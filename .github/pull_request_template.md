@@ -1,12 +1,13 @@
 ## 📝 Descripción
-Este Pull Request incluye ajustes y refactorización enfocados en la API y en la Landing Page/Inicio:
+Este Pull Request incluye ajustes y refactorización enfocados en la API, la base de datos y las vistas principales (Landing, Inicio y Login):
 
-**1. Frontend (Landing & Inicio):**
-* **Separación de estilos Web/Móvil:** Refactorización del sistema de estilos (`StyleSheet`) para la Landing, el Grid de productos y las Cards. Se han creado archivos `.ts` dedicados para móvil (ajustando anchos al 45% y márgenes) y `.web.ts` para escritorio (limitando el ancho máximo a 1200px).
-* **Limpieza de código:** Extracción de los estilos en línea (inline styles) de `inicio.tsx` a su propio archivo de estilos para mejorar rendimiento y legibilidad.
+**1. Frontend (Landing, Inicio y Login):**
+* **Separación de estilos Web/Móvil:** Refactorización del sistema de estilos (`StyleSheet`) para la Landing, el Grid de productos, las Cards y la pantalla de **Login**. Se han creado archivos `.ts` dedicados para móvil (adaptando márgenes y tamaños) y `.web.ts` para escritorio (limitando anchos máximos y mejorando la distribución).
 
-**2. Backend (API):**
-* Ajustes y configuración en `main.py` para la gestión de datos y endpoints de la aplicación. *(Nota: detalla aquí brevemente si el main.py hace algo más específico como conectar a la BD o configurar CORS)*.
+
+**2. Backend (API) y Base de Datos:**
+* **Ajustes en API (`main.py`):** Configuración general para la gestión de datos y endpoints de la aplicación.
+* **Supabase (Auth):** Se ha añadido login usando supabase y corregido un error de restricción de clave foránea añadiendo `ON DELETE CASCADE` a la tabla `usuarios`. Ahora se pueden borrar usuarios directamente desde el panel de Auth sin que la base de datos bloquee la acción.
 
 ## 🔗 Issue relacionado
 Closes #
@@ -14,15 +15,15 @@ Closes #
 ## 🚀 Tipo de cambio
 - [x] ✨ Nueva funcionalidad (feature)
 - [ ] 🐛 Corrección de error (bugfix)
-- [x] ♻️ Refactorización (mejora de código sin añadir nueva funcionalidad)
-- [x] 🎨 Mejoras de UI/UX o estilos (Tailwind / NativeWind / StyleSheet)
+- [ ] ♻️ Refactorización (mejora de código sin añadir nueva funcionalidad)
+- [ ] 🎨 Mejoras de UI/UX o estilos (Tailwind / NativeWind / StyleSheet)
 - [ ] 🔧 Configuración del proyecto / Dependencias
 
 ## 📱 Cambios en la Interfaz (Si aplica)
 | Antes | Después |
-| --- | ![alt text](landingpc.png) |
-| --- | ![alt text](landingMb.png)
-| *(Añadir captura antigua o N/A)* | *(Añadir captura de la versión móvil/web adaptada)* |
+| --- | ![alt text](loginPC.png) |
+| --- | ![alt text](loginM.png) |
+| *(Añadir captura de Login/Inicio antiguos)* | *(Añadir captura de la versión móvil/web adaptada)* |
 
 ## ✅ Checklist de calidad antes de fusionar
 - [x] He revisado mi propio código línea por línea antes de abrir esta PR.
@@ -33,4 +34,4 @@ Closes #
 - [ ] He añadido o actualizado los comentarios en funciones complejas.
 
 ## 💡 Notas adicionales para el revisor / Tutor
-* Para la separación de estilos web y móvil, se ha utilizado la convención de Expo/React Native usando extensiones `.web.ts` y `.ts`, lo que permite al empaquetador resolver la versión correcta automáticamente según la plataforma de ejecución.
+* Para la separación de estilos web y móvil en todas las pantallas refactorizadas (Landing, Inicio, Login), se ha utilizado la convención de Expo/React Native usando extensiones `.web.ts` y `.ts`, permitiendo al empaquetador resolver la versión correcta automáticamente.
