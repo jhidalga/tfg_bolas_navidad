@@ -15,6 +15,7 @@ venv/
 .venv/
 env/
 .pytest_cache/
+api\__pycache__
 
 # =========================
 # EXPO / REACT NATIVE (Carpeta 'customLayer')
@@ -32,3 +33,8 @@ web-build/
 # =========================
 .DS_Store
 Thumbs.db
+api/__pycache__/main.cpython-312.pyc
+api/__pycache__/main.cpython-312.pyc
+api/__pycache__/main.cpython-312.pyc
+api/.env
+customLayer/.env

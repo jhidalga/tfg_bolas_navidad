@@ -1,9 +1,10 @@
 import os
-from fastapi import FastAPI, HTTPException, Header, Header
+from typing import Optional
+from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
-from realtime import Optional
 from supabase import ClientOptions, create_client, Client
 from dotenv import load_dotenv
+
 load_dotenv()
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
@@ -23,8 +24,16 @@ app.add_middleware(
 def read_root():
     return {"message": "¡Bienvenido a la API de Custom Layers!"}
 
+@app.get("/api/productos")
+def obtener_productos():
+    try:
+        respuesta = supabase.table("productos").select("*, modelos(*)").execute()
+        return respuesta.data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al obtener productos: {str(e)}")
+
 @app.get("/api/usuarios")
-def obtener_mi_perfil(authorization: Optional[str] = Header(None)):
+def obtener_usuarios(authorization: Optional[str] = Header(None)):
     if not authorization:
         raise HTTPException(status_code=401, detail="Falta el token de sesión")
     
