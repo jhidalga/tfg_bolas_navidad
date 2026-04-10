@@ -1,11 +1,12 @@
 ## 📝 Descripción
-Este Pull Request incluye la creación y los ajustes enfocados exclusivamente en la pantalla y funcionalidad de **Registro**:
+Este Pull Request incluye la creación y los ajustes enfocados exclusivamente en las pantallas y funcionalidades de **Inicio**:
 
-**1. Frontend (Registro):**
-* **Separación de estilos Web/Móvil:** Creación y ajuste del sistema de estilos (`StyleSheet`) para la pantalla de **Registro**. Se han creado archivos `.ts` dedicados para móvil (adaptando márgenes y tamaños de los inputs/botones) y `.web.ts` para escritorio (limitando anchos máximos y mejorando la distribución del formulario).
+**1. Frontend (Inicio):**
+* **Separación de estilos Web/Móvil:** Creación y ajuste del sistema de estilos (`StyleSheet`) para la pantalla de **Inicio**. Se han creado archivos `.ts` dedicados para móvil (adaptando display del grid y cards y tamaños) y `.web.ts` para escritorio.
 
 **2. Backend y Base de Datos:**
-* **Supabase (Auth):** Se ha implementado la funcionalidad de registro conectando el formulario con Supabase para permitir la creación y alta de nuevos usuarios en el sistema.
+* **Api:** Se ha implementado la funcionalidad para obtener los datos de los productos de la base de datos y mostrarlos en la pantalla.
+* **Supabase:** Se ha creado las tablas correspondientes para almacenar los datos necesarios de los productos
 
 ## 🔗 Issue relacionado
 Closes #
@@ -19,8 +20,8 @@ Closes #
 
 ## 📱 Cambios en la Interfaz (Si aplica)
 | Antes | Después |
-| --- | ![alt text](registroPC.png) |
-| --- | ![alt text](registroM.png) |
+| --- |![alt text](inicioPC.png)  |
+| --- |![alt text](inicioMovil.png)  |
 
 ## ✅ Checklist de calidad antes de fusionar
 - [x] He revisado mi propio código línea por línea antes de abrir esta PR.
