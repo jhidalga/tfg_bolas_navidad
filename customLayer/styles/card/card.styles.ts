@@ -7,10 +7,9 @@ export const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#eaeaea',
         margin: 10,
-        // En Web queremos que ocupen un cuarto del ancho aprox (menos el margen)
         width: Platform.OS === 'web' ? '22%' : '45%',
         minWidth: 250,
-        flexGrow: 1, // Para que se estiren y rellenen huecos
+        flexGrow: 1,
         overflow: 'hidden',
     },
     imagenContenedor: {
