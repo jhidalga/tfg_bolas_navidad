@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { View, ActivityIndicator, Text } from 'react-native';
+import { useRouter } from 'expo-router';
 import Card from './cardProductos';
 import { styles } from '../styles/grid/grid.styles';
 
@@ -15,12 +16,14 @@ interface Producto {
     personalizable: boolean;
     colores: string[];
     imagen: string;
+    precio: number;
     modelos: Modelo[];
 }
 
 export default function Grid() {
     const [productos, setProductos] = useState<Producto[]>([]);
     const [cargando, setCargando] = useState(true);
+    const router = useRouter();
 
     useEffect(() => {
         const fetchProductos = async () => {
@@ -40,9 +43,9 @@ export default function Grid() {
 
     if (cargando) {
         return (
-            <View style={[styles.grid, { justifyContent: 'center', alignItems: 'center', flex: 1, padding: 50 }]}>
+            <View style={styles.loadingContainer}>
                 <ActivityIndicator size="large" color="#0000ff" />
-                <Text style={{ marginTop: 10, color: 'gray' }}>Cargando catálogo...</Text>
+                <Text style={styles.loaderText}>Cargando catálogo...</Text>
             </View>
         );
     }
@@ -50,14 +53,20 @@ export default function Grid() {
     return (
         <View style={styles.grid}>
             {productos.map((item) => (
-                <Card 
-                    key={item.id} 
-                    titulo={item.nombre} 
-                    imagenUrl={item.imagen}
-                    personalizable={item.personalizable}
-                    cantidadModelos={item.modelos ? item.modelos.length : 0}
-                    cantidadColores={item.colores ? item.colores.length : 0}
-                />
+                <View key={item.id} style={styles.cardWrapper}>
+                    <Card 
+                        titulo={item.nombre} 
+                        imagenUrl={item.imagen}
+                        precio={item.precio?.toString()}
+                        personalizable={item.personalizable}
+                        cantidadModelos={item.modelos ? item.modelos.length : 0}
+                        cantidadColores={item.colores ? item.colores.length : 0}
+                        onPress={() => router.push({
+                            pathname: '/detalles',
+                            params: { productoData: JSON.stringify(item) }
+                        })}
+                    />
+                </View>
             ))}
         </View>
     );
