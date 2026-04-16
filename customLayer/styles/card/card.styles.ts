@@ -1,4 +1,4 @@
-import { StyleSheet, Platform } from 'react-native';
+import { StyleSheet } from 'react-native';
 
 export const styles = StyleSheet.create({
     contenedor: {
@@ -6,10 +6,7 @@ export const styles = StyleSheet.create({
         borderRadius: 8,
         borderWidth: 1,
         borderColor: '#eaeaea',
-        margin: 10,
-        width: Platform.OS === 'web' ? '22%' : '45%',
-        minWidth: 250,
-        flexGrow: 1,
+        width: '100%',
         overflow: 'hidden',
     },
     imagenContenedor: {
@@ -39,5 +36,15 @@ export const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: 'bold',
         color: '#1a1a1a',
+    },
+    textoPersonalizable: {
+        color: '#16a34a',
+        fontSize: 12,
+        marginTop: 4,
+    },
+    textoDetalles: {
+        color: '#999999',
+        fontSize: 12,
+        marginTop: 4,
     }
 });
