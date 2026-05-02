@@ -3,32 +3,17 @@ import { View, ActivityIndicator, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import Card from './cardProductos';
 import { styles } from '../styles/grid/grid.styles';
-
-interface Modelo {
-    id: string;
-    nombre: string;
-    imagen: string;
-}
-
-interface Producto {
-    id: string;
-    nombre: string;
-    personalizable: boolean;
-    colores: string[];
-    imagen: string;
-    precio: number;
-    modelos: Modelo[];
-}
+import Toast from 'react-native-toast-message';
 
 export default function Grid() {
-    const [productos, setProductos] = useState<Producto[]>([]);
+    const [productos, setProductos] = useState<any[]>([]);
     const [cargando, setCargando] = useState(true);
     const router = useRouter();
 
     useEffect(() => {
         const fetchProductos = async () => {
             try {
-                const response = await fetch('http://192.168.0.25:8000/api/productos');
+                const response = await fetch('http://127.0.0.1:8000/api/productos');
                 const data = await response.json();
                 setProductos(data);
             } catch (error) {
@@ -37,14 +22,13 @@ export default function Grid() {
                 setCargando(false);
             }
         };
-
         fetchProductos();
     }, []);
 
     if (cargando) {
         return (
             <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#0000ff" />
+                <ActivityIndicator size="large" color="#3b82f6" />
                 <Text style={styles.loaderText}>Cargando catálogo...</Text>
             </View>
         );
@@ -52,22 +36,33 @@ export default function Grid() {
 
     return (
         <View style={styles.grid}>
-            {productos.map((item) => (
-                <View key={item.id} style={styles.cardWrapper}>
-                    <Card 
-                        titulo={item.nombre} 
-                        imagenUrl={item.imagen}
-                        precio={item.precio?.toString()}
-                        personalizable={item.personalizable}
-                        cantidadModelos={item.modelos ? item.modelos.length : 0}
-                        cantidadColores={item.colores ? item.colores.length : 0}
-                        onPress={() => router.push({
-                            pathname: '/detalles',
-                            params: { productoData: JSON.stringify(item) }
-                        })}
-                    />
-                </View>
-            ))}
+            {productos.map((item) => {
+                const imagenVisual = item.modelos && item.modelos.length > 0 ? item.modelos[0].imagen : null;
+                return (
+                    <View key={item.id} style={styles.cardWrapper}>
+                        <Card 
+                            titulo={item.nombre} 
+                            imagenUrl={imagenVisual}
+                            precio={item.precio?.toString()}
+                            personalizable={item.personalizable}
+                            cantidadModelos={item.modelos ? item.modelos.length : 0}
+                            cantidadColores={item.colores ? item.colores.length : 0}
+                            deshabilitado={item.deshabilitado}
+                            onPress={() => {
+                                if (item.deshabilitado) {
+                                    Toast.show({
+                                        type: 'error',
+                                        text1: 'No disponible',
+                                        text2: 'Este producto no está disponible temporalmente.'
+                                    });
+                                } else {
+                                    router.push({ pathname: '/detalles', params: { id: item.id } });
+                                }
+                            }}
+                        />
+                    </View>
+                );
+            })}
         </View>
     );
 }
