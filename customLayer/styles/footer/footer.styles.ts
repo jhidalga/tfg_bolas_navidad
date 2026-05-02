@@ -3,27 +3,45 @@ import { StyleSheet } from 'react-native';
 export const styles = StyleSheet.create({
     contenedorFooter: {
         width: '100%',
-        backgroundColor: '#1e293b',
-        paddingVertical: 30,
         paddingHorizontal: 25,
-        marginTop: 'auto',
-        alignItems: 'center',
+        paddingVertical: 40,
+        backgroundColor: 'transparent',
     },
-    columna: {
-        width: '100%',
-        alignItems: 'center',
+    seccionEventos: {
+        marginBottom: 30,
     },
-    tituloColumna: {
-        color: '#ffffff',
-        fontSize: 22,
+    tituloEventos: {
+        fontSize: 18,
         fontWeight: 'bold',
-        marginBottom: 10,
-        textAlign: 'center',
+        marginBottom: 25,
+        color: '#1a1a1a',
     },
-    textoDescripcion: {
-        color: '#94a3b8',
-        fontSize: 14,
-        lineHeight: 22,
-        textAlign: 'center',
+    gridEventos: {
+        flexDirection: 'column',
+        gap: 30,
+    },
+    tarjetaEvento: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+    },
+    iconoEvento: {
+        width: 24,
+        height: 24,
+        marginRight: 15,
+        resizeMode: 'contain',
+    },
+    textosEvento: {
+        flex: 1,
+    },
+    tituloTarjeta: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginBottom: 4,
+        color: '#1a1a1a',
+    },
+    descripcionTarjeta: {
+        fontSize: 12,
+        color: '#666666',
+        lineHeight: 18,
     }
 });
