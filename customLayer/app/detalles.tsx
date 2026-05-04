@@ -25,7 +25,7 @@ export default function DetallesProducto() {
     useEffect(() => {
         const cargarDetalles = async () => {
             try {
-                const res = await fetch(`http://192.168.0.25:8000/api/productos/${id}`);
+                const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/productos/${id}`);
                 if (res.ok) {
                     const data = await res.json();
                     setProducto(data);
@@ -82,7 +82,7 @@ export default function DetallesProducto() {
                 personalizacion: personalizacion || 'Sin texto'
             };
 
-            const apiUrl = 'http://192.168.0.25:8000/api';
+            const apiUrl = `${process.env.EXPO_PUBLIC_API_URL || ''}/api`;
             const response = await fetch(`${apiUrl}/carrito`, {
                 method: 'POST',
                 headers: {
