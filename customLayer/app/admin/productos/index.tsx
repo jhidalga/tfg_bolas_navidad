@@ -16,7 +16,7 @@ export default function AdminProductos() {
     const cargarProductos = async () => {
         try {
             const { data: { session } } = await supabase.auth.getSession();
-            const res = await fetch('http://192.168.0.25:8000/api/productos?incluir_ocultos=true', {
+            const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/productos?incluir_ocultos=true`, {
                 headers: { 'Authorization': `Bearer ${session?.access_token}` }
             });
             if (res.ok) {

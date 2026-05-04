@@ -5,7 +5,8 @@ import { supabase } from '../../../lib/supabase';
 import { styles } from '../../../styles/adminUsuarios/adminUsuarios.styles';
 import Toast from 'react-native-toast-message';
 
-const API_URL = 'http://192.168.0.25:8000/api'; 
+const API_URL = `${process.env.EXPO_PUBLIC_API_URL || ''}/api`;
+
 
 export default function GestorUsuariosAdmin() {
     const router = useRouter();

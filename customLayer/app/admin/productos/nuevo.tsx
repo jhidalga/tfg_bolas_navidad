@@ -59,7 +59,7 @@ export default function NuevoProductoAdmin() {
         const { imagen, ...datosProducto } = form;
         
         try {
-            const resProd = await fetch(`http://192.168.0.25:8000/api/admin/productos`, {
+            const resProd = await fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/admin/productos`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${session?.access_token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify(datosProducto)
@@ -68,7 +68,7 @@ export default function NuevoProductoAdmin() {
             if (resProd.ok) {
                 const productoCreado = await resProd.json();
                 
-                await fetch(`http://192.168.0.25:8000/api/admin/productos/${productoCreado.id}/modelos`, {
+                await fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/admin/productos/${productoCreado.id}/modelos`, {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${session?.access_token}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify({ nombre: 'Base', imagen: form.imagen })

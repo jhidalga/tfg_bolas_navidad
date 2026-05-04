@@ -24,7 +24,7 @@ export default function DetalleProductoAdmin() {
 
     const cargarProducto = async () => {
         const { data: { session } } = await supabase.auth.getSession();
-        const res = await fetch(`http://192.168.0.25:8000/api/productos/${id}?incluir_ocultos=true`, {
+        const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/productos/${id}?incluir_ocultos=true`, {
             headers: { 'Authorization': `Bearer ${session?.access_token}` }
         });
         if (res.ok) {
@@ -43,7 +43,7 @@ export default function DetalleProductoAdmin() {
 
     const guardarDatosPrincipales = async () => {
         const { data: { session } } = await supabase.auth.getSession();
-        const res = await fetch(`http://192.168.0.25:8000/api/admin/productos/${id}`, {
+        const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/admin/productos/${id}`, {
             method: 'PATCH',
             headers: { 'Authorization': `Bearer ${session?.access_token}`, 'Content-Type': 'application/json' },
             body: JSON.stringify(form)
@@ -64,7 +64,7 @@ export default function DetalleProductoAdmin() {
         if (!session) return;
         try {
             const resultados = await Promise.all(seleccionados.map(async (mid) => {
-                return fetch(`http://192.168.0.25:8000/api/admin/modelos/${mid}`, {
+                return fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/admin/modelos/${mid}`, {
                     method: 'DELETE',
                     headers: { 'Authorization': `Bearer ${session.access_token}` }
                 });
@@ -98,7 +98,7 @@ export default function DetalleProductoAdmin() {
     const guardarModelo = async (idx: number) => {
         const { data: { session } } = await supabase.auth.getSession();
         const mod = modelos[idx];
-        const res = await fetch(`http://192.168.0.25:8000/api/admin/modelos/${mod.id}`, {
+        const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/admin/modelos/${mod.id}`, {
             method: 'PATCH',
             headers: { 'Authorization': `Bearer ${session?.access_token}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ nombre: mod.nombre, imagen: mod.imagen })
@@ -113,7 +113,7 @@ export default function DetalleProductoAdmin() {
             return;
         }
         const { data: { session } } = await supabase.auth.getSession();
-        const res = await fetch(`http://192.168.0.25:8000/api/admin/productos/${id}/modelos`, {
+        const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/admin/productos/${id}/modelos`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${session?.access_token}`, 'Content-Type': 'application/json' },
             body: JSON.stringify(mod)

@@ -17,7 +17,7 @@ export default function DetallesPedidoAdmin() {
             if (!session) return;
             
             try {
-                const respuesta = await fetch(`http://192.168.0.25:8000/api/admin/pedidos/${id}`, {
+                const respuesta = await fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/admin/pedidos/${id}`, {
                     method: 'GET',
                     headers: { 'Authorization': `Bearer ${session.access_token}` }
                 });

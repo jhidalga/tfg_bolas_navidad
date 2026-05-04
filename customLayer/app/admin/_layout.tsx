@@ -24,7 +24,7 @@ export default function AdminLayout() {
             }
 
             try {
-                const respuesta = await fetch('http://192.168.0.25:8000/api/usuarios/perfil', {
+                const respuesta = await fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/usuarios/perfil`, {
                     method: 'GET',
                     headers: {
                         'Authorization': `Bearer ${session.access_token}`,

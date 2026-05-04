@@ -30,7 +30,7 @@ export default function ListaPedidosAdmin() {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) return;
         try {
-            const respuesta = await fetch('http://192.168.0.25:8000/api/admin/pedidos', {
+            const respuesta = await fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/admin/pedidos`, {
                 method: 'GET',
                 headers: { 'Authorization': `Bearer ${session.access_token}` }
             });
@@ -58,7 +58,7 @@ export default function ListaPedidosAdmin() {
         if (!session) return;
 
         try {
-            const respuesta = await fetch(`http://192.168.0.25:8000/api/admin/pedidos/${id}/estado`, {
+            const respuesta = await fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/admin/pedidos/${id}/estado`, {
                 method: 'PATCH',
                 headers: {
                     'Authorization': `Bearer ${session.access_token}`,

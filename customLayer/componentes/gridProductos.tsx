@@ -13,7 +13,7 @@ export default function Grid() {
     useEffect(() => {
         const fetchProductos = async () => {
             try {
-                const response = await fetch('http://127.0.0.1:8000/api/productos');
+                const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/productos`);
                 const data = await response.json();
                 setProductos(data);
             } catch (error) {

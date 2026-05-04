@@ -27,7 +27,7 @@ export default function PantallaCarrito() {
     const insets = useSafeAreaInsets();
     const [carrito, setCarrito] = useState<ItemCarrito[]>([]);
     const [cargando, setCargando] = useState(true);
-    const apiUrl = 'http://192.168.0.25:8000/api';
+    const apiUrl = `${process.env.EXPO_PUBLIC_API_URL || ''}/api`;
 
     useFocusEffect(
         useCallback(() => {
