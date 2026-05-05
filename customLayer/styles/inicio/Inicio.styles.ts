@@ -4,7 +4,7 @@ const { width } = Dimensions.get('window');
 const esMovil = width < 768;
 
 export const styles = StyleSheet.create({
-    contenedorPrincipal: {
+contenedorPrincipal: {
         flex: 1,
         backgroundColor: '#f8f9fa',
     },
@@ -12,11 +12,9 @@ export const styles = StyleSheet.create({
         flexGrow: 1,
     },
     contenedorGrid: {
-        width: '100%',
-        maxWidth: 1200,
-        alignSelf: 'center',
-        paddingHorizontal: esMovil ? 15 : 20,
-        paddingTop: esMovil ? 20 : 40,
+        flex: 1,
+        paddingHorizontal: 20,
+        paddingTop: 40,
         paddingBottom: 60,
     }
 });

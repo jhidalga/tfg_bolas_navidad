@@ -1,38 +1,15 @@
-import { useEffect, useState } from 'react';
-import { View, ActivityIndicator, Text } from 'react-native';
-import { useRouter } from 'expo-router';
+import { View } from 'react-native';
 import Card from './cardProductos';
 import { styles } from '../styles/grid/grid.styles';
 import Toast from 'react-native-toast-message';
+import { useRouter } from 'expo-router';
 
-export default function Grid() {
-    const [productos, setProductos] = useState<any[]>([]);
-    const [cargando, setCargando] = useState(true);
+interface GridProps {
+    productos: any[];
+}
+
+export default function Grid({ productos }: GridProps) {
     const router = useRouter();
-
-    useEffect(() => {
-        const fetchProductos = async () => {
-            try {
-                const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/productos`);
-                const data = await response.json();
-                setProductos(data);
-            } catch (error) {
-                console.error(error);
-            } finally {
-                setCargando(false);
-            }
-        };
-        fetchProductos();
-    }, []);
-
-    if (cargando) {
-        return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#3b82f6" />
-                <Text style={styles.loaderText}>Cargando catálogo...</Text>
-            </View>
-        );
-    }
 
     return (
         <View style={styles.grid}>
