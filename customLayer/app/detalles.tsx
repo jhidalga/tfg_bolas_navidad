@@ -13,6 +13,7 @@ export default function DetallesProducto() {
     const [producto, setProducto] = useState<any>(null);
     const [cargando, setCargando] = useState(true);
     const [agregando, setAgregando] = useState(false);
+    const [cantidad, setCantidad] = useState(1);
     
     const insets = useSafeAreaInsets();
     const { width, height } = Dimensions.get('window');
@@ -79,7 +80,8 @@ export default function DetallesProducto() {
                 modelo_id: modelo,
                 modelo: modeloSeleccionado?.nombre || 'Unico',
                 color: color || 'Unico',
-                personalizacion: personalizacion || 'Sin texto'
+                personalizacion: personalizacion || 'Sin texto',
+                cantidad: cantidad
             };
 
             const apiUrl = `${process.env.EXPO_PUBLIC_API_URL || ''}/api`;
@@ -185,6 +187,26 @@ export default function DetallesProducto() {
                                     />
                                 </View>
                             )}
+                        </View>
+                        <View style={styles.opcionContainer}>
+                            <Text style={styles.tituloOpcion}>Cantidad</Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderWidth: 1, borderColor: '#dee2e6', borderRadius: 12, width: 120, overflow: 'hidden' }}>
+                                <TouchableOpacity 
+                                    style={{ padding: 15, backgroundColor: '#f8f9fa' }} 
+                                    onPress={() => setCantidad(Math.max(1, cantidad - 1))}
+                                >
+                                    <Text style={{ fontSize: 18, fontWeight: 'bold' }}>-</Text>
+                                </TouchableOpacity>
+                                
+                                <Text style={{ flex: 1, textAlign: 'center', fontSize: 16, fontWeight: 'bold' }}>{cantidad}</Text>
+                                
+                                <TouchableOpacity 
+                                    style={{ padding: 15, backgroundColor: '#f8f9fa' }} 
+                                    onPress={() => setCantidad(cantidad + 1)}
+                                >
+                                    <Text style={{ fontSize: 18, fontWeight: 'bold' }}>+</Text>
+                                </TouchableOpacity>
+                            </View>
                         </View>
                         <View style={styles.contenedorAcciones}>
                             <TouchableOpacity 

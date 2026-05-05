@@ -20,6 +20,7 @@ class ItemCarrito(BaseModel):
     modelo: str
     color: str
     personalizacion: str
+    cantidad: int = 1
 
 class CheckoutPedido(BaseModel):
     total: float
@@ -196,7 +197,8 @@ def realizar_pedido(checkout: CheckoutPedido, authorization: Optional[str] = Hea
                 "modelo": item["modelo"],
                 "color": item["color"],
                 "personalizacion": item["personalizacion"],
-                "precio_unitario": item["productos"]["precio"] 
+                "precio_unitario": item["productos"]["precio"] ,
+                "cantidad": item.get("cantidad", 1)
             })
             
         cliente_seguro.table("detalles_pedido").insert(detalles).execute()
