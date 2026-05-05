@@ -212,7 +212,7 @@ def obtener_todos_los_pedidos(authorization: Optional[str] = Header(None)):
     try:
         cliente_seguro = create_client(SUPABASE_URL, SUPABASE_KEY, options=ClientOptions(headers={"Authorization": f"Bearer {token}"}))
         respuesta = cliente_seguro.table("pedidos")\
-            .select("*, usuarios!user_id(nombre, curso)")\
+            .select("*, usuarios!user_id(nombre, curso), detalles_pedido(*, productos(nombre))")\
             .order('created_at', desc=True)\
             .execute()
         return respuesta.data

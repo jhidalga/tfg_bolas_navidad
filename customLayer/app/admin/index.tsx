@@ -1,4 +1,4 @@
-import { View, Text, Pressable, ScrollView } from 'react-native';
+import { View, Text, Pressable, ScrollView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../lib/supabase';
@@ -6,6 +6,8 @@ import DropDownPicker from 'react-native-dropdown-picker';
 import { styles } from '../../styles/adminPedidos/adminPedidos.styles';
 import FontAwesome5 from '@expo/vector-icons/build/FontAwesome5';
 import { Entypo, FontAwesome } from '@expo/vector-icons';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 
 export default function ListaPedidosAdmin() {
     const router = useRouter();
@@ -31,7 +33,6 @@ export default function ListaPedidosAdmin() {
         cargarPedidos();
     }, []);
 
-    //vovler a la pagina 1 al aplicar filtro
     useEffect(() => {
         setPaginaActual(1);
     }, [filtroEstado, filtroCurso]);
@@ -92,7 +93,6 @@ export default function ListaPedidosAdmin() {
         });
     }, [pedidos, filtroEstado, filtroCurso]);
 
-    // logica paginacion
     const totalPaginas = Math.ceil(pedidosFiltrados.length / itemsPorPagina);
     const pedidosPaginados = pedidosFiltrados.slice(
         (paginaActual - 1) * itemsPorPagina, 
@@ -108,12 +108,63 @@ export default function ListaPedidosAdmin() {
         }
     };
 
+    const exportarCSV = async () => {
+        //Cabeceras
+        const cabeceras = "Producto,Modelo,Personalización (Nombre),Color,Cantidad,Cliente,Curso,Estado \n";
+        
+        let filas = "";
+        pedidosFiltrados.forEach(p => {
+            const cliente = p.usuarios?.nombre || "Desconocido";
+            const curso = p.usuarios?.curso || "Desconocido";
+            const estado = p.estado;
+
+            if (p.detalles_pedido && p.detalles_pedido.length > 0) {
+                p.detalles_pedido.forEach((detalle: any) => {
+                    const producto = detalle.productos?.nombre || "Desconocido";
+                    const modelo = detalle.modelo || "Base";
+                    const color = detalle.color || "-";
+                    const personalizacion = detalle.personalizacion === 'Sin texto' ? '' : detalle.personalizacion;
+                    const cantidad = detalle.cantidad || 1;
+                    filas += `"${producto}","${modelo}","${personalizacion}","${color}","${cantidad}","${cliente}","${curso}","${estado}"\n`;
+                });
+            }
+        });
+
+        const contenidoCSV = cabeceras + filas;
+
+        try {
+            if (Platform.OS === 'web') {
+                const blob = new Blob([contenidoCSV], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.setAttribute('download', 'hoja_fabricacion.csv');
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } else {
+                const dir = (FileSystem as any).documentDirectory || '';
+                const uri = dir + 'hoja_fabricacion.csv';
+                
+                await (FileSystem as any).writeAsStringAsync(uri, contenidoCSV);
+                
+                if (await (Sharing as any).isAvailableAsync()) {
+                    await (Sharing as any).shareAsync(uri);
+                } else {
+                    alert("No se puede compartir en este dispositivo");
+                }
+            }
+        } catch (error) {
+            console.error("Error al exportar:", error);
+            alert("Hubo un error al exportar los datos.");
+        }
+    };
+
     return (
         <View style={styles.contenedorPantalla}>
             <View style={styles.cabeceraPrincipal}>
                 <Text style={styles.tituloHeader}>Gestión de Pedidos</Text>
-                <Pressable style={styles.btnExportar} onPress={() => { }}>
-                    <Text style={styles.txtBtnExportar}><Entypo name="export" size={20} color="black" /> Exportar Excel</Text>
+                <Pressable style={styles.btnExportar} onPress={exportarCSV}>
+                    <Text style={styles.txtBtnExportar}><Entypo name="export" size={20} color="white" /> Exportar Hoja</Text>
                 </Pressable>
             </View>
             <View style={styles.barraFiltros}>
@@ -180,9 +231,9 @@ export default function ListaPedidosAdmin() {
                                                 </View>
                                             </View>
                                             <View style={styles.datosCliente}>
-                                                <Text style={styles.txtDato}><FontAwesome name="calendar" size={24} color="black" /> {new Date(pedido.created_at).toLocaleDateString()}</Text>
-                                                <Text style={styles.txtDato}><FontAwesome5 name="user" size={20} color="black" /> {pedido.usuarios?.nombre || "Desconocido"}</Text>
-                                                <Text style={styles.txtDato}><FontAwesome5 name="book" size={20} color="black" /> {pedido.usuarios?.curso || "Desconocido"}</Text>
+                                                <Text style={styles.txtDato}><FontAwesome name="calendar" size={16} color="black" /> {new Date(pedido.created_at).toLocaleDateString()}</Text>
+                                                <Text style={styles.txtDato}><FontAwesome5 name="user" size={14} color="black" /> {pedido.usuarios?.nombre || "Desconocido"}</Text>
+                                                <Text style={styles.txtDato}><FontAwesome5 name="book" size={14} color="black" /> {pedido.usuarios?.curso || "Desconocido"}</Text>
                                             </View>
                                             <Text style={styles.precioTotal}>{pedido.total} €</Text>
                                         </Pressable>
@@ -209,7 +260,6 @@ export default function ListaPedidosAdmin() {
                                 );
                             })}
                         </View>
-
                         {totalPaginas > 1 && (
                             <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingTop: 30, paddingBottom: 10, gap: 15 }}>
                                 <Pressable 
@@ -219,11 +269,9 @@ export default function ListaPedidosAdmin() {
                                 >
                                     <Text style={{ color: 'white', fontWeight: 'bold' }}>Anterior</Text>
                                 </Pressable>
-
                                 <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#475569' }}>
                                     Página {paginaActual} de {totalPaginas}
                                 </Text>
-
                                 <Pressable 
                                     style={[{ paddingVertical: 8, paddingHorizontal: 16, borderRadius: 8 }, paginaActual === totalPaginas ? { backgroundColor: '#cbd5e1' } : { backgroundColor: '#3b82f6' }]}
                                     disabled={paginaActual === totalPaginas}
