@@ -47,5 +47,8 @@ export const styles = StyleSheet.create({
         color: '#999999',
         fontSize: 12,
         marginTop: 4,
+    },
+    contenedorDeshabilitado: {
+        backgroundColor: '#f0f0f0',
     }
 });
