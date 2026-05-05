@@ -167,6 +167,7 @@ export default function ListaPedidosAdmin() {
                                             </View>
                                         </View>
                                         <View style={styles.datosCliente}>
+                                            <Text style={styles.txtDato}>{new Date(pedido.created_at).toLocaleDateString()}</Text>
                                             <Text style={styles.txtDato}>👤 {pedido.usuarios?.nombre || "Desconocido"}</Text>
                                             <Text style={styles.txtDato}>📚 {pedido.usuarios?.curso || "Desconocido"}</Text>
                                         </View>
