@@ -335,3 +335,26 @@ def actualizar_rol_usuario(usuario_id: str, payload: dict, authorization: Option
         if isinstance(e, HTTPException):
             raise e
         raise HTTPException(status_code=500, detail=str(e))
+    
+@app.get("/api/pedidos/usuario")
+def obtener_mis_pedidos(authorization: Optional[str] = Header(None)):
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Falta el token de sesión")
+    token = authorization.replace("Bearer ", "")
+    try:
+        payload = jwt.decode(token, options={"verify_signature": False})
+        user_id = payload.get("sub")
+        cliente_seguro = create_client(
+            SUPABASE_URL, 
+            SUPABASE_KEY, 
+            options=ClientOptions(headers={"Authorization": f"Bearer {token}"})
+        )
+        respuesta = cliente_seguro.table("pedidos")\
+            .select("*")\
+            .eq("user_id", user_id)\
+            .order('created_at', desc=True)\
+            .execute()
+            
+        return respuesta.data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al obtener tus pedidos: {str(e)}")
