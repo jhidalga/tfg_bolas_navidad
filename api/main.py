@@ -350,7 +350,7 @@ def obtener_mis_pedidos(authorization: Optional[str] = Header(None)):
             options=ClientOptions(headers={"Authorization": f"Bearer {token}"})
         )
         respuesta = cliente_seguro.table("pedidos")\
-            .select("*")\
+            .select("*, detalles_pedido(id)")\
             .eq("user_id", user_id)\
             .order('created_at', desc=True)\
             .execute()
