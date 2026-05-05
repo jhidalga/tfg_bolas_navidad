@@ -49,6 +49,10 @@ class ModeloAdminData(BaseModel):
     nombre: str
     imagen: Optional[str] = ""
 
+class UsuarioUpdate(BaseModel):
+    nombre: Optional[str] = None
+    curso: Optional[str] = None
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -92,6 +96,29 @@ def obtener_perfil(authorization: Optional[str] = Header(None)):
         return respuesta.data
     except Exception as e:
         raise HTTPException(status_code=401, detail="Sesión no válida o expirada")
+
+@app.patch("/api/usuarios/perfil")
+def actualizar_perfil(datos: UsuarioUpdate, authorization: Optional[str] = Header(None)):
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Falta el token de sesión")
+    token = authorization.replace("Bearer ", "")
+    try:
+        payload = jwt.decode(token, options={"verify_signature": False})
+        user_id = payload.get("sub")
+        cliente_seguro = create_client(
+            SUPABASE_URL, 
+            SUPABASE_KEY, 
+            options=ClientOptions(headers={"Authorization": f"Bearer {token}"})
+        )
+        
+        update_data = {k: v for k, v in datos.dict().items() if v is not None}
+        
+        if update_data:
+            respuesta = cliente_seguro.table("usuarios").update(update_data).eq("id", user_id).execute()
+            return {"mensaje": "Perfil actualizado correctamente", "data": respuesta.data[0]}
+        return {"mensaje": "No se enviaron datos para actualizar"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error al actualizar el perfil: {str(e)}")
 
 @app.get("/api/carrito")
 def obtener_carrito(authorization: Optional[str] = Header(None)):
