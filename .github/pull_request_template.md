@@ -1,14 +1,13 @@
 ## 📝 Descripción
-Este Pull Request incluye la creacion de un componente filtro que afecta a la pantalla de **Inicio** y a **gridProductos**:
+Este Pull Request incluye la creacion de una pagina perfil:
 
 **1. Frontend:**
-* **Pantalla de Inicio:** Bloque de filtros en el lateral izquierdo del grid y ahora tambien se encarga de la llamada a la api
-* **Pantalla de gridProductos:** Ya no se encarga de la llamada a la api.
-* **Componente de foltros:** Encargado de filtrar los productos que venga de la api, el precio minimo y maximo son dinamicos, se obtienen mirando los precios
-de los productos que trae la api
+* **Pantalla de Perfil:** Pagina con campos de texto orientado a la modificacion de los datos del usuario excepto el correo y si es un profesor o un alumno
+
 
 
 **2. Backend y Base de Datos:**
+Nuevo endpoint POST para manejar la actualizacion de los datos del usuario
 
 
 ## 🔗 Issue relacionado
@@ -23,8 +22,8 @@ Closes #
 
 ## 📱 Cambios en la Interfaz (Si aplica)
 | Antes | Después |
-| --- |![alt text](image.png)  |
-| --- | |
+| --- |![alt text](dspPCNav.png)  |
+| --- |![alt text](dspPCPerf.png) |
 
 ## ✅ Checklist de calidad antes de fusionar
 - [x] He revisado mi propio código línea por línea antes de abrir esta PR.
