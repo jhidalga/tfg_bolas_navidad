@@ -1,12 +1,15 @@
 ## 📝 Descripción
-Este Pull Request incluye la creación y los ajustes enfocados exclusivamente en las pantallas y funcionalidades de **Inicio**:
+Este Pull Request incluye la creación y los ajustes enfocados exclusivamente en las pantallas y funcionalidades de **Pedidos del Usuario**:
 
-**1. Frontend (Inicio):**
-* **Separación de estilos Web/Móvil:** Creación y ajuste del sistema de estilos (`StyleSheet`) para la pantalla de **Inicio**. Se han creado archivos `.ts` dedicados para móvil (adaptando display del grid y cards y tamaños) y `.web.ts` para escritorio.
+**1. Frontend (Pedidos):**
+* **Pantalla de Mis Pedidos:** Implementación de la vista `app/pedidos/index.tsx` que permite a los usuarios visualizar su historial personal de pedidos.
+* **Pantalla de Mis Pedidos:** Implementación de la vista `app/pedidos/[id].tsx` que permite a los usuarios visualizar los detalles de sus pedidos.
+* **Resumen de Pedido:** Se ha integrado la visualización de la fecha, el importe total y la cantidad de productos solicitados por pedido.
+
 
 **2. Backend y Base de Datos:**
-* **Api:** Se ha implementado la funcionalidad para obtener los datos de los productos de la base de datos y mostrarlos en la pantalla.
-* **Supabase:** Se ha creado las tablas correspondientes para almacenar los datos necesarios de los productos
+* **Endpoint de Consulta:** Se ha creado el endpoint `GET /api/pedidos/usuario` en `main.py` para recuperar los pedidos del usuario autenticado mediante la decodificación del token JWT
+* **Relaciones en Supabase:** Optimización de las consultas para incluir el conteo de `detalles_pedido` vinculados a cada registro de la tabla `pedidos`.
 
 ## 🔗 Issue relacionado
 Closes #
@@ -29,7 +32,6 @@ Closes #
 - [x] El código compila sin errores ni advertencias (warnings) graves.
 - [x] He eliminado los `console.log()` innecesarios o de depuración.
 - [x] Mi código sigue la arquitectura y el estilo definido en el proyecto.
-- [ ] He añadido o actualizado los comentarios en funciones complejas.
 
 ## 💡 Notas adicionales para el revisor / Tutor
-* Para la separación de estilos web y móvil en la pantalla de Registro, se ha utilizado la convención de Expo/React Native usando extensiones `.web.ts` y `.ts`, permitiendo al empaquetador resolver la versión correcta automáticamente.
+* Se ha implementado una validación de seguridad en el backend que compara el `user_id` extraído del token JWT con el campo `user_id` del pedido antes de permitir cualquier modificación de estado.

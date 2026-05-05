@@ -72,6 +72,9 @@ export default function Navbar() {
                 <Pressable style={styles.boton} onPress={() => router.push('../carrito')}>
                     <Text style={styles.textoBoton}>Carrito</Text>
                 </Pressable>
+                <Pressable style={styles.boton} onPress={() => router.push('../pedidos')}>
+                    <Text style={styles.textoBoton}>Pedidos</Text>
+                </Pressable>
                 {esAdmin && (
                     <Pressable style={styles.botonAdmin} onPress={() => router.push('../admin')}>
                         <Text style={styles.textoAdmin}>Panel Admin</Text>
