@@ -1,15 +1,12 @@
 ## 📝 Descripción
 Este Pull Request incluye la creación y los ajustes enfocados exclusivamente en las pantallas y funcionalidades de **Pedidos del Usuario**:
 
-**1. Frontend (Pedidos):**
-* **Pantalla de Mis Pedidos:** Implementación de la vista `app/pedidos/index.tsx` que permite a los usuarios visualizar su historial personal de pedidos.
-* **Pantalla de Mis Pedidos:** Implementación de la vista `app/pedidos/[id].tsx` que permite a los usuarios visualizar los detalles de sus pedidos.
-* **Resumen de Pedido:** Se ha integrado la visualización de la fecha, el importe total y la cantidad de productos solicitados por pedido.
+**1. Frontend (admin/usuarios):**
+* **Pantalla de Mis Pedidos:** Implementación de campo de texto para filtrar los usuarios por su nombre.
 
 
 **2. Backend y Base de Datos:**
-* **Endpoint de Consulta:** Se ha creado el endpoint `GET /api/pedidos/usuario` en `main.py` para recuperar los pedidos del usuario autenticado mediante la decodificación del token JWT
-* **Relaciones en Supabase:** Optimización de las consultas para incluir el conteo de `detalles_pedido` vinculados a cada registro de la tabla `pedidos`.
+
 
 ## 🔗 Issue relacionado
 Closes #
@@ -23,8 +20,8 @@ Closes #
 
 ## 📱 Cambios en la Interfaz (Si aplica)
 | Antes | Después |
-| --- |![alt text](inicioPC.png)  |
-| --- |![alt text](inicioMovil.png)  |
+| ![alt text](antPC.png) |![alt text](dspPC.png)  |
+| --- | |
 
 ## ✅ Checklist de calidad antes de fusionar
 - [x] He revisado mi propio código línea por línea antes de abrir esta PR.
@@ -34,4 +31,3 @@ Closes #
 - [x] Mi código sigue la arquitectura y el estilo definido en el proyecto.
 
 ## 💡 Notas adicionales para el revisor / Tutor
-* Se ha implementado una validación de seguridad en el backend que compara el `user_id` extraído del token JWT con el campo `user_id` del pedido antes de permitir cualquier modificación de estado.
