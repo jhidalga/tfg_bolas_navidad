@@ -193,7 +193,6 @@ def realizar_pedido(checkout: CheckoutPedido, authorization: Optional[str] = Hea
             detalles.append({
                 "pedido_id": pedido_id,
                 "producto_id": item["producto_id"],
-                "modelo_id": item["modelo_id"],
                 "modelo": item["modelo"],
                 "color": item["color"],
                 "personalizacion": item["personalizacion"],
