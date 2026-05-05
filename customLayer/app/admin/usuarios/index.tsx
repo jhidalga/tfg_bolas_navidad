@@ -12,6 +12,7 @@ export default function GestorUsuariosAdmin() {
     const router = useRouter();
     const [cargando, setCargando] = useState(true);
     const [usuarios, setUsuarios] = useState<any[]>([]);
+    const [busqueda, setBusqueda] = useState('');
 
     useEffect(() => { cargarUsuarios(); }, []);
 
@@ -69,6 +70,7 @@ export default function GestorUsuariosAdmin() {
                         <Text style={styles.txtVolver}>⬅ Volver</Text>
                     </Pressable>
                     <Text style={styles.titulo}>Gestión de Usuarios</Text>
+                    <input type="text" placeholder="Buscar..." style={styles.inputBuscar} value={busqueda} onChange={(e) => setBusqueda(e.target.value)} />
                 </View>
 
                 <View style={styles.contenedorTabla}>
@@ -83,40 +85,41 @@ export default function GestorUsuariosAdmin() {
                         </View>
 
                         {usuarios.map((u) => (
-                            <View key={u.id} style={styles.fila}>
-                                <View style={styles.colNombre}>
-                                    <Text style={styles.txtNormal} numberOfLines={1}>{u.nombre || '-'}</Text>
-                                </View>
-                                <View style={styles.colEmail}>
-                                    <Text style={styles.txtSecundario} numberOfLines={1}>{u.email}</Text>
-                                </View>
-                                <View style={styles.colCurso}>
-                                    <Text style={styles.txtNormal}>{u.curso || '-'}</Text>
-                                </View>
-                                <View style={styles.colProf}>
-                                    <View style={styles.badgeProf}>
-                                        <Text style={{ color: '#64748b', fontSize: 14, fontWeight: 'bold' }}>
-                                            {u.profesor ? 'SÍ' : 'No'}
-                                        </Text>
+                            (busqueda && !u.nombre?.toLowerCase().includes(busqueda.toLowerCase()) ? null : (
+                                <View key={u.id} style={styles.fila}>
+                                    <View style={styles.colNombre}>
+                                        <Text style={styles.txtNormal} numberOfLines={1}>{u.nombre || '-'}</Text>
+                                    </View>
+                                    <View style={styles.colEmail}>
+                                        <Text style={styles.txtSecundario} numberOfLines={1}>{u.email}</Text>
+                                    </View>
+                                    <View style={styles.colCurso}>
+                                        <Text style={styles.txtNormal}>{u.curso || '-'}</Text>
+                                    </View>
+                                    <View style={styles.colProf}>
+                                        <View style={styles.badgeProf}>
+                                            <Text style={{ color: '#64748b', fontSize: 14, fontWeight: 'bold' }}>
+                                                {u.profesor ? 'SÍ' : 'No'}
+                                            </Text>
+                                        </View>
+                                    </View>
+                                    <View style={styles.colPedidos}>
+                                        <View style={styles.badgePedidos}>
+                                            <Text style={{ color: '#2563eb', fontWeight: 'bold', fontSize: 16 }}>{u.num_pedidos}</Text>
+                                        </View>
+                                    </View>
+                                    <View style={styles.colRol}>
+                                        <Pressable 
+                                            style={[styles.btnRol, u.administrador ? styles.btnAdmin : styles.btnUser]} 
+                                            onPress={() => toggleAdmin(u.id, u.administrador)}
+                                        >
+                                            <Text style={u.administrador ? styles.txtBtnAdmin : styles.txtBtnUser}>
+                                                {u.administrador ? 'ADMIN' : 'USER'}
+                                            </Text>
+                                        </Pressable>
                                     </View>
                                 </View>
-                                <View style={styles.colPedidos}>
-                                    <View style={styles.badgePedidos}>
-                                        <Text style={{ color: '#2563eb', fontWeight: 'bold', fontSize: 16 }}>{u.num_pedidos}</Text>
-                                    </View>
-                                </View>
-                                <View style={styles.colRol}>
-                                    <Pressable 
-                                        style={[styles.btnRol, u.administrador ? styles.btnAdmin : styles.btnUser]} 
-                                        onPress={() => toggleAdmin(u.id, u.administrador)}
-                                    >
-                                        <Text style={u.administrador ? styles.txtBtnAdmin : styles.txtBtnUser}>
-                                            {u.administrador ? 'ADMIN' : 'USER'}
-                                        </Text>
-                                    </Pressable>
-                                </View>
-                            </View>
-                        ))}
+                        ))))}
                     </View>
                 </View>
             </ScrollView>

@@ -11,6 +11,10 @@ export const styles = StyleSheet.create({
         alignItems: 'center'
     },
     header: {
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
         width: '100%',
         maxWidth: 1000,
         marginBottom: 25
@@ -126,5 +130,17 @@ export const styles = StyleSheet.create({
         borderColor: '#cbd5e1'
     },
     txtBtnAdmin: { color: 'white', fontWeight: 'bold', fontSize: 14 },
-    txtBtnUser: { color: '#64748b', fontWeight: 'bold', fontSize: 14 }
+    txtBtnUser: { color: '#64748b', fontWeight: 'bold', fontSize: 14 },
+
+    inputBuscar:{ 
+        backgroundColor: 'white',
+        borderWidth: 1,
+        borderColor: '#cbd5e1',
+        marginTop: 10,
+        borderRadius: 10,
+        paddingVertical: 10,
+        paddingHorizontal: 15,
+        fontSize: 17,
+        marginBottom: 15
+    }
 });
