@@ -1,8 +1,11 @@
 ## 📝 Descripción
-Este Pull Request incluye la modificacion de los estilos del componente cardProducto que afecta a la pantalla de **Inicio**:
+Este Pull Request incluye la creacion de un componente filtro que afecta a la pantalla de **Inicio** y a **gridProductos**:
 
-**1. Frontend (inicio):**
-* **Pantalla de Inicio:** Los productos que esten como desabilitados aparecen con un fondo mas oscuro que el resto.
+**1. Frontend:**
+* **Pantalla de Inicio:** Bloque de filtros en el lateral izquierdo del grid y ahora tambien se encarga de la llamada a la api
+* **Pantalla de gridProductos:** Ya no se encarga de la llamada a la api.
+* **Componente de foltros:** Encargado de filtrar los productos que venga de la api, el precio minimo y maximo son dinamicos, se obtienen mirando los precios
+de los productos que trae la api
 
 
 **2. Backend y Base de Datos:**
@@ -12,15 +15,15 @@ Este Pull Request incluye la modificacion de los estilos del componente cardProd
 Closes #
 
 ## 🚀 Tipo de cambio
-- [ ] ✨ Nueva funcionalidad (feature)
+- [X] ✨ Nueva funcionalidad (feature)
 - [ ] 🐛 Corrección de error (bugfix)
 - [ ] ♻️ Refactorización (mejora de código sin añadir nueva funcionalidad)
-- [X] 🎨 Mejoras de UI/UX o estilos (Tailwind / NativeWind / StyleSheet)
+- [ ] 🎨 Mejoras de UI/UX o estilos (Tailwind / NativeWind / StyleSheet)
 - [ ] 🔧 Configuración del proyecto / Dependencias
 
 ## 📱 Cambios en la Interfaz (Si aplica)
 | Antes | Después |
-| ![alt text](antPC.png) |![alt text](dspPC.png)  |
+| --- |![alt text](image.png)  |
 | --- | |
 
 ## ✅ Checklist de calidad antes de fusionar
