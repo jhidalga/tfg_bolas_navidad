@@ -1,0 +1,90 @@
+import { StyleSheet } from "react-native";
+
+export const styles = StyleSheet.create({
+    contenedorFiltros: {
+        width: 300,
+        backgroundColor: "#ffffff",
+        borderRadius: 16,
+        padding: 20,
+        marginRight: 90,
+        marginLeft: -100,
+        marginBottom: 20,
+        alignSelf: "flex-start", 
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.05,
+        shadowRadius: 10,
+        elevation: 3,
+        borderWidth: 1,
+        borderColor: "#e2e8f0",
+    },
+    tituloFiltro: {
+        fontSize: 18,
+        fontWeight: "800",
+        color: "#1e293b",
+        marginBottom: 20,
+    },
+    grupoFiltro: {
+        marginBottom: 20,
+    },
+    label: {
+        fontSize: 13,
+        fontWeight: "700",
+        color: "#475569",
+        marginBottom: 8,
+    },
+    input: {
+        backgroundColor: "#f8fafc",
+        borderWidth: 1,
+        borderColor: "#e2e8f0",
+        borderRadius: 8,
+        padding: 10,
+        fontSize: 14,
+        color: "#1e293b",
+    },
+    rowInputs: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 10,
+    },
+    inputRange: {
+        flex: 1,
+        maxWidth: 120,
+        backgroundColor: "#f8fafc",
+        borderWidth: 1,
+        borderColor: "#e2e8f0",
+        borderRadius: 8,
+        padding: 10,
+        fontSize: 14,
+        color: "#1e293b",
+        textAlign: "center",
+    },
+    checkboxRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 10,
+    },
+    checkboxOuter: {
+        width: 20,
+        height: 20,
+        borderWidth: 2,
+        borderColor: "#cbd5e1",
+        borderRadius: 4,
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    checkboxSelected: {
+        backgroundColor: "#3b82f6",
+        borderColor: "#3b82f6",
+    },
+    checkInner: {
+        color: "white",
+        fontSize: 10,
+        fontWeight: "bold",
+    },
+    textoRango: {
+        fontSize: 11,
+        color: "#94a3b8",
+        marginTop: 6,
+    }
+});
