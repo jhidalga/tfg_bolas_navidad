@@ -1,8 +1,8 @@
 ## 📝 Descripción
-Este Pull Request incluye la creación y los ajustes enfocados exclusivamente en las pantallas y funcionalidades de **Pedidos del Usuario**:
+Este Pull Request incluye la modificacion de los estilos del componente cardProducto que afecta a la pantalla de **Inicio**:
 
-**1. Frontend (admin/usuarios):**
-* **Pantalla de Mis Pedidos:** Implementación de campo de texto para filtrar los usuarios por su nombre.
+**1. Frontend (inicio):**
+* **Pantalla de Inicio:** Los productos que esten como desabilitados aparecen con un fondo mas oscuro que el resto.
 
 
 **2. Backend y Base de Datos:**
@@ -12,10 +12,10 @@ Este Pull Request incluye la creación y los ajustes enfocados exclusivamente en
 Closes #
 
 ## 🚀 Tipo de cambio
-- [x] ✨ Nueva funcionalidad (feature)
+- [ ] ✨ Nueva funcionalidad (feature)
 - [ ] 🐛 Corrección de error (bugfix)
 - [ ] ♻️ Refactorización (mejora de código sin añadir nueva funcionalidad)
-- [ ] 🎨 Mejoras de UI/UX o estilos (Tailwind / NativeWind / StyleSheet)
+- [X] 🎨 Mejoras de UI/UX o estilos (Tailwind / NativeWind / StyleSheet)
 - [ ] 🔧 Configuración del proyecto / Dependencias
 
 ## 📱 Cambios en la Interfaz (Si aplica)
