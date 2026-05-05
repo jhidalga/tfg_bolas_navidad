@@ -4,6 +4,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../lib/supabase';
 import DropDownPicker from 'react-native-dropdown-picker';
 import { styles } from '../../styles/adminPedidos/adminPedidos.styles';
+import FontAwesome5 from '@expo/vector-icons/build/FontAwesome5';
+import { Entypo, FontAwesome } from '@expo/vector-icons';
 
 export default function ListaPedidosAdmin() {
     const router = useRouter();
@@ -111,7 +113,7 @@ export default function ListaPedidosAdmin() {
             <View style={styles.cabeceraPrincipal}>
                 <Text style={styles.tituloHeader}>Gestión de Pedidos</Text>
                 <Pressable style={styles.btnExportar} onPress={() => { }}>
-                    <Text style={styles.txtBtnExportar}>📥 Exportar Excel</Text>
+                    <Text style={styles.txtBtnExportar}><Entypo name="export" size={20} color="black" /> Exportar Excel</Text>
                 </Pressable>
             </View>
             <View style={styles.barraFiltros}>
@@ -178,9 +180,9 @@ export default function ListaPedidosAdmin() {
                                                 </View>
                                             </View>
                                             <View style={styles.datosCliente}>
-                                                <Text style={styles.txtDato}>{new Date(pedido.created_at).toLocaleDateString()}</Text>
-                                                <Text style={styles.txtDato}>👤 {pedido.usuarios?.nombre || "Desconocido"}</Text>
-                                                <Text style={styles.txtDato}>📚 {pedido.usuarios?.curso || "Desconocido"}</Text>
+                                                <Text style={styles.txtDato}><FontAwesome name="calendar" size={24} color="black" /> {new Date(pedido.created_at).toLocaleDateString()}</Text>
+                                                <Text style={styles.txtDato}><FontAwesome5 name="user" size={20} color="black" /> {pedido.usuarios?.nombre || "Desconocido"}</Text>
+                                                <Text style={styles.txtDato}><FontAwesome5 name="book" size={20} color="black" /> {pedido.usuarios?.curso || "Desconocido"}</Text>
                                             </View>
                                             <Text style={styles.precioTotal}>{pedido.total} €</Text>
                                         </Pressable>

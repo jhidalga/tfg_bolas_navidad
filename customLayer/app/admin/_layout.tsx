@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { styles } from '../../styles/adminLayout/adminLayout.styles';
 import Toast from 'react-native-toast-message';
+import FontAwesome5 from '@expo/vector-icons/build/FontAwesome5';
 
 export default function AdminLayout() {
     const router = useRouter();
@@ -68,21 +69,21 @@ export default function AdminLayout() {
                         style={[styles.opcion, esRutaPedidos && styles.activa]} 
                         onPress={() => router.push('/admin' as any)}
                     >
-                        <Text style={[styles.texto, esRutaPedidos && styles.textoActivo]}>📦 Pedidos</Text>
+                        <Text style={[styles.texto, esRutaPedidos && styles.textoActivo]}><FontAwesome5 name="box" size={24} color="white" /> Pedidos</Text>
                     </Pressable>
 
                     <Pressable 
                         style={[styles.opcion, esRutaProductos && styles.activa]} 
                         onPress={() => router.push('/admin/productos' as any)}
                     >
-                        <Text style={[styles.texto, esRutaProductos && styles.textoActivo]}>🛒 Productos</Text>
+                        <Text style={[styles.texto, esRutaProductos && styles.textoActivo]}><FontAwesome5 name="boxes" size={24} color="white" /> Productos</Text>
                     </Pressable>
 
                     <Pressable 
                         style={[styles.opcion, esRutaUsuarios && styles.activa]} 
                         onPress={() => router.push('/admin/usuarios' as any)}
                     >
-                        <Text style={[styles.texto, esRutaUsuarios && styles.textoActivo]}>👥 Usuarios</Text>
+                        <Text style={[styles.texto, esRutaUsuarios && styles.textoActivo]}><FontAwesome5 name="users" size={24} color="white" /> Usuarios</Text>
                     </Pressable>
                 </View>
 

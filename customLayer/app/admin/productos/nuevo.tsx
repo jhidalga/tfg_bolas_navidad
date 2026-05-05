@@ -96,7 +96,7 @@ export default function NuevoProductoAdmin() {
             <TextInput style={styles.input} keyboardType="numeric" value={form.precio.toString()} onChangeText={t => setForm({...form, precio: parseFloat(t) || 0})} />
             
             <Pressable style={{ backgroundColor: '#3b82f6', padding: 15, borderRadius: 10, marginVertical: 20 }} onPress={seleccionarYSubirImagen}>
-                <Text style={{ color: 'white', textAlign: 'center' }}>{subiendo ? "Subiendo..." : "📷 Subir Imagen"}</Text>
+                <Text style={{ color: 'white', textAlign: 'center' }}>{subiendo ? "Subiendo..." : " Subir Imagen"}</Text>
             </Pressable>
             
             {form.imagen ? <Image source={{ uri: form.imagen }} style={{ width: 100, height: 100, alignSelf: 'center', marginBottom: 20 }} /> : null}
