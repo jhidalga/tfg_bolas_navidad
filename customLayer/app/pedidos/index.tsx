@@ -72,6 +72,8 @@ export default function MisPedidos() {
                     <View style={styles.gridTarjetas}>
                         {pedidos.map(pedido => {
                             const badge = getEstilosBadge(pedido.estado);
+                            const cantidadProductos = pedido.detalles_pedido ? pedido.detalles_pedido.length : 0;
+                            
                             return (
                                 <View key={pedido.id} style={styles.tarjeta}>
                                     <Pressable 
@@ -90,6 +92,9 @@ export default function MisPedidos() {
                                         <View style={styles.datosCliente}>
                                             <Text style={styles.txtDato}>
                                                 Fecha: {new Date(pedido.created_at).toLocaleDateString()}
+                                            </Text>
+                                            <Text style={styles.txtDato}>
+                                                Productos: {cantidadProductos}
                                             </Text>
                                         </View>
                                         
