@@ -1,4 +1,4 @@
-import { View, Text, TextInput, Pressable, ScrollView, Image } from 'react-native';
+import { View, Text, TextInput, Pressable, ScrollView, Image, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { supabase } from '../../../lib/supabase';
@@ -12,8 +12,13 @@ export default function NuevoProductoAdmin() {
     const [subiendo, setSubiendo] = useState(false);
     
     const [form, setForm] = useState({
-        nombre: '', descripcion: '', precio: 0.0, personalizable: false, colores: [""], imagen:""
+        nombre: '', 
+        descripcion: '', 
+        precio: 0.0, 
+        personalizable: false, 
+        imagen: ""
     });
+    const [coloresTexto, setColoresTexto] = useState("");
 
     const mostrarAlerta = (titulo: string, mensaje: string, irAtras = false) => {
         Toast.show({
@@ -56,13 +61,22 @@ export default function NuevoProductoAdmin() {
         }
 
         const { data: { session } } = await supabase.auth.getSession();
-        const { imagen, ...datosProducto } = form;
+        
+        const arrayColores = coloresTexto.split(',').map(c => c.trim()).filter(c => c !== '');
+        
+        const payloadProducto = {
+            nombre: form.nombre,
+            descripcion: form.descripcion,
+            precio: form.precio,
+            personalizable: form.personalizable,
+            colores: arrayColores
+        };
         
         try {
             const resProd = await fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/admin/productos`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${session?.access_token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify(datosProducto)
+                body: JSON.stringify(payloadProducto)
             });
 
             if (resProd.ok) {
@@ -82,28 +96,79 @@ export default function NuevoProductoAdmin() {
     };
 
     return (
-        <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
-            <Pressable onPress={() => router.back()} style={styles.btnVolver}>
-                <Text style={styles.txtVolver}>⬅ Cancelar</Text>
-            </Pressable>
-            
-            <Text style={styles.titulo}>Nuevo Producto</Text>
-            
-            <Text style={styles.label}>Nombre *</Text>
-            <TextInput style={styles.input} value={form.nombre} onChangeText={t => setForm({...form, nombre: t})} />
-            
-            <Text style={styles.label}>Precio (€) *</Text>
-            <TextInput style={styles.input} keyboardType="numeric" value={form.precio.toString()} onChangeText={t => setForm({...form, precio: parseFloat(t) || 0})} />
-            
-            <Pressable style={{ backgroundColor: '#3b82f6', padding: 15, borderRadius: 10, marginVertical: 20 }} onPress={seleccionarYSubirImagen}>
-                <Text style={{ color: 'white', textAlign: 'center' }}>{subiendo ? "Subiendo..." : " Subir Imagen"}</Text>
-            </Pressable>
-            
-            {form.imagen ? <Image source={{ uri: form.imagen }} style={{ width: 100, height: 100, alignSelf: 'center', marginBottom: 20 }} /> : null}
-            
-            <Pressable style={{ backgroundColor: '#10b981', padding: 15, borderRadius: 10 }} onPress={crearProducto}>
-                <Text style={{ color: 'white', textAlign: 'center', fontWeight: 'bold' }}>Guardar Producto</Text>
-            </Pressable>
-        </ScrollView>
+        <View style={styles.pantalla}>
+            <ScrollView contentContainerStyle={styles.scroll}>
+                <Pressable style={styles.btnVolverWrapper} onPress={() => router.back()}>
+                    <Text style={styles.btnVolver}>← Volver al catálogo</Text>
+                </Pressable>
+
+                <Text style={styles.tituloHeader}>Crear Nuevo Producto</Text>
+                <View style={styles.tarjeta}>
+                    <Text style={styles.tituloSeccion}>Información General</Text>
+                    
+                    <View style={styles.filaInputs}>
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.label}>Nombre del Producto *</Text>
+                            <TextInput style={styles.input} value={form.nombre} onChangeText={t => setForm({...form, nombre: t})} placeholder="Ej: Llavero 3D" />
+                        </View>
+                        <View style={[styles.inputGroup, { flex: 0.4 }]}>
+                            <Text style={styles.label}>Precio (€) *</Text>
+                            <TextInput style={styles.input} keyboardType="numeric" value={form.precio.toString()} onChangeText={t => setForm({...form, precio: parseFloat(t) || 0})} />
+                        </View>
+                    </View>
+
+                    <View style={styles.inputGroup}>
+                        <Text style={styles.label}>Descripción(Opcional)</Text>
+                        <TextInput style={[styles.input, styles.inputMultiline]} multiline numberOfLines={3} value={form.descripcion} onChangeText={t => setForm({...form, descripcion: t})} placeholder="Detalles del producto..." />
+                    </View>
+
+                    <View style={[styles.inputGroup, { marginTop: 15 }]}>
+                        <Text style={styles.label}>Colores disponibles (separados por coma)</Text>
+                        <TextInput style={styles.input} value={coloresTexto} onChangeText={setColoresTexto} placeholder="Ej: Rojo, Azul, Verde, Negro" />
+                    </View>
+                </View>
+
+                <View style={styles.tarjeta}>
+                    <Text style={styles.tituloSeccion}>Configuración</Text>
+                    <View style={styles.switchBox}>
+                        <Text style={styles.labelSwitch}>¿Permite texto personalizado?</Text>
+                        <Pressable 
+                            style={[styles.btnToggleSwitch, form.personalizable ? styles.btnOn : styles.btnOff]}
+                            onPress={() => setForm({...form, personalizable: !form.personalizable})}
+                        >
+                            <Text style={[ form.personalizable ? styles.txtOn : styles.txtOff]}>
+                                {form.personalizable ? "Sí" : "No"}
+                            </Text>
+                        </Pressable>
+                    </View>
+                </View>
+
+                <View style={styles.tarjeta}>
+                    <Text style={styles.tituloSeccion}>Imagen del Modelo Base *</Text>
+                    
+                    <View style={styles.contenedorImagen}>
+                        {form.imagen ? (
+                            <Image source={{ uri: form.imagen }} style={styles.previewImagen} />
+                        ) : (
+                            <View style={styles.placeholderImagen}>
+                                <Text style={{ color: '#94a3b8' }}>Sin imagen</Text>
+                            </View>
+                        )}
+                        
+                        <Pressable style={styles.btnSubirImagen} onPress={seleccionarYSubirImagen} disabled={subiendo}>
+                            {subiendo ? (
+                                <ActivityIndicator color="#fff" />
+                            ) : (
+                                <Text style={{ color: 'white', fontWeight: 'bold' }}>Seleccionar Imagen</Text>
+                            )}
+                        </Pressable>
+                    </View>
+                </View>
+
+                <Pressable style={styles.btnGuardarMain} onPress={crearProducto}>
+                    <Text style={styles.txtBtnGuardarMain}>Crear Producto</Text>
+                </Pressable>
+            </ScrollView>
+        </View>
     );
 }
