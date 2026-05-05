@@ -3,6 +3,7 @@ import { useRouter } from "expo-router";
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { styles } from '../styles/navbar/navbar.styles';
+import { FontAwesome } from '@expo/vector-icons';
 
 let cachedEsAdmin: boolean | null = null;
 
@@ -82,6 +83,10 @@ export default function Navbar() {
                 )}
                 <Pressable style={styles.botonSalir} onPress={cerrarSesion}>
                     <Text style={styles.textoSalir}>Cerrar Sesión</Text>
+                </Pressable>
+                
+                <Pressable style={styles.boton} onPress={() => router.push('../perfil')}>
+                    <FontAwesome name="user-circle" size={24} color="#1a1a1a" />
                 </Pressable>
             </View>
         </View>
