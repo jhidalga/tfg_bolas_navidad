@@ -7,23 +7,28 @@ Este Pull Request incluye la creacion de una pagina perfil:
 
 
 **2. Backend y Base de Datos:**
-Nuevo endpoint POST para manejar la actualizacion de los datos del usuario
 
 
 ## 🔗 Issue relacionado
 Closes #
 
 ## 🚀 Tipo de cambio
-- [X] ✨ Nueva funcionalidad (feature)
+- [ ] ✨ Nueva funcionalidad (feature)
 - [ ] 🐛 Corrección de error (bugfix)
 - [ ] ♻️ Refactorización (mejora de código sin añadir nueva funcionalidad)
-- [ ] 🎨 Mejoras de UI/UX o estilos (Tailwind / NativeWind / StyleSheet)
+- [X] 🎨 Mejoras de UI/UX o estilos (Tailwind / NativeWind / StyleSheet)
 - [ ] 🔧 Configuración del proyecto / Dependencias
 
 ## 📱 Cambios en la Interfaz (Si aplica)
 | Antes | Después |
-| --- |![alt text](dspPCNav.png)  |
-| --- |![alt text](dspPCPerf.png) |
+| --- |![alt text](dspNavbarPc.png)  |
+| --- |![alt text](dspFiltrosMB.png) |
+| --- |![alt text](dspNavbarMB.png) |
+| --- |![alt text](dspPedidosAdminMB.png) |
+| --- |![alt text](dspProductosAdminMB.png) |
+| --- | |
+| --- | |
+| --- | |
 
 ## ✅ Checklist de calidad antes de fusionar
 - [x] He revisado mi propio código línea por línea antes de abrir esta PR.
