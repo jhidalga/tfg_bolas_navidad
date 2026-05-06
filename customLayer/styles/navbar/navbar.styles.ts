@@ -1,52 +1,56 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Platform } from 'react-native';
 
 export const styles = StyleSheet.create({
     contenedor: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
         alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingVertical: 15,
+        paddingHorizontal: 10,
+        paddingTop: 12,
+        paddingBottom: Platform.OS === 'ios' ? 25 : 15, 
         backgroundColor: '#ffffff',
-        borderBottomWidth: 1,
-        borderBottomColor: '#eaeaea',
         width: '100%',
+        
+        borderTopWidth: 1,
+        borderTopColor: '#f1f5f9',
+        elevation: 15, 
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: -4 }, 
+        shadowOpacity: 0.05,
+        shadowRadius: 5,
+        zIndex: 1000,
+        position: 'absolute',
+        bottom: 0,
     },
     logo: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#1a1a1a',
+        display: 'none', 
     },
     enlaces: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 15,
+        justifyContent: 'space-around',
+        flex: 1,
     },
     boton: {
-        paddingVertical: 8,
-    },
-    textoBoton: {
-        fontSize: 14,
-        color: '#1a1a1a',
-        fontWeight: '500',
+        paddingVertical: 10,
+        paddingHorizontal: 15,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     botonAdmin: {
         backgroundColor: '#4338ca',
-        paddingVertical: 6,
-        paddingHorizontal: 12,
-        borderRadius: 6,
-    },
-    textoAdmin: {
-        fontSize: 12,
-        color: '#ffffff',
-        fontWeight: '600',
+        padding: 12,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     botonSalir: {
-        paddingVertical: 8,
+        paddingVertical: 10,
+        paddingHorizontal: 15,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
-    textoSalir: {
-        fontSize: 14,
-        color: '#dc2626',
-        fontWeight: '500',
-    }
+    
+    textoBoton: { display: 'none' },
+    textoAdmin: { display: 'none' },
+    textoSalir: { display: 'none' }
 });
