@@ -6,12 +6,22 @@ export const styles = StyleSheet.create({
         flexDirection: 'row',
         backgroundColor: '#f8f9fa'
     },
+    headerMovil: {
+        display: 'none'
+    },
+    tituloMovil: {
+        display: 'none'
+    },
+    fondoOscuro: {
+        display: 'none'
+    },
     sidebar: {
         width: 250,
         backgroundColor: '#1e293b',
         padding: 20,
         height: '100%'
     },
+    sidebarOculto: {},
     logo: {
         fontSize: 22,
         fontWeight: 'bold',
@@ -27,7 +37,8 @@ export const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 15,
         borderRadius: 10,
-        marginBottom: 8
+        marginBottom: 8,
+        cursor: 'pointer' as any
     },
     activa: {
         backgroundColor: '#3b82f6'
@@ -44,7 +55,8 @@ export const styles = StyleSheet.create({
         marginTop: 'auto',
         paddingVertical: 15,
         borderTopWidth: 1,
-        borderTopColor: '#334155'
+        borderTopColor: '#334155',
+        cursor: 'pointer' as any
     },
     textoVolver: {
         color: '#ffffff',

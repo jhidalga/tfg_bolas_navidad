@@ -3,14 +3,55 @@ import { StyleSheet } from 'react-native';
 export const styles = StyleSheet.create({
     container: {
         flex: 1,
-        flexDirection: 'row',
         backgroundColor: '#f8f9fa'
     },
+    headerMovil: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingVertical: 15,
+        backgroundColor: '#ffffff',
+        borderBottomWidth: 1,
+        borderBottomColor: '#e2e8f0',
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 5,
+        zIndex: 10
+    },
+    tituloMovil: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#1e293b',
+        marginLeft: 15
+    },
+    fondoOscuro: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        zIndex: 20
+    },
     sidebar: {
-        width: 250,
+        position: 'absolute',
+        top: 0,
+        bottom: 0,
+        left: 0,
+        width: 260,
         backgroundColor: '#1e293b',
         padding: 20,
-        height: '100%'
+        zIndex: 30,
+        elevation: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 2, height: 0 },
+        shadowOpacity: 0.3,
+        shadowRadius: 10
+    },
+    sidebarOculto: {
+        display: 'none'
     },
     logo: {
         fontSize: 22,

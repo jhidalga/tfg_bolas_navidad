@@ -164,7 +164,7 @@ export default function ListaPedidosAdmin() {
             <View style={styles.cabeceraPrincipal}>
                 <Text style={styles.tituloHeader}>Gestión de Pedidos</Text>
                 <Pressable style={styles.btnExportar} onPress={exportarCSV}>
-                    <Text style={styles.txtBtnExportar}><Entypo name="export" size={20} color="white" /> Exportar Hoja</Text>
+                    <Text style={styles.txtBtnExportar}><Entypo name="export" size={20} color="white" /> Exportar csv</Text>
                 </Pressable>
             </View>
             <View style={styles.barraFiltros}>

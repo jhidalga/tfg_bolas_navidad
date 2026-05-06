@@ -2,7 +2,7 @@ import { StyleSheet } from "react-native";
 
 export const styles = StyleSheet.create({
     contenedorPantalla: { flex: 1, backgroundColor: "#f8f9fa" },
-    cabeceraPrincipal: { padding: 20, paddingBottom: 10 },
+    cabeceraPrincipal: { padding: 20, paddingBottom: 10,flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
     tituloHeader: {
         fontSize: 24,
         fontWeight: "800",
