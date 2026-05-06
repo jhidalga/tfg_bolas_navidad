@@ -11,13 +11,9 @@ export const styles = StyleSheet.create({
         alignItems: 'center'
     },
     header: {
-        display: 'flex',
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
+        flexDirection: 'column',
         width: '100%',
-        maxWidth: 1000,
-        marginBottom: 25
+        marginBottom: 20
     },
     btnVolver: { 
         marginBottom: 10,
@@ -29,9 +25,20 @@ export const styles = StyleSheet.create({
         fontSize: 16
     },
     titulo: { 
-        fontSize: 28, 
+        fontSize: 26, 
         fontWeight: 'bold', 
-        color: '#1e293b'
+        color: '#1e293b',
+        marginBottom: 15
+    },
+    inputBuscar:{ 
+        backgroundColor: 'white',
+        borderWidth: 1,
+        borderColor: '#cbd5e1',
+        borderRadius: 10,
+        paddingVertical: 12,
+        paddingHorizontal: 15,
+        fontSize: 16,
+        width: '100%'
     },
     toast: { 
         position: 'absolute', 
@@ -43,104 +50,88 @@ export const styles = StyleSheet.create({
         elevation: 5 
     },
     contenedorTabla: { 
-        backgroundColor: 'white',
-        borderRadius: 15, 
-        borderWidth: 1, 
-        borderColor: '#e2e8f0', 
-        elevation: 3,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        overflow: 'hidden',
         width: '100%',
-        maxWidth: 1000
     },
     tabla: { 
         width: '100%'
     },
     cabecera: { 
-        flexDirection: 'row', 
-        backgroundColor: '#f8fafc', 
-        paddingVertical: 20, 
-        paddingHorizontal: 30, 
-        borderBottomWidth: 1, 
-        borderBottomColor: '#cbd5e1' 
+        display: 'none'
     },
     colCabecera: { 
-        fontWeight: '500', 
-        fontSize: 15, 
-        color: '#64748b' 
+        display: 'none'
     },
     fila: { 
         flexDirection: 'row', 
-        height: 100, 
-        paddingHorizontal: 30, 
-        alignItems: 'center', 
-        borderBottomWidth: 1, 
-        borderBottomColor: '#f1f5f9' 
+        flexWrap: 'wrap',
+        backgroundColor: 'white',
+        padding: 18, 
+        borderRadius: 12,
+        marginBottom: 15,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 5,
     },
-    colNombre: { width: '20%' },
-    colEmail: { width: '30%' },
-    colCurso: { width: '12%', alignItems: 'center' },
-    colProf: { width: '12%', alignItems: 'center' },
-    colPedidos: { width: '11%', alignItems: 'center' },
-    colRol: { width: '15%', alignItems: 'flex-end' },
+    colNombre: { width: '100%', marginBottom: 4 },
+    colEmail: { width: '100%', marginBottom: 15 },
+    colCurso: { width: 'auto', marginRight: 8, marginBottom: 15 },
+    colProf: { width: 'auto', marginRight: 8, marginBottom: 15 },
+    colPedidos: { width: 'auto', marginRight: 8, marginBottom: 15 },
+    colRol: { width: '100%' },
     txtNormal: { 
-        fontSize: 16, 
-        fontWeight: 'bold', 
+        fontSize: 18, 
+        fontWeight: '700', 
         color: '#1e293b' 
     },
     txtSecundario: { 
         fontSize: 14, 
         color: '#64748b' 
     },
-    badgeProf: { 
-        paddingVertical: 5, 
-        paddingHorizontal: 15, 
-        borderRadius: 20, 
-        backgroundColor: '#f1f5f9',
-        borderWidth: 1,
-        borderColor: '#e2e8f0'
-    },
-    badgePedidos: {
-        width: 38,
-        height: 38,
-        borderRadius: 19,
+    badgeAzul: {
+        backgroundColor: '#eff6ff',
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 6,
         borderWidth: 1,
         borderColor: '#bfdbfe',
-        backgroundColor: '#eff6ff',
-        justifyContent: 'center',
-        alignItems: 'center'
     },
+    txtBadgeAzul: {
+        fontSize: 12,
+        fontWeight: 'bold',
+        color: '#1d4ed8',
+    },
+    badgeGris: {
+        backgroundColor: '#f1f5f9',
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 6,
+        borderWidth: 1,
+        borderColor: '#e2e8f0',
+    },
+    txtBadgeGris: {
+        fontSize: 12,
+        fontWeight: 'bold',
+        color: '#475569',
+    },
+    badgeProf: { display: 'none' },
+    badgePedidos: { display: 'none' },
     btnRol: { 
-        paddingVertical: 10, 
-        paddingHorizontal: 20, 
-        borderRadius: 10, 
+        width: '100%',
+        paddingVertical: 12, 
+        borderRadius: 8, 
         borderWidth: 1, 
-        minWidth: 110,
         alignItems: 'center'
     },
     btnAdmin: {
-        backgroundColor: '#3b82f6',
-        borderColor: '#3b82f6'
+        backgroundColor: '#fef2f2',
+        borderColor: '#fecaca'
     },
     btnUser: {
-        backgroundColor: 'white',
-        borderColor: '#cbd5e1'
+        backgroundColor: '#fff',
+        borderColor: '#e2e8f0'
     },
-    txtBtnAdmin: { color: 'white', fontWeight: 'bold', fontSize: 14 },
+    txtBtnAdmin: { color: '#dc2626', fontWeight: 'bold', fontSize: 14 },
     txtBtnUser: { color: '#64748b', fontWeight: 'bold', fontSize: 14 },
-
-    inputBuscar:{ 
-        backgroundColor: 'white',
-        borderWidth: 1,
-        borderColor: '#cbd5e1',
-        marginTop: 10,
-        borderRadius: 10,
-        paddingVertical: 10,
-        paddingHorizontal: 15,
-        fontSize: 17,
-        marginBottom: 15
-    }
 });

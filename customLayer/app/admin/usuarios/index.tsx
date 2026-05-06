@@ -1,4 +1,4 @@
-import { View, Text, Pressable, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, ScrollView, ActivityIndicator, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase';
@@ -6,7 +6,6 @@ import { styles } from '../../../styles/adminUsuarios/adminUsuarios.styles';
 import Toast from 'react-native-toast-message';
 
 const API_URL = `${process.env.EXPO_PUBLIC_API_URL || ''}/api`;
-
 
 export default function GestorUsuariosAdmin() {
     const router = useRouter();
@@ -70,7 +69,7 @@ export default function GestorUsuariosAdmin() {
                         <Text style={styles.txtVolver}>⬅ Volver</Text>
                     </Pressable>
                     <Text style={styles.titulo}>Gestión de Usuarios</Text>
-                    <input type="text" placeholder="Buscar..." style={styles.inputBuscar} value={busqueda} onChange={(e) => setBusqueda(e.target.value)} />
+                    <TextInput placeholder="Buscar..." style={styles.inputBuscar} value={busqueda} onChangeText={(text) => setBusqueda(text)} />
                 </View>
 
                 <View style={styles.contenedorTabla}>
@@ -78,7 +77,7 @@ export default function GestorUsuariosAdmin() {
                         <View style={styles.cabecera}>
                             <Text style={[styles.colCabecera, styles.colNombre]}>Nombre</Text>
                             <Text style={[styles.colCabecera, styles.colEmail]}>Email</Text>
-                            <Text style={[styles.colCabecera, styles.colCurso, { textAlign: 'center' }]}>Curso</Text>
+                            <Text style={[styles.colCabecera, styles.colCurso, { textAlign: 'center' }]}>Curso/Departamento</Text>
                             <Text style={[styles.colCabecera, styles.colProf, { textAlign: 'center' }]}>Profesor</Text>
                             <Text style={[styles.colCabecera, styles.colPedidos, { textAlign: 'center' }]}>Pedidos</Text>
                             <Text style={[styles.colCabecera, styles.colRol, { textAlign: 'right' }]}>Rol</Text>
@@ -93,9 +92,13 @@ export default function GestorUsuariosAdmin() {
                                     <View style={styles.colEmail}>
                                         <Text style={styles.txtSecundario} numberOfLines={1}>{u.email}</Text>
                                     </View>
+                                    
                                     <View style={styles.colCurso}>
-                                        <Text style={styles.txtNormal}>{u.curso || '-'}</Text>
+                                        <View style={styles.badgeAzul}>
+                                            <Text style={styles.txtBadgeAzul}>{u.curso || 'Sin curso'}</Text>
+                                        </View>
                                     </View>
+                                    
                                     <View style={styles.colProf}>
                                         <View style={styles.badgeProf}>
                                             <Text style={{ color: '#64748b', fontSize: 14, fontWeight: 'bold' }}>
@@ -103,11 +106,13 @@ export default function GestorUsuariosAdmin() {
                                             </Text>
                                         </View>
                                     </View>
+                                    
                                     <View style={styles.colPedidos}>
-                                        <View style={styles.badgePedidos}>
-                                            <Text style={{ color: '#2563eb', fontWeight: 'bold', fontSize: 16 }}>{u.num_pedidos}</Text>
+                                        <View style={styles.badgeGris}>
+                                            <Text style={styles.txtBadgeGris}>{u.num_pedidos || 0} Pedidos</Text>
                                         </View>
                                     </View>
+                                    
                                     <View style={styles.colRol}>
                                         <Pressable 
                                             style={[styles.btnRol, u.administrador ? styles.btnAdmin : styles.btnUser]} 

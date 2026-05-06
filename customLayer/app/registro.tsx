@@ -87,12 +87,12 @@ export default function Registro() {
                         secureTextEntry
                     />
                     
-                    <Text style={styles.etiqueta}>Curso</Text>
+                    <Text style={styles.etiqueta}>Curso/Departamento</Text>
                     <TextInput
                         style={styles.input}
                         value={curso}
                         onChangeText={setCurso}
-                        placeholder='1ESOA,1BACH,1DAM...'
+                        placeholder='1ESOA,Ingles...'
                         autoCapitalize='characters'
                     />
                     
