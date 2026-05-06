@@ -24,7 +24,7 @@ export const styles = StyleSheet.create({
         gap: 10,
         paddingHorizontal: 20,
         marginBottom: 20,
-        zIndex: 5000,
+        zIndex: 15,
     },
     filtroWrapper: { width: "100%" },
     dropdown: {
