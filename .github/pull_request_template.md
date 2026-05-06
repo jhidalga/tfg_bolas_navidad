@@ -1,8 +1,11 @@
 ## 📝 Descripción
-Este Pull Request incluye la creacion de una pagina perfil:
+Este Pull Request se centra en el ajuste de estilos para la version movil:
 
 **1. Frontend:**
-* **Pantalla de Perfil:** Pagina con campos de texto orientado a la modificacion de los datos del usuario excepto el correo y si es un profesor o un alumno
+* **Componente Navbar** 
+* **Componente Filtros** 
+* **Pagina Pedidos administrador** 
+* **Pagina Productos administrador** 
 
 
 
