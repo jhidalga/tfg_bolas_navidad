@@ -245,7 +245,7 @@ export default function DetalleProductoAdmin() {
                                 </Pressable>
                                 <TextInput style={styles.inputTabla} value={m.nombre} onChangeText={t => { const n = [...modelos]; n[idx].nombre = t; setModelos(n); }} />
                                 <Pressable style={styles.btnFilaGuardar} onPress={() => guardarModelo(idx)}>
-                                    <Text style={{ color: '#10b981', fontWeight: 'bold', fontSize: 12 }}>GUARDAR</Text>
+                                    <Text style={{ color: '#10b981', fontWeight: 'bold', fontSize: 12,textAlign: 'center' }}>GUARDAR</Text>
                                 </Pressable>
                             </View>
                         ))}

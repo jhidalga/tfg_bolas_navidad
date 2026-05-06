@@ -3,7 +3,7 @@ import { useRouter } from "expo-router";
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { styles } from '../styles/navbar/navbar.styles';
-import { FontAwesome } from '@expo/vector-icons';
+import { FontAwesome, FontAwesome5, Ionicons } from '@expo/vector-icons';
 
 let cachedEsAdmin: boolean | null = null;
 
@@ -15,7 +15,6 @@ export default function Navbar() {
         if (cachedEsAdmin === null) {
             comprobarRolAPI();
         }
-
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             if (session) {
                 if (cachedEsAdmin === null) comprobarRolAPI();
@@ -24,7 +23,6 @@ export default function Navbar() {
                 setEsAdmin(false);
             }
         });
-
         return () => subscription.unsubscribe();
     }, []);
 
@@ -40,7 +38,6 @@ export default function Navbar() {
                         'Content-Type': 'application/json'
                     }
                 });
-
                 if (respuesta.ok) {
                     const datosUsuario = await respuesta.json();
                     cachedEsAdmin = datosUsuario.administrador === true;
@@ -56,7 +53,7 @@ export default function Navbar() {
     }
 
     async function cerrarSesion() {
-        cachedEsAdmin = null; 
+        cachedEsAdmin = null;
         await supabase.auth.signOut();
         router.replace('/login');
     }
@@ -68,25 +65,29 @@ export default function Navbar() {
             </View>
             <View style={styles.enlaces}>
                 <Pressable style={styles.boton} onPress={() => router.push('../inicio')}>
-                    <Text style={styles.textoBoton}>Inicio</Text>
-                </Pressable>
-                <Pressable style={styles.boton} onPress={() => router.push('../carrito')}>
-                    <Text style={styles.textoBoton}>Carrito</Text>
-                </Pressable>
-                <Pressable style={styles.boton} onPress={() => router.push('../pedidos')}>
-                    <Text style={styles.textoBoton}>Pedidos</Text>
-                </Pressable>
-                {esAdmin && (
-                    <Pressable style={styles.botonAdmin} onPress={() => router.push('../admin')}>
-                        <Text style={styles.textoAdmin}>Panel Admin</Text>
-                    </Pressable>
-                )}
-                <Pressable style={styles.botonSalir} onPress={cerrarSesion}>
-                    <Text style={styles.textoSalir}>Cerrar Sesión</Text>
+                    <Ionicons name="home" size={24} color="#475569" />
                 </Pressable>
                 
+                <Pressable style={styles.boton} onPress={() => router.push('../carrito')}>
+                    <Ionicons name="cart" size={24} color="#475569" />
+                </Pressable>
+                
+                <Pressable style={styles.boton} onPress={() => router.push('../pedidos')}>
+                    <FontAwesome5 name="box-open" size={22} color="#475569" />
+                </Pressable>
+
                 <Pressable style={styles.boton} onPress={() => router.push('../perfil')}>
-                    <FontAwesome name="user-circle" size={24} color="#1a1a1a" />
+                    <FontAwesome name="user-circle" size={24} color="#475569" />
+                </Pressable>
+
+                {esAdmin && (
+                    <Pressable style={styles.botonAdmin} onPress={() => router.push('../admin')}>
+                        <FontAwesome name="cogs" size={20} color="#ffffff" />
+                    </Pressable>
+                )}
+
+                <Pressable style={styles.botonSalir} onPress={cerrarSesion}>
+                    <Ionicons name="log-out-outline" size={26} color="#dc2626" />
                 </Pressable>
             </View>
         </View>

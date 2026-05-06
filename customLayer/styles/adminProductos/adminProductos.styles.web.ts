@@ -7,10 +7,19 @@ export const styles = StyleSheet.create({
     },
     scrollContent: {
         padding: 30,
-        /* Punto medio: ni muy estrecho ni pantalla completa */
-        maxWidth: 1300, 
+        maxWidth: 1300,
         width: '100%',
         alignSelf: 'center',
+    },
+    btnVolver: {
+        marginBottom: 15,
+        alignSelf: 'flex-start',
+        cursor: 'pointer' as any,
+    },
+    txtVolver: {
+        color: '#3b82f6',
+        fontWeight: 'bold',
+        fontSize: 16,
     },
     cabecera: {
         flexDirection: 'row',
@@ -23,17 +32,23 @@ export const styles = StyleSheet.create({
         fontWeight: '800',
         color: '#111827',
     },
-    btnNuevo: {
+    btnNuevoHeader: {
         backgroundColor: '#3b82f6',
         paddingHorizontal: 20,
         paddingVertical: 12,
         borderRadius: 10,
-        cursor: 'pointer',
-    } as any,
-    txtNuevo: {
+        cursor: 'pointer' as any,
+    },
+    txtNuevoHeader: {
         color: '#fff',
         fontWeight: 'bold',
         fontSize: 16,
+    },
+    btnNuevoFlotante: {
+        display: 'none',
+    },
+    txtNuevoFlotante: {
+        display: 'none',
     },
     tabla: {
         backgroundColor: '#fff',
@@ -50,6 +65,11 @@ export const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: '#e5e7eb',
     },
+    colFotoHeader: { flex: 0.5, fontSize: 16, color: '#374151', fontWeight: '500' },
+    colDetallesCabecera: { flex: 4.5, flexDirection: 'row' },
+    colInfoCabecera: { flex: 2, fontSize: 16, color: '#374151', fontWeight: '500' },
+    colPrecioCabecera: { flex: 1, fontSize: 16, color: '#374151', fontWeight: '500' },
+    colBadgeCabecera: { flex: 1, fontSize: 16, color: '#374151', fontWeight: '500' },
     fila: {
         flexDirection: 'row',
         padding: 18,
@@ -62,12 +82,36 @@ export const styles = StyleSheet.create({
             backgroundColor: '#f9fafb',
         }
     } as any,
-    col: {
-        fontSize: 16, /* Estándar profesional */
+    colFoto: {
+        flex: 0.5,
+    },
+    colDetalles: {
+        flex: 4.5,
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    colInfo: {
+        flex: 2,
+    },
+    colPrecio: {
+        flex: 1,
+        fontSize: 16,
         color: '#374151',
+        fontWeight: 'bold',
+    },
+    contenedorBadges: {
+        flex: 2,
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    colVisibilidad: {
+        flex: 1,
+    },
+    colEstado: {
+        flex: 1,
     },
     miniImg: {
-        width: 70, /* Tamaño equilibrado */
+        width: 70,
         height: 70,
         borderRadius: 8,
         backgroundColor: '#eee',
@@ -91,17 +135,5 @@ export const styles = StyleSheet.create({
     txtBadge: {
         fontSize: 12,
         fontWeight: 'bold',
-    },
-    btnEditar: {
-        borderWidth: 1,
-        borderColor: '#d1d5db',
-        paddingHorizontal: 15,
-        paddingVertical: 8,
-        borderRadius: 8,
-    },
-    txtEditar: {
-        fontSize: 13,
-        fontWeight: '600',
-        color: '#374151',
     }
 });

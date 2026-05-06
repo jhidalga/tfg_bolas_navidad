@@ -2,7 +2,7 @@ import { StyleSheet } from "react-native";
 
 export const styles = StyleSheet.create({
     contenedorPantalla: { flex: 1, backgroundColor: "#f8f9fa" },
-    cabeceraPrincipal: { padding: 20, paddingBottom: 10 },
+    cabeceraPrincipal: { padding: 20, paddingBottom: 10,flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
     tituloHeader: {
         fontSize: 24,
         fontWeight: "800",
@@ -24,7 +24,7 @@ export const styles = StyleSheet.create({
         gap: 10,
         paddingHorizontal: 20,
         marginBottom: 20,
-        zIndex: 5000,
+        zIndex: 15,
     },
     filtroWrapper: { width: "100%" },
     dropdown: {
