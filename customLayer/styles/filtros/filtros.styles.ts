@@ -2,20 +2,20 @@ import { StyleSheet } from "react-native";
 
 export const styles = StyleSheet.create({
     contenedorFiltros: {
-        width: 300,
+        width: '100%',
         backgroundColor: "#ffffff",
-        borderRadius: 16,
-        padding: 20,
-        marginRight: 90,
-        marginLeft: -100,
+        borderRadius: 0,
+        padding: 0,
+        marginRight: 0,
+        marginLeft: 0,
         marginBottom: 20,
-        alignSelf: "flex-start", 
-        shadowColor: "#000",
+        alignSelf: "center",
+        shadowColor: "transparent",
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.05,
         shadowRadius: 10,
-        elevation: 3,
-        borderWidth: 1,
+        elevation: 0,
+        borderWidth: 0,
         borderColor: "#e2e8f0",
     },
     tituloFiltro: {
@@ -23,9 +23,11 @@ export const styles = StyleSheet.create({
         fontWeight: "800",
         color: "#1e293b",
         marginBottom: 20,
+        display: 'none',
     },
     grupoFiltro: {
         marginBottom: 20,
+        width: '100%',
     },
     label: {
         fontSize: 13,
@@ -41,15 +43,17 @@ export const styles = StyleSheet.create({
         padding: 10,
         fontSize: 14,
         color: "#1e293b",
+        width: '100%',
     },
     rowInputs: {
         flexDirection: "row",
         alignItems: "center",
+        justifyContent: "space-between",
+        width: '100%',
         gap: 10,
     },
     inputRange: {
         flex: 1,
-        maxWidth: 120,
         backgroundColor: "#f8fafc",
         borderWidth: 1,
         borderColor: "#e2e8f0",
@@ -63,6 +67,7 @@ export const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         gap: 10,
+        paddingVertical: 5,
     },
     checkboxOuter: {
         width: 20,
