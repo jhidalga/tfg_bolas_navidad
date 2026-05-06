@@ -1,29 +1,30 @@
 import { StyleSheet } from 'react-native';
 
 export const styles = StyleSheet.create({
-    scrollFondo: {
+    contenedorPantalla: {
+        flex: 1,
         backgroundColor: '#ffffff',
     },
     contenedorCentral: {
-        paddingTop: 80,
+        flex: 1,
         paddingHorizontal: 20,
-        paddingBottom: 40,
+        justifyContent: 'center',
+        paddingTop: 20,
     },
-
     heroSection: {
         alignItems: 'center',
-        marginBottom: 60,
+        marginBottom: 30,
     },
     titulo: {
-        fontSize: 50,
+        fontSize: 30,
         fontWeight: '900',
         color: '#111827',
         textAlign: 'center',
-        lineHeight: 55,
-        marginBottom: 15,
+        lineHeight: 30,
+        marginBottom: 5,
     },
     descripcion: {
-        fontSize: 20,
+        fontSize: 18,
         color: '#4B5563',
         textAlign: 'center',
         paddingHorizontal: 10,
@@ -31,7 +32,7 @@ export const styles = StyleSheet.create({
     botones: {
         flexDirection: 'column',
         width: '100%',
-        marginTop: 40,
+        marginTop: 30,
         gap: 15,
     },
     botonLogin: {
@@ -58,7 +59,6 @@ export const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '500',
     },
-
     imagenes: {
         display: 'none',
     },
