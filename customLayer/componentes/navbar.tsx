@@ -1,4 +1,4 @@
-import { View, Text, Pressable } from 'react-native';
+import { View, Text, Pressable,Image } from 'react-native';
 import { useRouter } from "expo-router";
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
@@ -60,7 +60,8 @@ export default function Navbar() {
 
     return (
         <View style={styles.contenedor}>
-            <View>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Image source={require('../assets/images/icon.png')} style={{ width: 30, height: 30, marginBottom: -5 }} resizeMode="contain" />
                 <Text style={styles.logo}>Custom Layers</Text>
             </View>
             <View style={styles.enlaces}>
