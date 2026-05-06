@@ -7,6 +7,16 @@ export const styles = StyleSheet.create({
     },
     scrollContent: {
         padding: 15,
+        paddingBottom: 90,
+    },
+    btnVolver: {
+        marginBottom: 15,
+        alignSelf: 'flex-start',
+    },
+    txtVolver: {
+        color: '#3b82f6',
+        fontWeight: 'bold',
+        fontSize: 16,
     },
     cabecera: {
         flexDirection: 'row',
@@ -20,73 +30,105 @@ export const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#1a1d23',
     },
-    btnNuevo: {
-        backgroundColor: '#3b82f6',
-        paddingHorizontal: 14,
-        paddingVertical: 10,
-        borderRadius: 8,
+    btnNuevoHeader: {
+        display: 'none',
     },
-    txtNuevo: {
+    txtNuevoHeader: {
+        display: 'none',
+    },
+    btnNuevoFlotante: {
+        position: 'absolute',
+        bottom: 25,
+        right: 25,
+        backgroundColor: '#3b82f6',
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        alignItems: 'center',
+        justifyContent: 'center',
+        elevation: 5,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 5,
+        zIndex: 1000,
+    },
+    txtNuevoFlotante: {
         color: '#fff',
         fontWeight: 'bold',
-        fontSize: 14,
+        fontSize: 32,
+        marginTop: -4,
     },
     tabla: {
         width: '100%',
     },
     filaCabecera: {
-        display: 'none', 
+        display: 'none',
     },
+    colFotoHeader: { display: 'none' },
+    colDetallesCabecera: { display: 'none' },
+    colInfoCabecera: { display: 'none' },
+    colPrecioCabecera: { display: 'none' },
+    colBadgeCabecera: { display: 'none' },
     fila: {
         flexDirection: 'row',
         backgroundColor: '#fff',
-        padding: 12,
+        padding: 15,
         borderRadius: 12,
-        marginBottom: 10,
-        alignItems: 'center',
+        marginBottom: 15,
         elevation: 2,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 3,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 5,
     },
+    colFoto: {
+        width: 80,
+        marginRight: 12,
+    },
+    colDetalles: {
+        flex: 1,
+        flexDirection: 'column',
+    },
+    colInfo: {
+        marginBottom: 8,
+    },
+    colPrecio: {
+        fontSize: 22,
+        fontWeight: 'bold',
+        color: '#1a1d23',
+        marginBottom: 8,
+    },
+    contenedorBadges: {
+        flexDirection: 'row',
+        gap: 10,
+    },
+    colVisibilidad: { width: 'auto' },
+    colEstado: { width: 'auto' },
     miniImg: {
-        width: 65, /* Tamaño intermedio */
-        height: 65,
+        width: 75,
+        height: 75,
         borderRadius: 10,
         backgroundColor: '#f1f3f5',
     },
-    col: {
-        paddingLeft: 12,
-        flex: 1,
-    },
     txtNombre: {
-        fontSize: 17,
+        fontSize: 18,
         fontWeight: '700',
         color: '#1a1d23',
-        marginBottom: 2,
+        marginBottom: 4,
     },
     txtSub: {
         fontSize: 14,
         color: '#6c757d',
     },
     badge: {
-        paddingHorizontal: 8,
-        paddingVertical: 3,
+        paddingHorizontal: 10,
+        paddingVertical: 5,
         borderRadius: 6,
-        marginTop: 5,
         alignSelf: 'flex-start',
     },
     txtBadge: {
-        fontSize: 11,
-        fontWeight: 'bold',
-    },
-    btnEditar: {
-        display: 'none', 
-    },
-    txtEditar: {
         fontSize: 12,
-        fontWeight: '600',
-        color: '#374151',
+        fontWeight: 'bold',
     }
 });

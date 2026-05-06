@@ -33,77 +33,89 @@ export default function AdminProductos() {
     if (cargando) return <ActivityIndicator style={{ marginTop: 50 }} size="large" color="#3b82f6" />;
 
     return (
-        <ScrollView style={styles.contenedor} contentContainerStyle={styles.scrollContent}>
-            <Pressable onPress={() => router.back()} style={{ marginBottom: 15 }}>
-                <Text style={{ color: '#3b82f6', fontWeight: 'bold' }}>⬅ Volver</Text>
-            </Pressable>
-            
-            <View style={styles.cabecera}>
-                <Text style={styles.titulo}>Gestión de Catálogo</Text>
-                <Pressable style={styles.btnNuevo} onPress={() => router.push('/admin/productos/nuevo')}>
-                    <Text style={styles.txtNuevo}>+ Nuevo Producto</Text>
+        <View style={styles.contenedor}>
+            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+                <Pressable onPress={() => router.back()} style={styles.btnVolver}>
+                    <Text style={styles.txtVolver}>  Volver</Text>
                 </Pressable>
-            </View>
-
-            <View style={styles.tabla}>
-                <View style={styles.filaCabecera}>
-                    <Text style={[styles.col, { flex: 0.5 }]}>Foto</Text>
-                    <Text style={[styles.col, { flex: 2 }]}>Producto</Text>
-                    <Text style={[styles.col, { flex: 1 }]}>Precio</Text>
-                    <Text style={[styles.col, { flex: 1 }]}>Visibilidad</Text>
-                    <Text style={[styles.col, { flex: 1 }]}>Estado</Text>
+                
+                <View style={styles.cabecera}>
+                    <Text style={styles.titulo}>Gestión de Catálogo</Text>
+                    <Pressable style={styles.btnNuevoHeader} onPress={() => router.push('/admin/productos/nuevo')}>
+                        <Text style={styles.txtNuevoHeader}>+ Nuevo Producto</Text>
+                    </Pressable>
                 </View>
 
-                {productos.map((prod) => (
-                    <Pressable
-                        key={prod.id}
-                        style={styles.fila}
-                        onPress={() => router.push(`/admin/productos/${prod.id}`)}
-                    >
-                        <View style={[styles.col, { flex: 0.5 }]}>
-                            <Image
-                                source={{ uri: prod.modelos?.[0]?.imagen }}
-                                style={styles.miniImg}
-                            />
+                <View style={styles.tabla}>
+                    <View style={styles.filaCabecera}>
+                        <Text style={styles.colFotoHeader}>Foto</Text>
+                        <View style={styles.colDetallesCabecera}>
+                            <Text style={styles.colInfoCabecera}>Producto</Text>
+                            <Text style={styles.colPrecioCabecera}>Precio</Text>
+                            <Text style={styles.colBadgeCabecera}>Visibilidad</Text>
+                            <Text style={styles.colBadgeCabecera}>Estado</Text>
                         </View>
-                        
-                        <View style={[styles.col, { flex: 2 }]}>
-                            <Text style={styles.txtNombre}>{prod.nombre}</Text>
-                            <Text style={styles.txtSub}>{prod.modelos?.length || 0} modelos</Text>
-                        </View>
-                        
-                        <Text style={[styles.col, { flex: 1, fontWeight: 'bold' }]}>{prod.precio} €</Text>
-                        
-                        <View style={[styles.col, { flex: 1 }]}>
-                            <View style={[
-                                styles.badge,
-                                { backgroundColor: prod.oculto ? '#fee2e2' : '#dcfce7' }
-                            ]}>
-                                <Text style={[
-                                    styles.txtBadge,
-                                    { color: prod.oculto ? '#991b1b' : '#166534' }
-                                ]}>
-                                    {prod.oculto ? 'Oculto' : 'Visible'}
-                                </Text>
-                            </View>
-                        </View>
+                    </View>
 
-                        <View style={[styles.col, { flex: 1 }]}>
-                            <View style={[
-                                styles.badge,
-                                { backgroundColor: prod.deshabilitado ? '#fef3c7' : '#dcfce7' }
-                            ]}>
-                                <Text style={[
-                                    styles.txtBadge,
-                                    { color: prod.deshabilitado ? '#d97706' : '#166534' }
-                                ]}>
-                                    {prod.deshabilitado ? 'Deshabilitado' : 'Activo'}
-                                </Text>
+                    {productos.map((prod) => (
+                        <Pressable
+                            key={prod.id}
+                            style={styles.fila}
+                            onPress={() => router.push(`/admin/productos/${prod.id}`)}
+                        >
+                            <View style={styles.colFoto}>
+                                <Image
+                                    source={{ uri: prod.modelos?.[0]?.imagen }}
+                                    style={styles.miniImg}
+                                />
                             </View>
-                        </View>
-                    </Pressable>
-                ))}
-            </View>
-        </ScrollView>
+                            
+                            <View style={styles.colDetalles}>
+                                <View style={styles.colInfo}>
+                                    <Text style={styles.txtNombre}>{prod.nombre}</Text>
+                                    <Text style={styles.txtSub}>{prod.modelos?.length || 0} modelos</Text>
+                                </View>
+                                
+                                <Text style={styles.colPrecio}>{prod.precio} €</Text>
+                                
+                                <View style={styles.contenedorBadges}>
+                                    <View style={styles.colVisibilidad}>
+                                        <View style={[
+                                            styles.badge,
+                                            { backgroundColor: prod.oculto ? '#fee2e2' : '#dcfce7' }
+                                        ]}>
+                                            <Text style={[
+                                                styles.txtBadge,
+                                                { color: prod.oculto ? '#991b1b' : '#166534' }
+                                            ]}>
+                                                {prod.oculto ? 'Oculto' : 'Visible'}
+                                            </Text>
+                                        </View>
+                                    </View>
+                                    
+                                    <View style={styles.colEstado}>
+                                        <View style={[
+                                            styles.badge,
+                                            { backgroundColor: prod.deshabilitado ? '#fef3c7' : '#dcfce7' }
+                                        ]}>
+                                            <Text style={[
+                                                styles.txtBadge,
+                                                { color: prod.deshabilitado ? '#d97706' : '#166534' }
+                                            ]}>
+                                                {prod.deshabilitado ? 'Deshabilitado' : 'Activo'}
+                                            </Text>
+                                        </View>
+                                    </View>
+                                </View>
+                            </View>
+                        </Pressable>
+                    ))}
+                </View>
+            </ScrollView>
+
+            <Pressable style={styles.btnNuevoFlotante} onPress={() => router.push('/admin/productos/nuevo')}>
+                <Text style={styles.txtNuevoFlotante}>+</Text>
+            </Pressable>
+        </View>
     );
 }
