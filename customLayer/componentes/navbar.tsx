@@ -1,9 +1,11 @@
 import { View, Text, Pressable,Image } from 'react-native';
 import { useRouter } from "expo-router";
 import { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabase';
+import { esAdminGlobal, supabase } from '../lib/supabase';
 import { styles } from '../styles/navbar/navbar.styles';
 import { FontAwesome, FontAwesome5, Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from 'expo-router';
+import { useCallback } from 'react';
 
 let cachedEsAdmin: boolean | null = null;
 
@@ -51,6 +53,11 @@ export default function Navbar() {
             }
         }
     }
+    useFocusEffect(
+        useCallback(() => {
+            setEsAdmin(esAdminGlobal);
+        }, [])
+    );
 
     async function cerrarSesion() {
         cachedEsAdmin = null;

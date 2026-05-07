@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, Pressable } from 'react-native';
+import { View, Text, ScrollView, Pressable, Image } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { supabase } from '../../../lib/supabase';
@@ -11,7 +11,6 @@ export default function DetallesPedidoAdmin() {
     const [cargando, setCargando] = useState(true);
 
     useEffect(() => {
-         /* busca la informacion del pedido usando su id */ 
         const cargarDetalle = async () => {
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) return;
@@ -27,7 +26,6 @@ export default function DetallesPedidoAdmin() {
                     setDatos(json);
                 }
             } catch (error) {
-                console.error(error);
             } finally {
                 setCargando(false);
             }
@@ -36,7 +34,6 @@ export default function DetallesPedidoAdmin() {
         cargarDetalle();
     }, [id]);
 
-    
     if (cargando) return <Text style={styles.mensajeEstado}>Cargando pedido...</Text>;
     if (!datos) return <Text style={styles.mensajeEstado}>Error al cargar el pedido (o no existe)</Text>;
 
@@ -46,29 +43,41 @@ export default function DetallesPedidoAdmin() {
                 <Text style={styles.txtVolver}>⬅ Volver</Text>
             </Pressable>
 
-            <Text style={styles.titulo}>Detalles del Pedido #{datos.pedido.id}</Text>
+            <Text style={styles.titulo}>Detalles del Pedido #{datos.pedido.id.slice(0,8).toUpperCase()}</Text>
             <Text style={styles.totalInfo}>Importe Total: {datos.pedido.total}€</Text>
 
-            <Text style={styles.subtitulo}>Detalles:</Text>
+            <Text style={styles.subtitulo}>Productos:</Text>
             
-            {datos.productos && datos.productos.map((prod: any, index: number) => (
-                <View key={index} style={styles.tarjetaProducto}>
-                    <View style={styles.infoProducto}>
-                        <Text style={styles.nombre}>Producto: {prod.productos.nombre}</Text>
-                        <Text>Modelo: {prod.modelo}</Text>
-                        <Text>Color: {prod.color}</Text>
-                        <Text>Precio unitario: {prod.precio_unitario}€</Text>
-                        
-                        {prod.personalizacion ? (
-                            <View style={styles.badgePersonalizado}>
-                                <Text style={styles.txtBadge}>Personalizacion: "{prod.personalizacion}"</Text>
-                            </View>
+            {datos.productos && datos.productos.map((prod: any, index: number) => {
+                const modeloAsociado = prod.productos?.modelos?.find((m: any) => m.nombre === prod.modelo);
+                const imagenUri = modeloAsociado?.imagen;
+
+                return (
+                    <View key={index} style={styles.tarjetaProducto}>
+                        {imagenUri ? (
+                            <Image source={{ uri: imagenUri }} style={styles.imagenProducto} />
                         ) : (
-                            <Text style={styles.txtNormal}>Sin personalizar</Text>
+                            <View style={styles.placeholderImagen} />
                         )}
+                        
+                        <View style={styles.infoProducto}>
+                            <Text style={styles.nombre}>{prod.productos.nombre}</Text>
+                            <Text style={styles.txtNormalSecundario}>Modelo: <Text style={styles.txtBold}>{prod.modelo}</Text></Text>
+                            <Text style={styles.txtNormalSecundario}>Color: <Text style={styles.txtBold}>{prod.color}</Text></Text>
+                            <Text style={styles.txtNormalSecundario}>Cantidad: <Text style={styles.txtBold}>{prod.cantidad || 1}</Text></Text>
+                            <Text style={styles.txtNormalSecundario}>Precio unitario: <Text style={styles.txtBold}>{prod.precio_unitario}€</Text></Text>
+                            
+                            {prod.personalizacion && prod.personalizacion !== 'Sin texto' ? (
+                                <View style={styles.badgePersonalizado}>
+                                    <Text style={styles.txtBadge}>Personalización: "{prod.personalizacion}"</Text>
+                                </View>
+                            ) : (
+                                <Text style={styles.txtNormal}>Sin personalizar</Text>
+                            )}
+                        </View>
                     </View>
-                </View>
-            ))}
+                );
+            })}
         </ScrollView>
     );
 }

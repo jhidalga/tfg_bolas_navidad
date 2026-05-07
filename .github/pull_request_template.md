@@ -1,11 +1,8 @@
 ## 📝 Descripción
-Este Pull Request se centra en el ajuste de estilos para la version movil:
+Este Pull Request se centra en la creacion de una nueva funcionalidad en la pagina de vista de productos del administrador
 
 **1. Frontend:**
-* **Componente Navbar** 
-* **Componente Filtros** 
-* **Pagina Pedidos administrador** 
-* **Pagina Productos administrador** 
+* **Paginas de productos admin** Agregado barra de busqueda para filtrar por nombre
 
 
 
@@ -16,19 +13,19 @@ Este Pull Request se centra en el ajuste de estilos para la version movil:
 Closes #
 
 ## 🚀 Tipo de cambio
-- [ ] ✨ Nueva funcionalidad (feature)
+- [X] ✨ Nueva funcionalidad (feature)
 - [ ] 🐛 Corrección de error (bugfix)
-- [ ] ♻️ Refactorización (mejora de código sin añadir nueva funcionalidad)
+- [X] ♻️ Refactorización (mejora de código sin añadir nueva funcionalidad)
 - [X] 🎨 Mejoras de UI/UX o estilos (Tailwind / NativeWind / StyleSheet)
 - [ ] 🔧 Configuración del proyecto / Dependencias
 
 ## 📱 Cambios en la Interfaz (Si aplica)
 | Antes | Después |
-| --- |![alt text](dspNavbarPc.png)  |
-| --- |![alt text](dspFiltrosMB.png) |
-| --- |![alt text](dspNavbarMB.png) |
-| --- |![alt text](dspPedidosAdminMB.png) |
-| --- |![alt text](dspProductosAdminMB.png) |
+| --- |![alt text](dspadminProdPC.png)  |
+| --- | |
+| --- | |
+| --- | |
+| --- | |
 | --- | |
 | --- | |
 | --- | |
