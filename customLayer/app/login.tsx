@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import { useState } from 'react';
 import Footer from '../componentes/footer';
 import { supabase } from '../lib/supabase';
+import { setEsAdminGlobal } from '../lib/supabase';
 
 export default function Login() {
     const router = useRouter();
@@ -26,16 +27,29 @@ export default function Login() {
 
         setCargando(true);
 
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
             email: correoLimpio,
             password: contrasenaLimpia,
         });
 
-        setCargando(false);
-
         if (error) {
+            setCargando(false);
             alert(error.message);
-        } else {
+        } else if (data?.session) {
+            try {
+                const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/usuarios/perfil`, {
+                    headers: { 'Authorization': `Bearer ${data.session.access_token}` }
+                });
+                
+                if (res.ok) {
+                    const perfil = await res.json();
+                    setEsAdminGlobal(perfil.administrador === true);
+                }
+            } catch (e) {
+                console.error('Error al obtener el perfil del usuario:', e);
+            }
+
+            setCargando(false);
             router.replace('/inicio');
         }
     }

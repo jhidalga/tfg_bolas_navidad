@@ -6,8 +6,10 @@ import Grid from '@/componentes/gridProductos';
 import Filtros from '@/componentes/filtros';
 import { styles } from '../styles/inicio/Inicio.styles';
 import { Ionicons } from '@expo/vector-icons';
-import { supabase } from '../lib/supabase';
+import { esAdminGlobal, supabase } from '../lib/supabase';
 import { Platform } from 'react-native';
+import { useFocusEffect } from 'expo-router';
+import { useCallback } from 'react';
 
 export default function Inicio() {
     const [productos, setProductos] = useState<any[]>([]);
@@ -79,6 +81,11 @@ export default function Inicio() {
         };
         fetchConfigYProductos();
     }, []);
+    useFocusEffect(
+        useCallback(() => {
+            setEsAdmin(esAdminGlobal);
+        }, [])
+    );
 
     const guardarMensaje = async () => {
         try {
