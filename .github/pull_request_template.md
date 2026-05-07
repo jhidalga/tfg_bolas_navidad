@@ -1,15 +1,13 @@
 ## 📝 Descripción
-Este Pull Request se centra en el ajuste de estilos para la version movil:
+Este Pull Request se centra en el ajuste de estilos de diversos componentes:
 
 **1. Frontend:**
-* **Componente Navbar** 
-* **Componente Filtros** 
-* **Pagina Pedidos administrador** 
-* **Pagina Productos administrador** 
+* **Paginas detalles productos admin/usuario**Ambas paginas son iguales, ahora muestra la foto del modelo y tienen un diseño similar al del resto de la aplicacion
 
 
 
 **2. Backend y Base de Datos:**
+* **Modificacion del endpoint detalles pedido** agregado a la consulta para que traiga los datos del modelo 
 
 
 ## 🔗 Issue relacionado
@@ -18,17 +16,17 @@ Closes #
 ## 🚀 Tipo de cambio
 - [ ] ✨ Nueva funcionalidad (feature)
 - [ ] 🐛 Corrección de error (bugfix)
-- [ ] ♻️ Refactorización (mejora de código sin añadir nueva funcionalidad)
+- [X] ♻️ Refactorización (mejora de código sin añadir nueva funcionalidad)
 - [X] 🎨 Mejoras de UI/UX o estilos (Tailwind / NativeWind / StyleSheet)
 - [ ] 🔧 Configuración del proyecto / Dependencias
 
 ## 📱 Cambios en la Interfaz (Si aplica)
 | Antes | Después |
-| --- |![alt text](dspNavbarPc.png)  |
-| --- |![alt text](dspFiltrosMB.png) |
-| --- |![alt text](dspNavbarMB.png) |
-| --- |![alt text](dspPedidosAdminMB.png) |
-| --- |![alt text](dspProductosAdminMB.png) |
+| --- |![alt text](dspdetallesPedidosPC.png)  |
+| --- | |
+| --- | |
+| --- | |
+| --- | |
 | --- | |
 | --- | |
 | --- | |
