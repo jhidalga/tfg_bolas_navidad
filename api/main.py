@@ -386,3 +386,26 @@ def obtener_mis_pedidos(authorization: Optional[str] = Header(None)):
         return respuesta.data
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al obtener tus pedidos: {str(e)}")
+
+class MensajeAdminUpdate(BaseModel):
+    mensaje: str
+
+@app.get("/api/mensajes")
+def obtener_mensaje_admin():
+    try:
+        res = supabase.table("mensajes_admin").select("*").eq("id", 1).single().execute()
+        return res.data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.patch("/api/admin/mensajes")
+def actualizar_mensaje_admin(datos: MensajeAdminUpdate, authorization: Optional[str] = Header(None)):
+    if not authorization:
+        raise HTTPException(status_code=401, detail="No autorizado")
+    token = authorization.replace("Bearer ", "")
+    try:
+        cliente_seguro = create_client(SUPABASE_URL, SUPABASE_KEY, options=ClientOptions(headers={"Authorization": f"Bearer {token}"}))
+        res = cliente_seguro.table("mensajes_admin").update({"mensaje": datos.mensaje}).eq("id", 1).execute()
+        return res.data[0]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
