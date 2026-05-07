@@ -31,17 +31,29 @@ export default function Inicio() {
         const fetchProductos = async () => {
             try {
                 const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/productos`);
-                const data = await response.json();
-                setProductos(data);
-                
-                if (data.length > 0) {
-                    const precios = data.map((p: any) => p.precio);
-                    const min = Math.min(...precios);
-                    const max = Math.max(...precios);
-                    setMinMax({ min, max });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (Array.isArray(data)) {
+                        setProductos(data);
+                        
+                        if (data.length > 0) {
+                            const precios = data.map((p: any) => p.precio || 0);
+                            const min = Math.min(...precios);
+                            const max = Math.max(...precios);
+                            setMinMax({ min, max });
+                        }
+                    } else {
+                        console.error("La API no devolvió un array:", data);
+                        setProductos([]);
+                    }
+                } else {
+                    console.error("Error en la petición:", response.status);
+                    setProductos([]);
                 }
             } catch (error) {
-                console.error(error);
+                console.error("Error de red o conexión:", error);
+                setProductos([]);
             } finally {
                 setCargando(false);
             }
@@ -50,13 +62,18 @@ export default function Inicio() {
     }, []);
 
     const productosFiltrados = useMemo(() => {
-        return productos.filter(p => {
-            const matchNombre = p.nombre.toLowerCase().includes(nombre.toLowerCase());
+        const arraySeguro = Array.isArray(productos) ? productos : [];
+        
+        return arraySeguro.filter(p => {
+            const nombreSeguro = p.nombre || '';
+            const matchNombre = nombreSeguro.toLowerCase().includes(nombre.toLowerCase());
+            
             const matchPers = personalizable ? p.personalizable === true : true;
             const minNum = filtroPrecioMin ? parseFloat(filtroPrecioMin) : minMax.min;
             const maxNum = filtroPrecioMax ? parseFloat(filtroPrecioMax) : minMax.max;
             
-            const matchPrecio = p.precio >= minNum && p.precio <= maxNum;
+            const precioSeguro = p.precio || 0;
+            const matchPrecio = precioSeguro >= minNum && precioSeguro <= maxNum;
             
             return matchNombre && matchPers && matchPrecio;
         });
@@ -94,7 +111,13 @@ export default function Inicio() {
                             <ActivityIndicator size="large" color="#3b82f6" />
                         ) : (
                             <>
-                                <Grid productos={productosPaginados} />
+                                {productosPaginados.length === 0 ? (
+                                    <Text style={{ textAlign: 'center', marginTop: 50, fontSize: 16, color: '#64748b' }}>
+                                        No se encontraron productos.
+                                    </Text>
+                                ) : (
+                                    <Grid productos={productosPaginados} />
+                                )}
                                 
                                 {totalPaginas > 1 && (
                                     <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingVertical: 20, gap: 15 }}>
