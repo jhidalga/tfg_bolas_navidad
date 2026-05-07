@@ -230,7 +230,7 @@ def obtener_detalle_pedido_admin(pedido_id: str, authorization: Optional[str] = 
             raise HTTPException(status_code=404, detail="Pedido no encontrado")
         
         detalles_res = cliente_seguro.table("detalles_pedido")\
-            .select("*, productos(nombre)")\
+            .select("*, productos(nombre, modelos(nombre, imagen))")\
             .eq("pedido_id", pedido_id)\
             .execute()
             
