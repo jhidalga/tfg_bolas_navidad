@@ -7,6 +7,7 @@ import Filtros from '@/componentes/filtros';
 import { styles } from '../styles/inicio/Inicio.styles';
 import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
+import { Platform } from 'react-native';
 
 export default function Inicio() {
     const [productos, setProductos] = useState<any[]>([]);
@@ -162,7 +163,7 @@ export default function Inicio() {
                             </Text>
                             {esAdmin && (
                                 <Pressable onPress={() => setEditandoMensaje(true)} style={{ backgroundColor: '#d97706', paddingHorizontal: 15, paddingVertical: 8, borderRadius: 8, marginLeft: 10 }}>
-                                    <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 12,padding: 5 }}>Editar</Text>
+                                    <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 12, ...(Platform.OS !== 'web' ? { padding: 5 } : {}) }}>Editar</Text>
                                 </Pressable>
                             )}
                         </View>
