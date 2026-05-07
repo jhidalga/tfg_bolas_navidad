@@ -162,7 +162,7 @@ export default function Inicio() {
                             </Text>
                             {esAdmin && (
                                 <Pressable onPress={() => setEditandoMensaje(true)} style={{ backgroundColor: '#d97706', paddingHorizontal: 15, paddingVertical: 8, borderRadius: 8, marginLeft: 10 }}>
-                                    <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 12 }}>Editar</Text>
+                                    <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 12,padding: 5 }}>Editar</Text>
                                 </Pressable>
                             )}
                         </View>
