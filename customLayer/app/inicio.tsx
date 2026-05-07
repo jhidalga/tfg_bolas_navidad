@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { View, ScrollView, ActivityIndicator, Text, Pressable, Platform, Modal, TouchableOpacity } from 'react-native';
+import { View, ScrollView, ActivityIndicator, Text, Pressable, Modal, TouchableOpacity } from 'react-native';
 import Footer from '../componentes/footer';
 import Navbar from '@/componentes/navbar';
 import Grid from '@/componentes/gridProductos';
@@ -22,7 +22,6 @@ export default function Inicio() {
 
     const [modalFiltros, setModalFiltros] = useState(false);
 
-    // al aplicar filtro volver a a la primera pagina
     useEffect(() => {
         setPaginaActual(1);
     }, [nombre, personalizable, filtroPrecioMin, filtroPrecioMax]);
@@ -31,12 +30,10 @@ export default function Inicio() {
         const fetchProductos = async () => {
             try {
                 const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/productos`);
-
                 if (response.ok) {
                     const data = await response.json();
                     if (Array.isArray(data)) {
                         setProductos(data);
-                        
                         if (data.length > 0) {
                             const precios = data.map((p: any) => p.precio || 0);
                             const min = Math.min(...precios);
@@ -44,15 +41,12 @@ export default function Inicio() {
                             setMinMax({ min, max });
                         }
                     } else {
-                        console.error("La API no devolvió un array:", data);
                         setProductos([]);
                     }
                 } else {
-                    console.error("Error en la petición:", response.status);
                     setProductos([]);
                 }
             } catch (error) {
-                console.error("Error de red o conexión:", error);
                 setProductos([]);
             } finally {
                 setCargando(false);
@@ -63,15 +57,12 @@ export default function Inicio() {
 
     const productosFiltrados = useMemo(() => {
         const arraySeguro = Array.isArray(productos) ? productos : [];
-        
         return arraySeguro.filter(p => {
             const nombreSeguro = p.nombre || '';
             const matchNombre = nombreSeguro.toLowerCase().includes(nombre.toLowerCase());
-            
             const matchPers = personalizable ? p.personalizable === true : true;
             const minNum = filtroPrecioMin ? parseFloat(filtroPrecioMin) : minMax.min;
             const maxNum = filtroPrecioMax ? parseFloat(filtroPrecioMax) : minMax.max;
-            
             const precioSeguro = p.precio || 0;
             const matchPrecio = precioSeguro >= minNum && precioSeguro <= maxNum;
             
@@ -79,32 +70,34 @@ export default function Inicio() {
         });
     }, [productos, nombre, personalizable, filtroPrecioMin, filtroPrecioMax, minMax]);
 
-    //logica paginacion
     const totalPaginas = Math.ceil(productosFiltrados.length / itemsPorPagina);
     const productosPaginados = productosFiltrados.slice(
         (paginaActual - 1) * itemsPorPagina, 
         paginaActual * itemsPorPagina
     );
 
+    const renderFiltros = () => (
+        <Filtros 
+            nombre={nombre} 
+            setNombre={setNombre}
+            personalizable={personalizable} 
+            setPersonalizable={setPersonalizable}
+            precioMin={filtroPrecioMin} 
+            setPrecioMin={setFiltroPrecioMin}
+            precioMax={filtroPrecioMax} 
+            setPrecioMax={setFiltroPrecioMax}
+            minMax={minMax}
+        />
+    );
+
     return (
         <View style={styles.contenedorPrincipal}>
             <Navbar />
             <ScrollView contentContainerStyle={styles.contenidoScroll} showsVerticalScrollIndicator={false}>
-                <View style={{ flexDirection: Platform.OS === 'web' ? 'row' : 'column', maxWidth: 1200, width: '100%', alignSelf: 'center', paddingHorizontal: 20, paddingTop: 40 }}>
-                    
-                    {Platform.OS === 'web' && !cargando && (
-                        <Filtros 
-                            nombre={nombre} 
-                            setNombre={setNombre}
-                            personalizable={personalizable} 
-                            setPersonalizable={setPersonalizable}
-                            precioMin={filtroPrecioMin} 
-                            setPrecioMin={setFiltroPrecioMin}
-                            precioMax={filtroPrecioMax} 
-                            setPrecioMax={setFiltroPrecioMax}
-                            minMax={minMax}
-                        />
-                    )}
+                <View style={styles.layoutPrincipal}>
+                    <View style={styles.sidebarDesktop}>
+                        {!cargando && renderFiltros()}
+                    </View>
                     
                     <View style={{ flex: 1 }}>
                         {cargando ? (
@@ -149,44 +142,29 @@ export default function Inicio() {
                 <Footer />
             </ScrollView>
 
-            {Platform.OS !== 'web' && (
-                <>
-                    <Modal visible={modalFiltros} animationType="slide" transparent={true} onRequestClose={() => setModalFiltros(false)}>
-                        <View style={styles.modalFondo}>
-                            <View style={styles.modalContenido}>
-                                <View style={styles.modalHeader}>
-                                    <Text style={styles.modalTitulo}>Filtros</Text>
-                                    <TouchableOpacity onPress={() => setModalFiltros(false)}>
-                                        <Ionicons name="close" size={28} color="#1e293b" />
-                                    </TouchableOpacity>
-                                </View>
-                                
-                                <ScrollView showsVerticalScrollIndicator={false}>
-                                    <Filtros 
-                                        nombre={nombre} 
-                                        setNombre={setNombre}
-                                        personalizable={personalizable} 
-                                        setPersonalizable={setPersonalizable}
-                                        precioMin={filtroPrecioMin} 
-                                        setPrecioMin={setFiltroPrecioMin}
-                                        precioMax={filtroPrecioMax} 
-                                        setPrecioMax={setFiltroPrecioMax}
-                                        minMax={minMax}
-                                    />
-                                    <TouchableOpacity style={styles.btnAplicarFiltros} onPress={() => setModalFiltros(false)}>
-                                        <Text style={styles.txtBtnAplicar}>Aplicar Filtros</Text>
-                                    </TouchableOpacity>
-                                </ScrollView>
-                            </View>
+            <Modal visible={modalFiltros} animationType="slide" transparent={true} onRequestClose={() => setModalFiltros(false)}>
+                <View style={styles.modalFondo}>
+                    <View style={styles.modalContenido}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitulo}>Filtros</Text>
+                            <TouchableOpacity onPress={() => setModalFiltros(false)}>
+                                <Ionicons name="close" size={28} color="#1e293b" />
+                            </TouchableOpacity>
                         </View>
-                    </Modal>
+                        <ScrollView showsVerticalScrollIndicator={false}>
+                            {renderFiltros()}
+                            <TouchableOpacity style={styles.btnAplicarFiltros} onPress={() => setModalFiltros(false)}>
+                                <Text style={styles.txtBtnAplicar}>Aplicar Filtros</Text>
+                            </TouchableOpacity>
+                        </ScrollView>
+                    </View>
+                </View>
+            </Modal>
 
-                    {!cargando && (
-                        <TouchableOpacity style={styles.btnFlotante} onPress={() => setModalFiltros(true)}>
-                            <Ionicons name="options" size={26} color="white" />
-                        </TouchableOpacity>
-                    )}
-                </>
+            {!cargando && (
+                <TouchableOpacity style={styles.btnFlotante} onPress={() => setModalFiltros(true)}>
+                    <Ionicons name="options" size={26} color="white" />
+                </TouchableOpacity>
             )}
         </View>
     );
