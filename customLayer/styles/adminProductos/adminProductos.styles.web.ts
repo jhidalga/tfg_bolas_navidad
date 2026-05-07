@@ -21,16 +21,32 @@ export const styles = StyleSheet.create({
         fontWeight: 'bold',
         fontSize: 16,
     },
-    cabecera: {
+    cabeceraContenedor: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: 30,
     },
+    cabeceraAcciones: {
+        flexDirection: 'row',
+        gap: 15,
+        alignItems: 'center',
+    },
     titulo: {
         fontSize: 30,
         fontWeight: '800',
         color: '#111827',
+    },
+    inputBuscar: {
+        backgroundColor: 'white',
+        borderWidth: 1,
+        borderColor: '#cbd5e1',
+        borderRadius: 10,
+        paddingVertical: 10,
+        paddingHorizontal: 15,
+        fontSize: 15,
+        width: 300,
+        outlineStyle: 'none' as any,
     },
     btnNuevoHeader: {
         backgroundColor: '#3b82f6',
@@ -135,5 +151,15 @@ export const styles = StyleSheet.create({
     txtBadge: {
         fontSize: 12,
         fontWeight: 'bold',
-    }
+    },
+    estadoVacio: {
+        padding: 50,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    txtEstadoVacio: { 
+        fontSize: 16, 
+        color: "#64748b", 
+        textAlign: "center" 
+    },
 });
