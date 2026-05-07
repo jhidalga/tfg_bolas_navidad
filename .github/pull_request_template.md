@@ -1,20 +1,19 @@
 ## 📝 Descripción
-Este Pull Request se centra en el ajuste de estilos de diversos componentes:
+Este Pull Request se centra en la creacion de una nueva funcionalidad en la pagina de vista de productos del administrador
 
 **1. Frontend:**
-* **Paginas detalles productos admin/usuario**Ambas paginas son iguales, ahora muestra la foto del modelo y tienen un diseño similar al del resto de la aplicacion
+* **Paginas de productos admin** Agregado barra de busqueda para filtrar por nombre
 
 
 
 **2. Backend y Base de Datos:**
-* **Modificacion del endpoint detalles pedido** agregado a la consulta para que traiga los datos del modelo 
 
 
 ## 🔗 Issue relacionado
 Closes #
 
 ## 🚀 Tipo de cambio
-- [ ] ✨ Nueva funcionalidad (feature)
+- [X] ✨ Nueva funcionalidad (feature)
 - [ ] 🐛 Corrección de error (bugfix)
 - [X] ♻️ Refactorización (mejora de código sin añadir nueva funcionalidad)
 - [X] 🎨 Mejoras de UI/UX o estilos (Tailwind / NativeWind / StyleSheet)
@@ -22,7 +21,7 @@ Closes #
 
 ## 📱 Cambios en la Interfaz (Si aplica)
 | Antes | Después |
-| --- |![alt text](dspdetallesPedidosPC.png)  |
+| --- |![alt text](dspadminProdPC.png)  |
 | --- | |
 | --- | |
 | --- | |

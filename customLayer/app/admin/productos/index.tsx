@@ -1,6 +1,6 @@
-import { View, Text, Pressable, ScrollView, Image, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, ScrollView, Image, ActivityIndicator, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { styles } from '../../../styles/adminProductos/adminProductos.styles';
 
@@ -8,6 +8,7 @@ export default function AdminProductos() {
     const router = useRouter();
     const [productos, setProductos] = useState<any[]>([]);
     const [cargando, setCargando] = useState(true);
+    const [busqueda, setBusqueda] = useState('');
 
     useEffect(() => {
         cargarProductos();
@@ -30,20 +31,35 @@ export default function AdminProductos() {
         }
     };
 
+    const productosFiltrados = useMemo(() => {
+        return productos.filter(p => 
+            p.nombre.toLowerCase().includes(busqueda.toLowerCase())
+        );
+    }, [productos, busqueda]);
+
     if (cargando) return <ActivityIndicator style={{ marginTop: 50 }} size="large" color="#3b82f6" />;
 
     return (
         <View style={styles.contenedor}>
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 <Pressable onPress={() => router.back()} style={styles.btnVolver}>
-                    <Text style={styles.txtVolver}>  Volver</Text>
+                    <Text style={styles.txtVolver}>⬅ Volver</Text>
                 </Pressable>
                 
-                <View style={styles.cabecera}>
+                <View style={styles.cabeceraContenedor}>
                     <Text style={styles.titulo}>Gestión de Catálogo</Text>
-                    <Pressable style={styles.btnNuevoHeader} onPress={() => router.push('/admin/productos/nuevo')}>
-                        <Text style={styles.txtNuevoHeader}>+ Nuevo Producto</Text>
-                    </Pressable>
+                    <View style={styles.cabeceraAcciones}>
+                        <TextInput 
+                            style={styles.inputBuscar}
+                            placeholder="Buscar producto por nombre..."
+                            placeholderTextColor="#94a3b8"
+                            value={busqueda}
+                            onChangeText={setBusqueda}
+                        />
+                        <Pressable style={styles.btnNuevoHeader} onPress={() => router.push('/admin/productos/nuevo')}>
+                            <Text style={styles.txtNuevoHeader}>+ Nuevo Producto</Text>
+                        </Pressable>
+                    </View>
                 </View>
 
                 <View style={styles.tabla}>
@@ -57,59 +73,65 @@ export default function AdminProductos() {
                         </View>
                     </View>
 
-                    {productos.map((prod) => (
-                        <Pressable
-                            key={prod.id}
-                            style={styles.fila}
-                            onPress={() => router.push(`/admin/productos/${prod.id}`)}
-                        >
-                            <View style={styles.colFoto}>
-                                <Image
-                                    source={{ uri: prod.modelos?.[0]?.imagen }}
-                                    style={styles.miniImg}
-                                />
-                            </View>
-                            
-                            <View style={styles.colDetalles}>
-                                <View style={styles.colInfo}>
-                                    <Text style={styles.txtNombre}>{prod.nombre}</Text>
-                                    <Text style={styles.txtSub}>{prod.modelos?.length || 0} modelos</Text>
+                    {productosFiltrados.length === 0 ? (
+                        <View style={styles.estadoVacio}>
+                            <Text style={styles.txtEstadoVacio}>No se encontraron productos.</Text>
+                        </View>
+                    ) : (
+                        productosFiltrados.map((prod) => (
+                            <Pressable
+                                key={prod.id}
+                                style={styles.fila}
+                                onPress={() => router.push(`/admin/productos/${prod.id}`)}
+                            >
+                                <View style={styles.colFoto}>
+                                    <Image
+                                        source={{ uri: prod.modelos?.[0]?.imagen }}
+                                        style={styles.miniImg}
+                                    />
                                 </View>
                                 
-                                <Text style={styles.colPrecio}>{prod.precio} €</Text>
-                                
-                                <View style={styles.contenedorBadges}>
-                                    <View style={styles.colVisibilidad}>
-                                        <View style={[
-                                            styles.badge,
-                                            { backgroundColor: prod.oculto ? '#fee2e2' : '#dcfce7' }
-                                        ]}>
-                                            <Text style={[
-                                                styles.txtBadge,
-                                                { color: prod.oculto ? '#991b1b' : '#166534' }
-                                            ]}>
-                                                {prod.oculto ? 'Oculto' : 'Visible'}
-                                            </Text>
-                                        </View>
+                                <View style={styles.colDetalles}>
+                                    <View style={styles.colInfo}>
+                                        <Text style={styles.txtNombre}>{prod.nombre}</Text>
+                                        <Text style={styles.txtSub}>{prod.modelos?.length || 0} modelos</Text>
                                     </View>
                                     
-                                    <View style={styles.colEstado}>
-                                        <View style={[
-                                            styles.badge,
-                                            { backgroundColor: prod.deshabilitado ? '#fef3c7' : '#dcfce7' }
-                                        ]}>
-                                            <Text style={[
-                                                styles.txtBadge,
-                                                { color: prod.deshabilitado ? '#d97706' : '#166534' }
+                                    <Text style={styles.colPrecio}>{prod.precio} €</Text>
+                                    
+                                    <View style={styles.contenedorBadges}>
+                                        <View style={styles.colVisibilidad}>
+                                            <View style={[
+                                                styles.badge,
+                                                { backgroundColor: prod.oculto ? '#fee2e2' : '#dcfce7' }
                                             ]}>
-                                                {prod.deshabilitado ? 'Deshabilitado' : 'Activo'}
-                                            </Text>
+                                                <Text style={[
+                                                    styles.txtBadge,
+                                                    { color: prod.oculto ? '#991b1b' : '#166534' }
+                                                ]}>
+                                                    {prod.oculto ? 'Oculto' : 'Visible'}
+                                                </Text>
+                                            </View>
+                                        </View>
+                                        
+                                        <View style={styles.colEstado}>
+                                            <View style={[
+                                                styles.badge,
+                                                { backgroundColor: prod.deshabilitado ? '#fef3c7' : '#dcfce7' }
+                                            ]}>
+                                                <Text style={[
+                                                    styles.txtBadge,
+                                                    { color: prod.deshabilitado ? '#d97706' : '#166534' }
+                                                ]}>
+                                                    {prod.deshabilitado ? 'Deshabilitado' : 'Activo'}
+                                                </Text>
+                                            </View>
                                         </View>
                                     </View>
                                 </View>
-                            </View>
-                        </Pressable>
-                    ))}
+                            </Pressable>
+                        ))
+                    )}
                 </View>
             </ScrollView>
 
