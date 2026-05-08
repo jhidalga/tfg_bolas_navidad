@@ -9,10 +9,16 @@ export default function AdminProductos() {
     const [productos, setProductos] = useState<any[]>([]);
     const [cargando, setCargando] = useState(true);
     const [busqueda, setBusqueda] = useState('');
+    const [paginaActual, setPaginaActual] = useState(1);
+    const itemsPorPagina = 12;
 
     useEffect(() => {
         cargarProductos();
     }, []);
+
+    useEffect(() => {
+        setPaginaActual(1);
+    }, [busqueda]);
 
     const cargarProductos = async () => {
         try {
@@ -36,6 +42,12 @@ export default function AdminProductos() {
             p.nombre.toLowerCase().includes(busqueda.toLowerCase())
         );
     }, [productos, busqueda]);
+
+    const totalPaginas = Math.ceil(productosFiltrados.length / itemsPorPagina);
+    const productosPaginados = productosFiltrados.slice(
+        (paginaActual - 1) * itemsPorPagina,
+        paginaActual * itemsPorPagina
+    );
 
     if (cargando) return <ActivityIndicator style={{ marginTop: 50 }} size="large" color="#3b82f6" />;
 
@@ -78,7 +90,7 @@ export default function AdminProductos() {
                             <Text style={styles.txtEstadoVacio}>No se encontraron productos.</Text>
                         </View>
                     ) : (
-                        productosFiltrados.map((prod) => (
+                        productosPaginados.map((prod) => (
                             <Pressable
                                 key={prod.id}
                                 style={styles.fila}
@@ -133,6 +145,30 @@ export default function AdminProductos() {
                         ))
                     )}
                 </View>
+
+                {totalPaginas > 1 && (
+                    <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingTop: 30, paddingBottom: 10, gap: 15 }}>
+                        <Pressable 
+                            style={[{ paddingVertical: 8, paddingHorizontal: 16, borderRadius: 8 }, paginaActual === 1 ? { backgroundColor: '#cbd5e1' } : { backgroundColor: '#3b82f6' }]}
+                            disabled={paginaActual === 1}
+                            onPress={() => setPaginaActual(p => p - 1)}
+                        >
+                            <Text style={{ color: 'white', fontWeight: 'bold' }}>Anterior</Text>
+                        </Pressable>
+                        
+                        <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#475569' }}>
+                            Página {paginaActual} de {totalPaginas}
+                        </Text>
+                        
+                        <Pressable 
+                            style={[{ paddingVertical: 8, paddingHorizontal: 16, borderRadius: 8 }, paginaActual === totalPaginas ? { backgroundColor: '#cbd5e1' } : { backgroundColor: '#3b82f6' }]}
+                            disabled={paginaActual === totalPaginas}
+                            onPress={() => setPaginaActual(p => p + 1)}
+                        >
+                            <Text style={{ color: 'white', fontWeight: 'bold' }}>Siguiente</Text>
+                        </Pressable>
+                    </View>
+                )}
             </ScrollView>
 
             <Pressable style={styles.btnNuevoFlotante} onPress={() => router.push('/admin/productos/nuevo')}>
