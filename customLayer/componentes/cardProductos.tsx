@@ -66,7 +66,7 @@ export default function CardProducto({
                     <Text style={styles.precio}>{precio} €</Text>
                     
                     {personalizable && (
-                        <Text style={styles.textoPersonalizable}>✨ Personalizable</Text>
+                        <Text style={styles.textoPersonalizable}> Personalizable</Text>
                     )}
                     
                     {cantidadModelos !== undefined && cantidadModelos > 1 && (
