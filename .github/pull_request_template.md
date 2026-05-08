@@ -1,13 +1,13 @@
 ## 📝 Descripción
-Este Pull Request se centra en la modificacion de la pagina de registro para añadir verificacion de correo electronico
+Este Pull Request se centra en la modificacion de los datos de los pedidos añadiendo la opcion de poner precio extra por la personalizacion
 
 **1. Frontend:**
-* **Paginas de registro** Interfaz modificada para introducir codigo verificacion correo
+* **Paginas de admin nuevo producto** Interfaz modificada para introducir precio de la personalizacion
 
 
 
 **2. Backend y Base de Datos:**
-* **Supabase** Activar verificacion de correo mediante clave numerica
+* **Supabase** Modificacion de la tabla productos para incluir el campo del precio extra por personalizacion
 
 ## 🔗 Issue relacionado
 Closes #
@@ -21,7 +21,7 @@ Closes #
 
 ## 📱 Cambios en la Interfaz (Si aplica)
 | Antes | Después |
-| --- |![alt text](dspRegistroPC.png)  |
+| --- |![alt text](dspAdminNuevoPC.png)  |
 | --- | |
 | --- | |
 | --- | |
