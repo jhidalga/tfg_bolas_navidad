@@ -15,6 +15,7 @@ export default function NuevoProductoAdmin() {
         nombre: '', 
         descripcion: '', 
         precio: 0.0, 
+        precio_personalizacion: 0.0,
         personalizable: false, 
         imagen: ""
     });
@@ -68,6 +69,7 @@ export default function NuevoProductoAdmin() {
             nombre: form.nombre,
             descripcion: form.descripcion,
             precio: form.precio,
+            precio_personalizacion: form.precio_personalizacion,
             personalizable: form.personalizable,
             colores: arrayColores
         };
@@ -141,6 +143,18 @@ export default function NuevoProductoAdmin() {
                             </Text>
                         </Pressable>
                     </View>
+                    
+                    {form.personalizable && (
+                        <View style={[styles.inputGroup, { marginTop: 15 }]}>
+                            <Text style={styles.label}>Precio Extra por Personalización (€)</Text>
+                            <TextInput 
+                                style={styles.input} 
+                                keyboardType="numeric" 
+                                value={form.precio_personalizacion.toString()} 
+                                onChangeText={t => setForm({...form, precio_personalizacion: parseFloat(t) || 0})} 
+                            />
+                        </View>
+                    )}
                 </View>
 
                 <View style={styles.tarjeta}>

@@ -32,6 +32,7 @@ class ProductoAdminCrear(BaseModel):
     nombre: str
     descripcion: Optional[str] = ""
     precio: float
+    precio_personalizacion: float = 0.0
     deshabilitado: bool = False
     oculto: bool = False
     personalizable: bool = False
@@ -41,6 +42,7 @@ class ProductoAdminUpdate(BaseModel):
     nombre: Optional[str] = None
     descripcion: Optional[str] = None
     precio: Optional[float] = None
+    precio_personalizacion: Optional[float] = None
     deshabilitado: Optional[bool] = None
     oculto: Optional[bool] = None
     personalizable: Optional[bool] = None
@@ -131,7 +133,7 @@ def obtener_carrito(authorization: Optional[str] = Header(None)):
         user_id = payload.get("sub")
         cliente_seguro = create_client(SUPABASE_URL, SUPABASE_KEY, options=ClientOptions(headers={"Authorization": f"Bearer {token}"}))
         res = cliente_seguro.table("carrito")\
-            .select("*, productos(nombre, precio), modelos(nombre, imagen)")\
+            .select("*, productos(nombre, precio, precio_personalizacion), modelos(nombre, imagen)")\
             .eq("user_id", user_id)\
             .execute()
             
@@ -179,7 +181,7 @@ def realizar_pedido(checkout: CheckoutPedido, authorization: Optional[str] = Hea
         user_id = payload.get("sub")
         cliente_seguro = create_client(SUPABASE_URL, SUPABASE_KEY, options=ClientOptions(headers={"Authorization": f"Bearer {token}"}))
         
-        carrito_res = cliente_seguro.table("carrito").select("*, productos(precio)").eq("user_id", user_id).execute()
+        carrito_res = cliente_seguro.table("carrito").select("*, productos(precio, precio_personalizacion)").eq("user_id", user_id).execute()
         items_carrito = carrito_res.data
         if not items_carrito:
             raise HTTPException(status_code=400, detail="El carrito está vacío")
@@ -190,13 +192,14 @@ def realizar_pedido(checkout: CheckoutPedido, authorization: Optional[str] = Hea
         
         detalles = []
         for item in items_carrito:
+            extra = float(item["productos"].get("precio_personalizacion") or 0.0) if item.get("personalizacion") and item.get("personalizacion") != "Sin texto" else 0.0
             detalles.append({
                 "pedido_id": pedido_id,
                 "producto_id": item["producto_id"],
                 "modelo": item["modelo"],
                 "color": item["color"],
-                "personalizacion": item["personalizacion"],
-                "precio_unitario": item["productos"]["precio"] ,
+                "personalizacion": item.get("personalizacion", "Sin texto"),
+                "precio_unitario": float(item["productos"]["precio"]) + extra,
                 "cantidad": item.get("cantidad", 1)
             })
             

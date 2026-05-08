@@ -20,6 +20,7 @@ interface ItemCarrito {
     productos: {
         nombre: string;
         precio: number;
+        precio_personalizacion?: number;
     };
     cantidad: number;
 }
@@ -93,7 +94,12 @@ export default function PantallaCarrito() {
         }
     };
 
-    const totalCarrito = carrito.reduce((suma, item) => suma + (Number(item.productos.precio) * item.cantidad), 0);
+    const calcularPrecioItem = (item: ItemCarrito) => {
+        const extra = (item.personalizacion && item.personalizacion !== 'Sin texto') ? (Number(item.productos.precio_personalizacion) || 0) : 0;
+        return Number(item.productos.precio) + extra;
+    };
+
+    const totalCarrito = carrito.reduce((suma, item) => suma + (calcularPrecioItem(item) * item.cantidad), 0);
 
     const crearPedido = async () => {
         try {
@@ -178,7 +184,7 @@ export default function PantallaCarrito() {
                                     )}
                                 </View>
                                 <View style={styles.accionesContenedor}>
-                                    <Text style={styles.precioProducto}>{(Number(item.productos.precio) * item.cantidad).toFixed(2)} €</Text>
+                                    <Text style={styles.precioProducto}>{(calcularPrecioItem(item) * item.cantidad).toFixed(2)} €</Text>
                                     
                                     <TouchableOpacity 
                                         style={styles.botonEliminar} 

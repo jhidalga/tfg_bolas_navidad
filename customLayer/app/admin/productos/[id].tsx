@@ -11,7 +11,7 @@ export default function DetalleProductoAdmin() {
     const { id } = useLocalSearchParams();
     const router = useRouter();
     const [cargando, setCargando] = useState(true);
-    const [form, setForm] = useState({ nombre: '', precio: 0.0, deshabilitado: false, oculto: false, personalizable: false });
+    const [form, setForm] = useState({ nombre: '', precio: 0.0, precio_personalizacion: 0.0, deshabilitado: false, oculto: false, personalizable: false });
     const [modelos, setModelos] = useState<any[]>([]);
     const [nuevosModelos, setNuevosModelos] = useState<any[]>([]);
     const [seleccionados, setSeleccionados] = useState<string[]>([]);
@@ -32,6 +32,7 @@ export default function DetalleProductoAdmin() {
             setForm({
                 nombre: datos.nombre,
                 precio: datos.precio,
+                precio_personalizacion: datos.precio_personalizacion || 0.0,
                 deshabilitado: datos.deshabilitado,
                 oculto: datos.oculto,
                 personalizable: datos.personalizable
@@ -188,6 +189,18 @@ export default function DetalleProductoAdmin() {
                             </Pressable>
                         </View>
                     </View>
+
+                    {form.personalizable && (
+                        <View style={[styles.inputGroup, { marginBottom: 20 }]}>
+                            <Text style={styles.label}>Precio Extra por Personalización (€)</Text>
+                            <TextInput 
+                                style={styles.input} 
+                                keyboardType="numeric" 
+                                value={form.precio_personalizacion.toString()} 
+                                onChangeText={t => setForm({...form, precio_personalizacion: parseFloat(t) || 0})} 
+                            />
+                        </View>
+                    )}
 
                     <Pressable style={styles.btnGuardarMain} onPress={guardarDatosPrincipales}>
                         <Text style={styles.txtBtnGuardarMain}>Guardar Cambios</Text>
