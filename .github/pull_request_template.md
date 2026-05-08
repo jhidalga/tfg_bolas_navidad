@@ -1,13 +1,13 @@
 ## 📝 Descripción
-Este Pull Request se centra en la creacion de una nueva funcionalidad en la pagina de vista de productos del administrador
+Este Pull Request se centra en la creacion de una nueva funcionalidad en la pagina de vista de pedidos del administrador
 
 **1. Frontend:**
-* **Paginas de productos admin** Agregado barra de busqueda para filtrar por nombre
+* **Paginas de pedidos admin** Agregado botones de borrado de pedidos
 
 
 
 **2. Backend y Base de Datos:**
-
+* **Api: Endpoint nuevo** Encargado de gestionar el DELETE de los pedidos
 
 ## 🔗 Issue relacionado
 Closes #
@@ -15,13 +15,13 @@ Closes #
 ## 🚀 Tipo de cambio
 - [X] ✨ Nueva funcionalidad (feature)
 - [ ] 🐛 Corrección de error (bugfix)
-- [X] ♻️ Refactorización (mejora de código sin añadir nueva funcionalidad)
-- [X] 🎨 Mejoras de UI/UX o estilos (Tailwind / NativeWind / StyleSheet)
+- [ ] ♻️ Refactorización (mejora de código sin añadir nueva funcionalidad)
+- [ ] 🎨 Mejoras de UI/UX o estilos (Tailwind / NativeWind / StyleSheet)
 - [ ] 🔧 Configuración del proyecto / Dependencias
 
 ## 📱 Cambios en la Interfaz (Si aplica)
 | Antes | Después |
-| --- |![alt text](dspadminProdPC.png)  |
+| --- |![alt text](dspAdminPedidosPC.png)  |
 | --- | |
 | --- | |
 | --- | |
