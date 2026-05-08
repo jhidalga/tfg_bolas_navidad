@@ -174,7 +174,7 @@ export default function PantallaCarrito() {
                                     <Text style={styles.textoDetalle}>Color: <Text style={styles.textoNegrita}>{item.color}</Text></Text>
                                     
                                     {item.personalizacion !== 'Sin texto' && (
-                                        <Text style={styles.textoPersonalizacion}>✨ "{item.personalizacion}"</Text>
+                                        <Text style={styles.textoPersonalizacion}> "{item.personalizacion}"</Text>
                                     )}
                                 </View>
                                 <View style={styles.accionesContenedor}>
