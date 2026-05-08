@@ -1,22 +1,24 @@
 ## 📝 Descripción
-Este Pull Request se centra en la modificacion de los datos de los pedidos añadiendo la opcion de poner precio extra por la personalizacion
+Este Pull Request se centra en la modificacion de las alertas de las paginas registro/login/index(admin productos) para que usen las alertas del Toas
 
 **1. Frontend:**
-* **Paginas de admin nuevo producto** Interfaz modificada para introducir precio de la personalizacion
+* **Pagina de admin productos(index)** Interfaz modificada para reemplazar alertas de navegador por las de Toast
+* **Pagina registro** Interfaz modificada para reemplazar alertas de navegador por las de Toast
+* **Pagina login** Interfaz modificada para reemplazar alertas de navegador por las de Toast
 
 
 
 **2. Backend y Base de Datos:**
-* **Supabase** Modificacion de la tabla productos para incluir el campo del precio extra por personalizacion
+
 
 ## 🔗 Issue relacionado
 Closes #
 
 ## 🚀 Tipo de cambio
-- [X] ✨ Nueva funcionalidad (feature)
+- [ ] ✨ Nueva funcionalidad (feature)
 - [ ] 🐛 Corrección de error (bugfix)
 - [ ] ♻️ Refactorización (mejora de código sin añadir nueva funcionalidad)
-- [ ] 🎨 Mejoras de UI/UX o estilos (Tailwind / NativeWind / StyleSheet)
+- [X] 🎨 Mejoras de UI/UX o estilos (Tailwind / NativeWind / StyleSheet)
 - [ ] 🔧 Configuración del proyecto / Dependencias
 
 ## 📱 Cambios en la Interfaz (Si aplica)
