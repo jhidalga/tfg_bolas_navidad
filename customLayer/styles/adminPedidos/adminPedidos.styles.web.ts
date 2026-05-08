@@ -14,6 +14,11 @@ export const styles = StyleSheet.create({
     },
     tituloHeader: { fontSize: 28, fontWeight: "800", color: "#1e293b" },
 
+    contenedorAccionesHeader: {
+        flexDirection: "row",
+        gap: 10,
+        alignItems: "center",
+    },
     btnExportar: {
         backgroundColor: "#10b981",
         paddingVertical: 10,
@@ -22,6 +27,30 @@ export const styles = StyleSheet.create({
         cursor: "pointer" as any,
     },
     txtBtnExportar: { color: "white", fontWeight: "bold", fontSize: 14 },
+
+    btnBorrarModo: {
+        backgroundColor: "#ef4444",
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        borderRadius: 8,
+        cursor: "pointer" as any,
+    },
+    btnCancelarModo: {
+        backgroundColor: "#e2e8f0",
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        borderRadius: 8,
+        cursor: "pointer" as any,
+    },
+    txtBtnCancelarModo: { color: "#475569", fontWeight: "bold", fontSize: 14 },
+    btnConfirmarBorrar: {
+        backgroundColor: "#dc2626",
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        borderRadius: 8,
+        cursor: "pointer" as any,
+    },
+    txtBtnConfirmarBorrar: { color: "white", fontWeight: "bold", fontSize: 14 },
 
     barraFiltros: {
         flexDirection: "row",
@@ -91,6 +120,27 @@ export const styles = StyleSheet.create({
         transition: "background-color 0.2s",
         "&:hover": { backgroundColor: "#f8fafc" },
     } as any,
+    
+    tarjetaSeleccionada: {
+        backgroundColor: "#fef2f2",
+        "&:hover": { backgroundColor: "#fee2e2" },
+    } as any,
+
+    checkOuter: {
+        width: 22,
+        height: 22,
+        borderWidth: 2,
+        borderColor: "#cbd5e1",
+        borderRadius: 6,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "white",
+    },
+    checkInner: {
+        backgroundColor: "#ef4444",
+        borderColor: "#ef4444",
+    },
+
     filaTop: {
         flexDirection: "row",
         justifyContent: "space-between",
