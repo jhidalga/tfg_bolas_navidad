@@ -8,6 +8,7 @@ import FontAwesome5 from '@expo/vector-icons/build/FontAwesome5';
 import { Entypo, FontAwesome } from '@expo/vector-icons';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
+import Toast from 'react-native-toast-message';
 
 export default function ListaPedidosAdmin() {
     const router = useRouter();
@@ -178,12 +179,12 @@ export default function ListaPedidosAdmin() {
                 if (await (Sharing as any).isAvailableAsync()) {
                     await (Sharing as any).shareAsync(uri);
                 } else {
-                    alert("No se puede compartir en este dispositivo");
+                    Toast.show({ type: 'error', text1: 'No se puede compartir en este dispositivo' });
                 }
             }
         } catch (error) {
             console.error("Error al exportar:", error);
-            alert("Hubo un error al exportar los datos.");
+            Toast.show({ type: 'error', text1: 'Hubo un error al exportar los datos.' });
         }
     };
 
