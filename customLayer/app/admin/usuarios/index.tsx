@@ -1,6 +1,6 @@
 import { View, Text, Pressable, ScrollView, ActivityIndicator, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { styles } from '../../../styles/adminUsuarios/adminUsuarios.styles';
 import Toast from 'react-native-toast-message';
@@ -12,8 +12,14 @@ export default function GestorUsuariosAdmin() {
     const [cargando, setCargando] = useState(true);
     const [usuarios, setUsuarios] = useState<any[]>([]);
     const [busqueda, setBusqueda] = useState('');
+    const [paginaActual, setPaginaActual] = useState(1);
+    const itemsPorPagina = 12;
 
     useEffect(() => { cargarUsuarios(); }, []);
+
+    useEffect(() => {
+        setPaginaActual(1);
+    }, [busqueda]);
 
     const triggerToast = (mensaje: string, color = '#3b82f6') => {
         const tipo = color === '#ef4444' ? 'error' : 'success';
@@ -59,6 +65,19 @@ export default function GestorUsuariosAdmin() {
         }
     };
 
+    const usuariosFiltrados = useMemo(() => {
+        return usuarios.filter(u => {
+            if (!busqueda) return true;
+            return u.nombre?.toLowerCase().includes(busqueda.toLowerCase());
+        });
+    }, [usuarios, busqueda]);
+
+    const totalPaginas = Math.ceil(usuariosFiltrados.length / itemsPorPagina);
+    const usuariosPaginados = usuariosFiltrados.slice(
+        (paginaActual - 1) * itemsPorPagina,
+        paginaActual * itemsPorPagina
+    );
+
     if (cargando) return <ActivityIndicator size="large" color="#3b82f6" style={{ marginTop: 50 }} />;
 
     return (
@@ -83,50 +102,72 @@ export default function GestorUsuariosAdmin() {
                             <Text style={[styles.colCabecera, styles.colRol, { textAlign: 'right' }]}>Rol</Text>
                         </View>
 
-                        {usuarios.map((u) => (
-                            (busqueda && !u.nombre?.toLowerCase().includes(busqueda.toLowerCase()) ? null : (
-                                <View key={u.id} style={styles.fila}>
-                                    <View style={styles.colNombre}>
-                                        <Text style={styles.txtNormal} numberOfLines={1}>{u.nombre || '-'}</Text>
-                                    </View>
-                                    <View style={styles.colEmail}>
-                                        <Text style={styles.txtSecundario} numberOfLines={1}>{u.email}</Text>
-                                    </View>
-                                    
-                                    <View style={styles.colCurso}>
-                                        <View style={styles.badgeAzul}>
-                                            <Text style={styles.txtBadgeAzul}>{u.curso || 'Sin curso'}</Text>
-                                        </View>
-                                    </View>
-                                    
-                                    <View style={styles.colProf}>
-                                        <View style={styles.badgeProf}>
-                                            <Text style={{ color: '#64748b', fontSize: 14, fontWeight: 'bold' }}>
-                                                {u.profesor ? 'SÍ' : 'No'}
-                                            </Text>
-                                        </View>
-                                    </View>
-                                    
-                                    <View style={styles.colPedidos}>
-                                        <View style={styles.badgeGris}>
-                                            <Text style={styles.txtBadgeGris}>{u.num_pedidos || 0} Pedidos</Text>
-                                        </View>
-                                    </View>
-                                    
-                                    <View style={styles.colRol}>
-                                        <Pressable 
-                                            style={[styles.btnRol, u.administrador ? styles.btnAdmin : styles.btnUser]} 
-                                            onPress={() => toggleAdmin(u.id, u.administrador)}
-                                        >
-                                            <Text style={u.administrador ? styles.txtBtnAdmin : styles.txtBtnUser}>
-                                                {u.administrador ? 'ADMIN' : 'USER'}
-                                            </Text>
-                                        </Pressable>
+                        {usuariosPaginados.map((u) => (
+                            <View key={u.id} style={styles.fila}>
+                                <View style={styles.colNombre}>
+                                    <Text style={styles.txtNormal} numberOfLines={1}>{u.nombre || '-'}</Text>
+                                </View>
+                                <View style={styles.colEmail}>
+                                    <Text style={styles.txtSecundario} numberOfLines={1}>{u.email}</Text>
+                                </View>
+                                
+                                <View style={styles.colCurso}>
+                                    <View style={styles.badgeAzul}>
+                                        <Text style={styles.txtBadgeAzul}>{u.curso || 'Sin curso'}</Text>
                                     </View>
                                 </View>
-                        ))))}
+                                
+                                <View style={styles.colProf}>
+                                    <View style={styles.badgeProf}>
+                                        <Text style={{ color: '#64748b', fontSize: 14, fontWeight: 'bold' }}>
+                                            {u.profesor ? 'SÍ' : 'No'}
+                                        </Text>
+                                    </View>
+                                </View>
+                                
+                                <View style={styles.colPedidos}>
+                                    <View style={styles.badgeGris}>
+                                        <Text style={styles.txtBadgeGris}>{u.num_pedidos || 0} Pedidos</Text>
+                                    </View>
+                                </View>
+                                
+                                <View style={styles.colRol}>
+                                    <Pressable 
+                                        style={[styles.btnRol, u.administrador ? styles.btnAdmin : styles.btnUser]} 
+                                        onPress={() => toggleAdmin(u.id, u.administrador)}
+                                    >
+                                        <Text style={u.administrador ? styles.txtBtnAdmin : styles.txtBtnUser}>
+                                            {u.administrador ? 'ADMIN' : 'USER'}
+                                        </Text>
+                                    </Pressable>
+                                </View>
+                            </View>
+                        ))}
                     </View>
                 </View>
+                {totalPaginas > 1 && (
+                    <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingTop: 30, paddingBottom: 10, gap: 15 }}>
+                        <Pressable 
+                            style={[{ paddingVertical: 8, paddingHorizontal: 16, borderRadius: 8 }, paginaActual === 1 ? { backgroundColor: '#cbd5e1' } : { backgroundColor: '#3b82f6' }]}
+                            disabled={paginaActual === 1}
+                            onPress={() => setPaginaActual(p => p - 1)}
+                        >
+                            <Text style={{ color: 'white', fontWeight: 'bold' }}>Anterior</Text>
+                        </Pressable>
+                        
+                        <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#475569' }}>
+                            Página {paginaActual} de {totalPaginas}
+                        </Text>
+                        
+                        <Pressable 
+                            style={[{ paddingVertical: 8, paddingHorizontal: 16, borderRadius: 8 }, paginaActual === totalPaginas ? { backgroundColor: '#cbd5e1' } : { backgroundColor: '#3b82f6' }]}
+                            disabled={paginaActual === totalPaginas}
+                            onPress={() => setPaginaActual(p => p + 1)}
+                        >
+                            <Text style={{ color: 'white', fontWeight: 'bold' }}>Siguiente</Text>
+                        </Pressable>
+                    </View>
+                )}
             </ScrollView>
         </View>
     );
