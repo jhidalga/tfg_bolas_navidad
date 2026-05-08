@@ -5,6 +5,7 @@ import { useState } from 'react';
 import Footer from '../componentes/footer';
 import { supabase } from '../lib/supabase';
 import { setEsAdminGlobal } from '../lib/supabase';
+import Toast from 'react-native-toast-message';
 
 export default function Registro() {
     const router = useRouter();
@@ -24,12 +25,12 @@ export default function Registro() {
         const nombreLimpio = nombre.trim();
 
         if (!correoLimpio || !contrasenaLimpia || !cursoLimpio || !nombreLimpio) {
-            alert('Por favor, rellena todos los campos.');
+            Toast.show({ type: 'error', text1: 'Por favor, rellena todos los campos.' });
             return;
         }
 
         if (!correoLimpio.endsWith('@g.educaand.es') || correoLimpio === '@g.educaand.es') {
-            alert('Debes introducir un usuario válido delante de @g.educaand.es');
+            Toast.show({ type: 'error', text1: 'Debes introducir un usuario válido delante de @g.educaand.es' });
             return;
         }
 
@@ -50,12 +51,12 @@ export default function Registro() {
         setCargando(false);
 
         if (error) {
-            alert(error.message);
+            Toast.show({ type: 'error', text1: 'Error', text2: error.message });
         } else if (data?.user && !data?.session) {
-            alert('Te hemos enviado un código de 6 dígitos a tu correo.');
+            Toast.show({ type: 'info', text1: 'Te hemos enviado un código de 6 dígitos a tu correo.' });
             setPaso(2);
         } else {
-            alert('Registro exitoso.');
+            Toast.show({ type: 'success', text1: 'Registro exitoso.' });
             router.replace('/inicio');
         }
     }
@@ -64,7 +65,7 @@ export default function Registro() {
         const codigoLimpio = codigo.trim();
         
         if (!codigoLimpio) {
-            alert('Por favor, introduce el código.');
+            Toast.show({ type: 'error', text1: 'Por favor, introduce el código.' });
             return;
         }
 
@@ -78,7 +79,7 @@ export default function Registro() {
 
         if (error) {
             setCargando(false);
-            alert('Código incorrecto o caducado.');
+            Toast.show({ type: 'error', text1: 'Código incorrecto o caducado.' });
         } else if (data?.session) {
             try {
                 const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/usuarios/perfil`, {

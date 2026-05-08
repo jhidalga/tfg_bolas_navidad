@@ -60,6 +60,9 @@ export default function DetallesProducto() {
     const modeloSeleccionado = producto.modelos?.find((m: any) => m.id === modelo);
     const imagenAMostrar = modeloSeleccionado?.imagen;
 
+    const extraPersonalizacion = (producto.personalizable && personalizacion.trim() !== '') ? (producto.precio_personalizacion || 0) : 0;
+    const precioTotal = (producto.precio + extraPersonalizacion).toFixed(2);
+
     const agregarAlCarrito = async () => {
         try {
             setAgregando(true);
@@ -138,7 +141,7 @@ export default function DetallesProducto() {
                         <View style={styles.cabeceraInfo}>
                             <Text style={styles.nombreProducto}>{producto.nombre}</Text>
                             <View style={styles.contenedorPrecio}>
-                                <Text style={styles.precioValor}>{producto.precio} €</Text>
+                                <Text style={styles.precioValor}>{precioTotal} €</Text>
                             </View>
                         </View>
                         <View style={styles.divisor} />
@@ -177,7 +180,9 @@ export default function DetallesProducto() {
                             )}
                             {producto.personalizable && (
                                 <View style={styles.opcionContainer}>
-                                    <Text style={styles.tituloOpcion}>Personalización</Text>
+                                    <Text style={styles.tituloOpcion}>
+                                        Personalización {producto.precio_personalizacion ? `(+${producto.precio_personalizacion}€)` : ''}
+                                    </Text>
                                     <TextInput
                                         style={styles.inputPersonalizado}
                                         placeholder="Escribe el nombre o frase aquí..."

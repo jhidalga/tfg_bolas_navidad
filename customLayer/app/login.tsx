@@ -5,6 +5,7 @@ import { useState } from 'react';
 import Footer from '../componentes/footer';
 import { supabase } from '../lib/supabase';
 import { setEsAdminGlobal } from '../lib/supabase';
+import Toast from 'react-native-toast-message';
 
 export default function Login() {
     const router = useRouter();
@@ -16,12 +17,12 @@ export default function Login() {
         const correoLimpio = correo.trim();
         const contrasenaLimpia = contrasena.trim();
         if (!correoLimpio || !contrasenaLimpia) {
-            alert('Por favor, rellena todos los campos.');
+            Toast.show({ type: 'error', text1: 'Por favor, rellena todos los campos.' });
             return;
         }
 
         if (!correoLimpio.endsWith('@g.educaand.es') || correoLimpio === '@g.educaand.es') {
-            alert('Debes introducir un usuario válido delante de @g.educaand.es');
+            Toast.show({ type: 'error', text1: 'Debes introducir un usuario válido delante de @g.educaand.es' });
             return;
         }
 
@@ -34,7 +35,7 @@ export default function Login() {
 
         if (error) {
             setCargando(false);
-            alert(error.message);
+            Toast.show({ type: 'error', text1: 'Error', text2: error.message });
         } else if (data?.session) {
             try {
                 const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/usuarios/perfil`, {
