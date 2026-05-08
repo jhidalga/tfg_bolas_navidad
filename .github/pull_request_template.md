@@ -1,13 +1,13 @@
 ## 📝 Descripción
-Este Pull Request se centra en la modificacion de la pagina de productos y usuarios del administrador
+Este Pull Request se centra en la modificacion de la pagina de registro para añadir verificacion de correo electronico
 
 **1. Frontend:**
-* **Paginas de productos admin** Agregado botones y sistema paginacion
-* **Paginas de usuarios admin** Agregado botones y sistema paginacion
+* **Paginas de registro** Interfaz modificada para introducir codigo verificacion correo
 
 
 
 **2. Backend y Base de Datos:**
+* **Supabase** Activar verificacion de correo mediante clave numerica
 
 ## 🔗 Issue relacionado
 Closes #
@@ -16,13 +16,13 @@ Closes #
 - [X] ✨ Nueva funcionalidad (feature)
 - [ ] 🐛 Corrección de error (bugfix)
 - [ ] ♻️ Refactorización (mejora de código sin añadir nueva funcionalidad)
-- [X] 🎨 Mejoras de UI/UX o estilos (Tailwind / NativeWind / StyleSheet)
+- [ ] 🎨 Mejoras de UI/UX o estilos (Tailwind / NativeWind / StyleSheet)
 - [ ] 🔧 Configuración del proyecto / Dependencias
 
 ## 📱 Cambios en la Interfaz (Si aplica)
 | Antes | Después |
-| --- |![alt text](dspAdminProductosPC.png)  |
-| --- |![alt text](dspAdminUsuariosPC.png) |
+| --- |![alt text](dspRegistroPC.png)  |
+| --- | |
 | --- | |
 | --- | |
 | --- | |
