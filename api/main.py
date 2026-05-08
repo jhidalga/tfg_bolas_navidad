@@ -248,6 +248,17 @@ def cambiar_estado_pedido(pedido_id: str, nuevo_estado: EstadoPedido, authorizat
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.delete("/api/admin/pedidos/{pedido_id}")
+def eliminar_pedido_admin(pedido_id: str, authorization: Optional[str] = Header(None)):
+    token = authorization.replace("Bearer ", "") if authorization else ""
+    try:
+        cliente_seguro = create_client(SUPABASE_URL, SUPABASE_KEY, options=ClientOptions(headers={"Authorization": f"Bearer {token}"}))
+        cliente_seguro.table("detalles_pedido").delete().eq("pedido_id", pedido_id).execute()
+        respuesta = cliente_seguro.table("pedidos").delete().eq("id", pedido_id).execute()
+        return {"mensaje": "Pedido eliminado correctamente", "data": respuesta.data}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/api/admin/productos")
 def crear_producto_admin(datos: ProductoAdminCrear, authorization: Optional[str] = Header(None)):
     token = authorization.replace("Bearer ", "") if authorization else ""
