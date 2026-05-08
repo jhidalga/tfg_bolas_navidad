@@ -2,7 +2,13 @@ import { StyleSheet } from "react-native";
 
 export const styles = StyleSheet.create({
     contenedorPantalla: { flex: 1, backgroundColor: "#f8f9fa" },
-    cabeceraPrincipal: { padding: 20, paddingBottom: 10,flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+    cabeceraPrincipal: {
+        padding: 20,
+        paddingBottom: 10,
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+    },
     tituloHeader: {
         fontSize: 24,
         fontWeight: "800",
@@ -10,14 +16,42 @@ export const styles = StyleSheet.create({
         marginBottom: 15,
     },
 
+    contenedorAccionesHeader: {
+        flexDirection: "row",
+        gap: 8,
+        alignItems: "center",
+        flexWrap: "wrap",
+        justifyContent: "flex-end",
+    },
     btnExportar: {
         backgroundColor: "#10b981",
         paddingVertical: 10,
         paddingHorizontal: 15,
         borderRadius: 8,
-        alignSelf: "flex-start",
     },
     txtBtnExportar: { color: "white", fontWeight: "bold", fontSize: 13 },
+
+    btnBorrarModo: {
+        backgroundColor: "#ef4444",
+        paddingVertical: 10,
+        paddingHorizontal: 15,
+        borderRadius: 8,
+    },
+    btnCancelarModo: {
+        backgroundColor: "#e2e8f0",
+        paddingVertical: 10,
+        paddingHorizontal: 15,
+        borderRadius: 8,
+    },
+    txtBtnCancelarModo: { color: "#475569", fontWeight: "bold", fontSize: 13 },
+
+    btnConfirmarBorrar: {
+        backgroundColor: "#dc2626",
+        paddingVertical: 10,
+        paddingHorizontal: 15,
+        borderRadius: 8,
+    },
+    txtBtnConfirmarBorrar: { color: "white", fontWeight: "bold", fontSize: 13 },
 
     barraFiltros: {
         flexDirection: "column",
@@ -72,6 +106,24 @@ export const styles = StyleSheet.create({
     },
 
     tarjetaInfo: { padding: 20 },
+    tarjetaSeleccionada: {
+        backgroundColor: "#fef2f2",
+    },
+    checkOuter: {
+        width: 22,
+        height: 22,
+        borderWidth: 2,
+        borderColor: "#cbd5e1",
+        borderRadius: 6,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "white",
+    },
+    checkInner: {
+        backgroundColor: "#ef4444",
+        borderColor: "#ef4444",
+    },
+
     filaTop: {
         flexDirection: "row",
         justifyContent: "space-between",

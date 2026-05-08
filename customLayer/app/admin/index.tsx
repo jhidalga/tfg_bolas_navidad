@@ -29,6 +29,9 @@ export default function ListaPedidosAdmin() {
     const [paginaActual, setPaginaActual] = useState(1);
     const itemsPorPagina = 12;
 
+    const [modoEliminar, setModoEliminar] = useState(false);
+    const [seleccionados, setSeleccionados] = useState<string[]>([]);
+
     useEffect(() => {
         cargarPedidos();
     }, []);
@@ -84,6 +87,32 @@ export default function ListaPedidosAdmin() {
         }
     };
 
+    const seleccionarEliminar = (id: string) => {
+        setSeleccionados(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+    };
+
+    const borrarPedidosSeleccionados = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+        
+        try {
+            const promesas = seleccionados.map(id => 
+                fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/admin/pedidos/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${session.access_token}` }
+                })
+            );
+            
+            await Promise.all(promesas);
+            
+            setPedidos(prev => prev.filter(p => !seleccionados.includes(p.id)));
+            setSeleccionados([]);
+            setModoEliminar(false);
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
     const pedidosFiltrados = useMemo(() => {
         return pedidos.filter(pedido => {
             const coincideEstado = filtroEstado.length === 0 || filtroEstado.includes(pedido.estado);
@@ -109,7 +138,6 @@ export default function ListaPedidosAdmin() {
     };
 
     const exportarCSV = async () => {
-        //Cabeceras
         const cabeceras = "Producto,Modelo,Personalización (Nombre),Color,Cantidad,Cliente,Curso,Estado \n";
         
         let filas = "";
@@ -163,10 +191,34 @@ export default function ListaPedidosAdmin() {
         <View style={styles.contenedorPantalla}>
             <View style={styles.cabeceraPrincipal}>
                 <Text style={styles.tituloHeader}>Gestión de Pedidos</Text>
-                <Pressable style={styles.btnExportar} onPress={exportarCSV}>
-                    <Text style={styles.txtBtnExportar}><Entypo name="export" size={20} color="white" /> Exportar csv</Text>
-                </Pressable>
+                
+                <View style={styles.contenedorAccionesHeader}>
+                    {!modoEliminar ? (
+                        <>
+                            <Pressable style={styles.btnExportar} onPress={exportarCSV}>
+                                <Text style={styles.txtBtnExportar}><Entypo name="export" size={16} color="white" /> Exportar</Text>
+                            </Pressable>
+                            <Pressable style={styles.btnBorrarModo} onPress={() => setModoEliminar(true)}>
+                                <Text style={styles.txtBtnExportar}><FontAwesome5 name="trash" size={14} color="white" /> Borrar</Text>
+                            </Pressable>
+                        </>
+                    ) : (
+                        <>
+                            <Pressable style={styles.btnCancelarModo} onPress={() => { setModoEliminar(false); setSeleccionados([]); }}>
+                                <Text style={styles.txtBtnCancelarModo}>Cancelar</Text>
+                            </Pressable>
+                            <Pressable 
+                                style={[styles.btnConfirmarBorrar, seleccionados.length === 0 && { opacity: 0.5 }]} 
+                                disabled={seleccionados.length === 0} 
+                                onPress={borrarPedidosSeleccionados}
+                            >
+                                <Text style={styles.txtBtnConfirmarBorrar}>Eliminar ({seleccionados.length})</Text>
+                            </Pressable>
+                        </>
+                    )}
+                </View>
             </View>
+
             <View style={styles.barraFiltros}>
                 <View style={[styles.filtroWrapper, { zIndex: openEstado ? 3000 : 2000 }]}>
                     <DropDownPicker
@@ -218,14 +270,28 @@ export default function ListaPedidosAdmin() {
                         <View style={styles.gridTarjetas}>
                             {pedidosPaginados.map(pedido => {
                                 const badge = getEstilosBadge(pedido.estado);
+                                const isSelected = seleccionados.includes(pedido.id);
                                 return (
                                     <View key={pedido.id} style={styles.tarjeta}>
                                         <Pressable
-                                            style={styles.tarjetaInfo}
-                                            onPress={() => router.push(`/admin/pedidos/${pedido.id}` as any)}
+                                            style={[styles.tarjetaInfo, modoEliminar && isSelected && styles.tarjetaSeleccionada]}
+                                            onPress={() => {
+                                                if (modoEliminar) {
+                                                    seleccionarEliminar(pedido.id);
+                                                } else {
+                                                    router.push(`/admin/pedidos/${pedido.id}` as any);
+                                                }
+                                            }}
                                         >
                                             <View style={styles.filaTop}>
-                                                <Text style={styles.idPedido}>#{pedido.id.slice(0, 8).toUpperCase()}</Text>
+                                                <View style={{flexDirection: 'row', alignItems: 'center', gap: 10}}>
+                                                    {modoEliminar && (
+                                                        <View style={[styles.checkOuter, isSelected && styles.checkInner]}>
+                                                            {isSelected && <Text style={{color: 'white', fontWeight: 'bold', fontSize: 12}}>✓</Text>}
+                                                        </View>
+                                                    )}
+                                                    <Text style={styles.idPedido}>#{pedido.id.slice(0, 8).toUpperCase()}</Text>
+                                                </View>
                                                 <View style={[styles.badgeEstado, badge.bg]}>
                                                     <Text style={[styles.txtBadgeEstado, badge.txt]}>{pedido.estado}</Text>
                                                 </View>
