@@ -6,7 +6,7 @@ import DropDownPicker from 'react-native-dropdown-picker';
 import { styles } from '../../styles/adminPedidos/adminPedidos.styles';
 import FontAwesome5 from '@expo/vector-icons/build/FontAwesome5';
 import { Entypo, FontAwesome } from '@expo/vector-icons';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import Toast from 'react-native-toast-message';
 
@@ -138,7 +138,7 @@ export default function ListaPedidosAdmin() {
         }
     };
 
-    const exportarCSV = async () => {
+const exportarCSV = async () => {
         const cabeceras = "Producto,Modelo,Personalización (Nombre),Color,Cantidad,Cliente,Curso,Estado \n";
         
         let filas = "";
@@ -171,13 +171,26 @@ export default function ListaPedidosAdmin() {
                 link.click();
                 document.body.removeChild(link);
             } else {
-                const dir = (FileSystem as any).documentDirectory || '';
+                // Forzamos "any" para evitar el error de TypeScript con los tipos locales de Expo
+                const FS = FileSystem as any;
+                const Share = Sharing as any;
+                
+                const dir = FS.documentDirectory || '';
                 const uri = dir + 'hoja_fabricacion.csv';
                 
-                await (FileSystem as any).writeAsStringAsync(uri, contenidoCSV);
+                // Aseguramos codificación UTF-8
+                await FS.writeAsStringAsync(uri, contenidoCSV, {
+                    encoding: FS.EncodingType ? FS.EncodingType.UTF8 : 'utf8'
+                });
                 
-                if (await (Sharing as any).isAvailableAsync()) {
-                    await (Sharing as any).shareAsync(uri);
+                const isAvailable = await Share.isAvailableAsync();
+                if (isAvailable) {
+                    // Los metadatos son la clave para que el móvil reconozca que es un archivo y te deje compartirlo/guardarlo
+                    await Share.shareAsync(uri, {
+                        mimeType: 'text/csv',
+                        dialogTitle: 'Exportar pedidos CSV',
+                        UTI: 'public.comma-separated-values-text'
+                    });
                 } else {
                     Toast.show({ type: 'error', text1: 'No se puede compartir en este dispositivo' });
                 }
@@ -185,6 +198,9 @@ export default function ListaPedidosAdmin() {
         } catch (error) {
             console.error("Error al exportar:", error);
             Toast.show({ type: 'error', text1: 'Hubo un error al exportar los datos.' });
+            if (Platform.OS !== 'web') {
+                alert("Hubo un error al exportar los datos.");
+            }
         }
     };
 

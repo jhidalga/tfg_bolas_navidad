@@ -3,26 +3,26 @@ import { StyleSheet } from "react-native";
 export const styles = StyleSheet.create({
     contenedorPantalla: { flex: 1, backgroundColor: "#f8f9fa" },
     cabeceraPrincipal: {
-        padding: 20,
-        paddingBottom: 10,
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-    },
-    tituloHeader: {
-        fontSize: 24,
-        fontWeight: "800",
-        color: "#1e293b",
-        marginBottom: 15,
-    },
-
-    contenedorAccionesHeader: {
-        flexDirection: "row",
-        gap: 8,
-        alignItems: "center",
-        flexWrap: "wrap",
-        justifyContent: "flex-end",
-    },
+            padding: 20,
+            paddingBottom: 10,
+            flexDirection: "column",
+            justifyContent: "flex-start",
+            alignItems: "flex-start",
+            gap: 15,
+        },
+        tituloHeader: {
+            fontSize: 24,
+            fontWeight: "800",
+            color: "#1e293b",
+        },
+        contenedorAccionesHeader: {
+            flexDirection: "row",
+            gap: 8,
+            alignItems: "center",
+            flexWrap: "wrap",
+            justifyContent: "flex-start",
+            width: "100%",
+        },
     btnExportar: {
         backgroundColor: "#10b981",
         paddingVertical: 10,
