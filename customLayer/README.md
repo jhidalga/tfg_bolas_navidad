@@ -1,50 +1,83 @@
-# Welcome to your Expo app 👋
+#  Custom Layers - Documentación del Proyecto
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Bienvenido a la documentación técnica de **Custom Layers**, una plataforma integral para la gestión e impresión 3D. El sistema utiliza un modelo de despliegue unificado en la web y un despliegue nativo para dispositivos móviles.
 
-## Get started
+---
 
-1. Install dependencies
+##  Variables de Entorno (Desarrollo Local)
 
-   ```bash
-   npm install
-   ```
+Para el desarrollo local, es necesario configurar los siguientes archivos .env:
 
-2. Start the app
+### 1. Backend (api/.env)
+Configura la conexión de la API de FastAPI con Supabase:
+SUPABASE_URL=https://tu-proyecto.supabase.co
+SUPABASE_KEY=tu_clave_de_servicio_o_anonima
 
-   ```bash
-   npx expo start
-   ```
+### 2. Frontend (customLayer/.env)
+Configura la App para que apunte a tu servidor local (usa tu IP local, no localhost):
+EXPO_PUBLIC_API_URL=http://TU_IP_LOCAL:8000
+EXPO_PUBLIC_SUPABASE_URL=https://tu-proyecto.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY=tu_clave_anonima_jwt
 
-In the output, you'll find options to open the app in a
+> **Nota:** Estas variables locales son exclusivas para desarrollo y no se suben al repositorio.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+---
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+##  Instalación y Ejecución Local
 
-## Get a fresh project
+### Paso 1: Backend (API)
+cd api
+pip install -r requirements.txt
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
-When you're ready, run:
+### Paso 2: Frontend (App/Web)
+cd customLayer
+npm install
+npx expo start
 
-```bash
-npm run reset-project
-```
+---
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+##  Despliegue a Producción (Vercel + EAS)
 
-## Learn more
+El despliegue de producción se gestiona de forma unificada para la web y la API, y de forma nativa para móviles.
 
-To learn more about developing your project with Expo, look at the following resources:
+### 1. Despliegue Unificado en Vercel (API + Web)
+Vercel utiliza el archivo `vercel.json` de la raíz para servir la API (FastAPI) y la versión Web de la App simultáneamente.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+1. Sube tu código a GitHub.
+2. En la web de Vercel (vercel.com), importa tu repositorio único.
+3. **Configuración del Proyecto:**
+   - **Build Command:** `cd customLayer && npm install && npx expo export` (para generar la versión web).
+   - **Output Directory:** `customLayer/dist` (o la ruta donde Expo genere el build).
+4. **Environment Variables (En la web de Vercel):**
+   Añade TODAS las claves necesarias en el mismo proyecto:
+   - `SUPABASE_URL`
+   - `SUPABASE_KEY`
+   - `EXPO_PUBLIC_SUPABASE_URL`
+   - `EXPO_PUBLIC_SUPABASE_ANON_KEY`
+5. Haz clic en **Deploy**. Ahora tu API y tu Web viven en la misma URL.
 
-## Join the community
+### 2. Despliegue de la Aplicación Móvil (EAS)
+Para generar el archivo `.apk` de Android, usamos Expo Application Services. Las variables de producción se inyectan en el archivo `eas.json`.
 
-Join our community of developers creating universal apps.
+1. Instala EAS CLI y loguéate:
+   npm install -g eas-cli
+   eas login
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+2. **Configuración en eas.json:**
+   Añade el bloque de entorno en el perfil de construcción (ej. preview):
+   "build": {
+     "preview": {
+       "android": { "buildType": "apk" },
+       "env": {
+         "EXPO_PUBLIC_API_URL": "https://tu-proyecto-unificado.vercel.app",
+         "EXPO_PUBLIC_SUPABASE_URL": "https://tu-proyecto.supabase.co",
+         "EXPO_PUBLIC_SUPABASE_ANON_KEY": "tu_clave_anonima_jwt"
+       }
+     }
+   }
+
+3. Ejecuta la compilación desde la carpeta `customLayer/`:
+   eas build -p android --profile preview
+
+4. En la pagina de EXPO con tu cuenta deberia de aparecer la aplicacion compilando, desde hay la puedes descargar cuando termine.
