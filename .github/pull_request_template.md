@@ -20,8 +20,8 @@ Closes #
 
 ## 📱 Cambios en la Interfaz (Si aplica)
 | Antes | Después |
-| ![alt text](adminProdNuevoPCAnt.png) | ![alt text](adminProdNuevoPCDsp.png) |
-| --- | |
+| ![alt text](PedidosUsuarioAntPC.png) | ![alt text](PedidosUsuarioDspPC.png) |
+|![alt text](CarritoAntPC.png) | ![alt text](CarritoDspPC.png) |
 | --- | |
 | --- | |
 | --- | |
