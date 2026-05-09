@@ -2,37 +2,74 @@ import { StyleSheet } from "react-native";
 
 export const styles = StyleSheet.create({
     contenedorPantalla: { flex: 1, backgroundColor: "#f8f9fa" },
-    cabeceraPrincipal: { padding: 20, paddingBottom: 10 },
-    tituloHeader: {
-        fontSize: 24,
-        fontWeight: "800",
-        color: "#1e293b",
-        marginBottom: 15,
+    cabeceraPrincipal: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        padding: 20,
+        paddingBottom: 15,
+        alignItems: "center",
+        maxWidth: 800,
+        width: "100%",
+        alignSelf: "center",
     },
+    tituloHeader: { fontSize: 28, fontWeight: "800", color: "#1e293b" },
 
+    contenedorAccionesHeader: {
+        flexDirection: "row",
+        gap: 10,
+        alignItems: "center",
+    },
     btnExportar: {
         backgroundColor: "#10b981",
         paddingVertical: 10,
-        paddingHorizontal: 15,
+        paddingHorizontal: 20,
         borderRadius: 8,
-        alignSelf: "flex-start",
+        cursor: "pointer" as any,
     },
-    txtBtnExportar: { color: "white", fontWeight: "bold", fontSize: 13 },
+    txtBtnExportar: { color: "white", fontWeight: "bold", fontSize: 14 },
+
+    btnBorrarModo: {
+        backgroundColor: "#ef4444",
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        borderRadius: 8,
+        cursor: "pointer" as any,
+    },
+    btnCancelarModo: {
+        backgroundColor: "#e2e8f0",
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        borderRadius: 8,
+        cursor: "pointer" as any,
+    },
+    txtBtnCancelarModo: { color: "#475569", fontWeight: "bold", fontSize: 14 },
+    btnConfirmarBorrar: {
+        backgroundColor: "#dc2626",
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        borderRadius: 8,
+        cursor: "pointer" as any,
+    },
+    txtBtnConfirmarBorrar: { color: "white", fontWeight: "bold", fontSize: 14 },
 
     barraFiltros: {
-        flexDirection: "column",
-        gap: 10,
+        flexDirection: "row",
+        gap: 15,
         paddingHorizontal: 20,
         marginBottom: 20,
+        maxWidth: 800,
+        width: "100%",
+        alignSelf: "center",
         zIndex: 5000,
     },
-    filtroWrapper: { width: "100%" },
+    filtroWrapper: { flex: 1, maxWidth: 300 },
     dropdown: {
         minHeight: 45,
         borderRadius: 10,
         borderWidth: 1,
         borderColor: "#e2e8f0",
         backgroundColor: "white",
+        cursor: "pointer" as any,
     },
     textoDropdown: { fontSize: 14, color: "#475569" },
     badgeDropdown: {
@@ -49,40 +86,73 @@ export const styles = StyleSheet.create({
         backgroundColor: "white",
     },
 
-    scrollContent: { padding: 20, paddingTop: 0 },
+    scrollContent: {
+        padding: 20,
+        paddingTop: 0,
+        maxWidth: 800,
+        width: "100%",
+        alignSelf: "center",
+    },
     estadoVacio: {
-        padding: 30,
+        padding: 50,
         alignItems: "center",
         backgroundColor: "white",
         borderRadius: 12,
         borderWidth: 1,
         borderColor: "#e2e8f0",
     },
-    txtEstadoVacio: { fontSize: 14, color: "#64748b", textAlign: "center" },
+    txtEstadoVacio: { fontSize: 16, color: "#64748b" },
 
-    gridTarjetas: { flexDirection: "column", gap: 15 },
+    gridTarjetas: { flexDirection: "row", flexWrap: "wrap", gap: 20 },
     tarjeta: {
-        width: "100%",
+        minWidth: 300,
+        flex: 1,
         backgroundColor: "white",
         borderRadius: 16,
         borderWidth: 1,
         borderColor: "#e2e8f0",
         overflow: "hidden",
-        elevation: 2,
+        boxShadow: "0 4px 6px -1px rgba(0,0,0,0.05)",
     },
 
-    tarjetaInfo: { padding: 20 },
+    tarjetaInfo: {
+        padding: 20,
+        cursor: "pointer" as any,
+        transition: "background-color 0.2s",
+        "&:hover": { backgroundColor: "#f8fafc" },
+    } as any,
+    
+    tarjetaSeleccionada: {
+        backgroundColor: "#fef2f2",
+        "&:hover": { backgroundColor: "#fee2e2" },
+    } as any,
+
+    checkOuter: {
+        width: 22,
+        height: 22,
+        borderWidth: 2,
+        borderColor: "#cbd5e1",
+        borderRadius: 6,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "white",
+    },
+    checkInner: {
+        backgroundColor: "#ef4444",
+        borderColor: "#ef4444",
+    },
+
     filaTop: {
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
         marginBottom: 15,
     },
-    idPedido: { fontSize: 16, fontWeight: "900", color: "#0f172a" },
+    idPedido: { fontSize: 18, fontWeight: "900", color: "#0f172a" },
 
     badgeEstado: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
     txtBadgeEstado: {
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: "bold",
         textTransform: "uppercase",
     },
@@ -97,7 +167,7 @@ export const styles = StyleSheet.create({
 
     datosCliente: { marginBottom: 15, gap: 5 },
     txtDato: { fontSize: 14, color: "#475569", fontWeight: "500" },
-    precioTotal: { fontSize: 20, fontWeight: "800", color: "#3b82f6" },
+    precioTotal: { fontSize: 22, fontWeight: "800", color: "#3b82f6" },
 
     tarjetaAcciones: {
         flexDirection: "row",
@@ -109,13 +179,15 @@ export const styles = StyleSheet.create({
         borderTopColor: "#e2e8f0",
     },
     btnCambiarEstado: {
-        width: "48%",
-        paddingVertical: 10,
+        flex: 1,
+        minWidth: "45%",
+        paddingVertical: 8,
         borderRadius: 6,
         backgroundColor: "white",
         borderWidth: 1,
         borderColor: "#cbd5e1",
         alignItems: "center",
+        cursor: "pointer" as any,
     },
     btnEstadoActual: { backgroundColor: "#f1f5f9", borderColor: "#94a3b8" },
     txtCambiarEstado: { fontSize: 12, color: "#64748b", fontWeight: "600" },
