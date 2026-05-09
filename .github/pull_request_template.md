@@ -1,8 +1,8 @@
 ## 📝 Descripción
-Este Pull Request se centra en arreglar un error con la variable que guarda si es administrador o no incluyendola en la memoria de la aplicacion
+Este Pull Request se centra en arreglar un error en el diseño de la pagina para crear nuevos productos del administrador
 
 **1. Frontend:**
-* **No hay cambios en el frontend**
+* **Productos nuevo** campo Permite texto personalizado ajustar ancho
 
 
 **2. Backend y Base de Datos:**
@@ -13,14 +13,14 @@ Closes #
 
 ## 🚀 Tipo de cambio
 - [ ] ✨ Nueva funcionalidad (feature)
-- [X] 🐛 Corrección de error (bugfix)
+- [ ] 🐛 Corrección de error (bugfix)
 - [ ] ♻️ Refactorización (mejora de código sin añadir nueva funcionalidad)
-- [ ] 🎨 Mejoras de UI/UX o estilos (Tailwind / NativeWind / StyleSheet)
+- [X] 🎨 Mejoras de UI/UX o estilos (Tailwind / NativeWind / StyleSheet)
 - [ ] 🔧 Configuración del proyecto / Dependencias
 
 ## 📱 Cambios en la Interfaz (Si aplica)
 | Antes | Después |
-| --- | |
+| ![alt text](adminProdNuevoPCAnt.png) | ![alt text](adminProdNuevoPCDsp.png) |
 | --- | |
 | --- | |
 | --- | |
