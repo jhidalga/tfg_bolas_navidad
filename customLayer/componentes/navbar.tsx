@@ -6,6 +6,7 @@ import { styles } from '../styles/navbar/navbar.styles';
 import { FontAwesome, FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 let cachedEsAdmin: boolean | null = null;
 
@@ -67,7 +68,20 @@ export default function Navbar() {
     
     useFocusEffect(
         useCallback(() => {
-            setEsAdmin(esAdminGlobal);
+            const recuperarRol = async () => {
+                try {
+                    const rolGuardado = await AsyncStorage.getItem('esAdminPersistente');
+                    if (rolGuardado !== null) {
+                        setEsAdmin(rolGuardado === 'true');
+                    } else {
+                        comprobarRolAPI();
+                    }
+                } catch (e) {
+                    console.error("Error leyendo AsyncStorage");
+                }
+            };
+            
+            recuperarRol();
         }, [])
     );
 
@@ -77,10 +91,10 @@ export default function Navbar() {
      */
     async function cerrarSesion() {
         cachedEsAdmin = null;
+        await AsyncStorage.removeItem('esAdminPersistente'); 
         await supabase.auth.signOut();
         router.replace('/login');
     }
-
     return (
         <View style={styles.contenedor}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>

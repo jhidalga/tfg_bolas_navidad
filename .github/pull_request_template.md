@@ -1,5 +1,5 @@
 ## 📝 Descripción
-Este Pull Request se centra en la modificacion del codigo para agregar comentarios compatibles con TypeDocs y la creacion de la carpeta documentacion
+Este Pull Request se centra en arreglar un error con la variable que guarda si es administrador o no incluyendola en la memoria de la aplicacion
 
 **1. Frontend:**
 * **No hay cambios en el frontend**
@@ -13,10 +13,10 @@ Closes #
 
 ## 🚀 Tipo de cambio
 - [ ] ✨ Nueva funcionalidad (feature)
-- [ ] 🐛 Corrección de error (bugfix)
+- [X] 🐛 Corrección de error (bugfix)
 - [ ] ♻️ Refactorización (mejora de código sin añadir nueva funcionalidad)
 - [ ] 🎨 Mejoras de UI/UX o estilos (Tailwind / NativeWind / StyleSheet)
-- [X] 🔧 Configuración del proyecto / Dependencias
+- [ ] 🔧 Configuración del proyecto / Dependencias
 
 ## 📱 Cambios en la Interfaz (Si aplica)
 | Antes | Después |
@@ -37,4 +37,3 @@ Closes #
 - [x] Mi código sigue la arquitectura y el estilo definido en el proyecto.
 
 ## 💡 Notas adicionales para el revisor / Tutor
-* **No hay cambios en interfaz o backend solo he agregado la documentacion**

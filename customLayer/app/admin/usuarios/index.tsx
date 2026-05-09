@@ -125,7 +125,7 @@ export default function GestorUsuariosAdmin() {
                             <Text style={[styles.colCabecera, styles.colCurso, { textAlign: 'center' }]}>Curso/Departamento</Text>
                             <Text style={[styles.colCabecera, styles.colProf, { textAlign: 'center' }]}>Profesor</Text>
                             <Text style={[styles.colCabecera, styles.colPedidos, { textAlign: 'center' }]}>Pedidos</Text>
-                            <Text style={[styles.colCabecera, styles.colRol, { textAlign: 'right' }]}>Rol</Text>
+                            <Text style={[styles.colCabecera, styles.colRol, { textAlign: 'center' }]}>Rol</Text>
                         </View>
 
                         {usuariosPaginados.map((u) => (
