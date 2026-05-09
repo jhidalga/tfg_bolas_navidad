@@ -5,6 +5,12 @@ import { supabase } from '../lib/supabase';
 import Toast from 'react-native-toast-message';
 import { styles } from '../styles/perfil/perfil.styles.web';
 
+/**
+ * Pantalla de visualización y edición del Perfil de Usuario.
+ * Permite al usuario logueado consultar sus datos personales (nombre, email, curso, rol)
+ * y modificar aquellos que sean editables mediante peticiones a la API.
+ * * @returns Componente principal que renderiza la vista del perfil.
+ */
 export default function MiPerfil() {
     const [cargando, setCargando] = useState(true);
     const [editando, setEditando] = useState(false);
@@ -18,6 +24,11 @@ export default function MiPerfil() {
         cargarPerfil();
     }, []);
 
+    /**
+     * Obtiene los datos del perfil del usuario actual desde la API.
+     * Requiere que el usuario tenga una sesión activa en Supabase.
+     * Actualiza el estado local con la información obtenida para mostrarla en la interfaz.
+     */
     const cargarPerfil = async () => {
         try {
             const { data: { session } } = await supabase.auth.getSession();
@@ -39,6 +50,12 @@ export default function MiPerfil() {
         }
     };
 
+    /**
+     * Envía los datos actualizados del formulario (nombre y curso) a la API 
+     * para modificar el perfil del usuario.
+     * Realiza validaciones básicas antes del envío y muestra notificaciones 
+     * (Toast) según el resultado de la operación.
+     */
     const guardarCambios = async () => {
         if (!form.nombre.trim() || !form.curso.trim()) {
             Toast.show({ type: 'error', text1: 'El nombre y curso no pueden estar vacíos' });
@@ -74,6 +91,10 @@ export default function MiPerfil() {
         }
     };
 
+    /**
+     * Cancela el modo de edición y restaura los valores del formulario 
+     * a los datos originales del usuario obtenidos previamente.
+     */
     const cancelarEdicion = () => {
         setForm({ nombre: usuario.nombre || '', curso: usuario.curso || '' });
         setEditando(false);
@@ -130,8 +151,6 @@ export default function MiPerfil() {
                             <Text style={styles.label}>¿Es profesor?</Text>
                             <Text style={styles.valorBloqueado}>{usuario?.profesor ? "Sí" : "No"}</Text>
                         </View>
-
-
 
                         <View style={styles.contenedorBotones}>
                             {!editando ? (

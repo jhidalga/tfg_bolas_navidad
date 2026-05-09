@@ -11,6 +11,14 @@ import { Platform } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
 
+/**
+ * Pantalla principal (Catálogo de productos).
+ * Muestra la lista paginada de productos disponibles, permite la búsqueda y 
+ * filtrado interactivo (por nombre, personalización y precio). También gestiona
+ * la visualización de avisos globales y, si el usuario es administrador, permite
+ * editar dicho aviso.
+ * * * @returns Componente que renderiza el layout principal con Navbar, Grid de productos, Filtros y Footer.
+ */
 export default function Inicio() {
     const [productos, setProductos] = useState<any[]>([]);
     const [cargando, setCargando] = useState(true);
@@ -36,6 +44,12 @@ export default function Inicio() {
     }, [nombre, personalizable, filtroPrecioMin, filtroPrecioMax]);
 
     useEffect(() => {
+        /**
+         * Obtiene la configuración del perfil (para verificar si es administrador),
+         * el mensaje global activo y la lista completa de productos desde la API.
+         * Calcula dinámicamente el precio mínimo y máximo real de los productos 
+         * para inicializar los límites de los filtros.
+         */
         const fetchConfigYProductos = async () => {
             try {
                 const { data: { session } } = await supabase.auth.getSession();
@@ -81,12 +95,17 @@ export default function Inicio() {
         };
         fetchConfigYProductos();
     }, []);
+    
     useFocusEffect(
         useCallback(() => {
             setEsAdmin(esAdminGlobal);
         }, [])
     );
 
+    /**
+     * Guarda el nuevo mensaje/aviso global en la base de datos a través de la API.
+     * Solo disponible si el usuario actual es administrador.
+     */
     const guardarMensaje = async () => {
         try {
             const { data: { session } } = await supabase.auth.getSession();
@@ -107,6 +126,11 @@ export default function Inicio() {
         }
     };
 
+    /**
+     * Filtra la lista de productos en tiempo real (memorizado con useMemo) 
+     * evaluando las condiciones de búsqueda por nombre, estado de personalización 
+     * y rango de precio seleccionado.
+     */
     const productosFiltrados = useMemo(() => {
         const arraySeguro = Array.isArray(productos) ? productos : [];
         return arraySeguro.filter(p => {
@@ -128,6 +152,11 @@ export default function Inicio() {
         paginaActual * itemsPorPagina
     );
 
+    /**
+     * Renderiza el componente de Filtros pasándole el estado actual y las 
+     * funciones de actualización correspondientes.
+     * * @returns Componente de Filtros
+     */
     const renderFiltros = () => (
         <Filtros
             nombre={nombre}

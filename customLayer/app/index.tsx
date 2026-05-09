@@ -3,6 +3,13 @@ import { styles } from "../styles/landing/Index.styles";
 import { useRouter } from "expo-router";
 import Footer from "../componentes/footer";
 
+/**
+ * Pantalla de inicio de bienvenida (Landing Page).
+ * Es la primera vista que encuentra un usuario al abrir la aplicación sin estar autenticado.
+ * Muestra el logotipo, el nombre de la marca, imágenes promocionales y 
+ * proporciona accesos directos para ir a las pantallas de Inicio de Sesión o Registro.
+ * * @returns Componente visual que renderiza la portada de la aplicación.
+ */
 export default function Index() {
   const router = useRouter();
   

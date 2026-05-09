@@ -4,10 +4,25 @@ import { styles } from '../styles/grid/grid.styles';
 import Toast from 'react-native-toast-message';
 import { useRouter } from 'expo-router';
 
-interface GridProps {
+/**
+ * Propiedades para el componente Grid.
+ */
+export interface GridProps {
+    /** * Lista de productos a renderizar en la cuadrícula. 
+     * Cada producto debe contener información básica como id, nombre, precio, 
+     * y opcionalmente modelos y colores disponibles.
+     */
     productos: any[];
 }
 
+/**
+ * Componente visual que organiza y muestra una lista de productos en formato de cuadrícula (Grid).
+ * Renderiza múltiples componentes `CardProducto` y gestiona la navegación hacia
+ * la vista de detalles al pulsar sobre uno de ellos.
+ * * Si un producto está deshabilitado, bloquea la navegación y muestra un mensaje emergente (Toast).
+ * * @param props - Propiedades del componente definidas en {@link GridProps}
+ * @returns Componente View contenedor de la cuadrícula de productos.
+ */
 export default function Grid({ productos }: GridProps) {
     const router = useRouter();
 

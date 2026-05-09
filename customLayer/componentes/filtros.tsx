@@ -2,19 +2,37 @@ import React from 'react';
 import { View, Text, TextInput, Pressable } from 'react-native';
 import { styles } from '../styles/filtros/filtros.styles';
 
-interface FiltrosProps {
+/**
+ * Propiedades para el componente Filtros.
+ */
+export interface FiltrosProps {
+    /** Valor actual del filtro de búsqueda por nombre */
     nombre: string;
+    /** Función para actualizar el estado del nombre a buscar */
     setNombre: (t: string) => void;
+    /** Estado del checkbox para filtrar solo productos personalizables */
     personalizable: boolean;
+    /** Función para alternar el estado del filtro de personalización */
     setPersonalizable: (v: boolean) => void;
+    /** Valor actual del filtro de precio mínimo (en texto) */
     precioMin: string;
+    /** Función para actualizar el estado del precio mínimo */
     setPrecioMin: (v: string) => void;
+    /** Valor actual del filtro de precio máximo (en texto) */
     precioMax: string;
+    /** Función para actualizar el estado del precio máximo */
     setPrecioMax: (v: string) => void;
-    
+    /** Rango absoluto de precios (mínimo y máximo) disponibles en los productos actuales. Útil para placeholders. */
     minMax: { min: number; max: number };
 }
 
+/**
+ * Componente visual que renderiza un panel de filtros laterales o superiores.
+ * Permite al usuario afinar la búsqueda de productos mediante nombre, 
+ * posibilidad de personalización y rango de precios.
+ * * @param props - Propiedades del componente definidas en {@link FiltrosProps}
+ * @returns Componente View que contiene los inputs y controles del filtro.
+ */
 export default function Filtros({ 
     nombre, setNombre, personalizable, setPersonalizable, 
     precioMin, setPrecioMin, precioMax, setPrecioMax, minMax 

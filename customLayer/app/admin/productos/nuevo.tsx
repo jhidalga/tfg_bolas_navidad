@@ -7,6 +7,13 @@ import { decode } from 'base64-arraybuffer';
 import { styles } from '../../../styles/adminNuevoProducto/adminNuevoProducto.styles';
 import Toast from 'react-native-toast-message';
 
+/**
+ * Pantalla de administración para la creación de un nuevo producto.
+ * Gestiona un formulario que recopila los datos generales, la configuración 
+ * de personalización, las variantes de color y la subida de una imagen inicial 
+ * que actuará como modelo base del producto.
+ * * @returns Componente que renderiza el formulario de creación de productos.
+ */
 export default function NuevoProductoAdmin() {
     const router = useRouter();
     const [subiendo, setSubiendo] = useState(false);
@@ -21,6 +28,12 @@ export default function NuevoProductoAdmin() {
     });
     const [coloresTexto, setColoresTexto] = useState("");
 
+    /**
+     * Muestra una notificación emergente (Toast) y opcionalmente retrocede a la pantalla anterior.
+     * * @param titulo - Título de la notificación.
+     * @param mensaje - Cuerpo del mensaje descriptivo.
+     * @param irAtras - Si es `true`, ejecuta `router.back()` al ocultarse la alerta.
+     */
     const mostrarAlerta = (titulo: string, mensaje: string, irAtras = false) => {
         Toast.show({
             type: titulo.toLowerCase().includes('error') ? 'error' : 'success',
@@ -32,6 +45,11 @@ export default function NuevoProductoAdmin() {
         });
     };
 
+    /**
+     * Abre la galería del dispositivo para seleccionar una imagen, la comprime, 
+     * la convierte de Base64 a ArrayBuffer y la sube al bucket 'fotos_productos' en Supabase.
+     * Si tiene éxito, guarda la URL pública generada en el estado del formulario.
+     */
     const seleccionarYSubirImagen = async () => {
         const result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.Images, allowsEditing: true, base64: true, quality: 0.8,
@@ -55,6 +73,11 @@ export default function NuevoProductoAdmin() {
         }
     };
 
+    /**
+     * Valida los datos introducidos en el formulario y envía la petición a la API 
+     * para crear el producto. Si el producto se crea exitosamente, realiza una segunda 
+     * petición para crear automáticamente su "Modelo Base" asociando la imagen subida.
+     */
     const crearProducto = async () => {
         if (!form.nombre || !form.precio || !form.imagen) {
             mostrarAlerta("Atención", "Nombre, precio e imagen son obligatorios.");

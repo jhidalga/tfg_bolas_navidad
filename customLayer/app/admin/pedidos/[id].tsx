@@ -4,6 +4,13 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { styles } from '../../../styles/adminDetallePedido/adminDetallePedido.styles';
 
+/**
+ * Pantalla de administración para ver los detalles de un pedido específico.
+ * Recupera la información completa de la transacción a través de la API usando 
+ * el identificador (ID) de la URL. Muestra el importe total y una lista con 
+ * el desglose de los productos comprados (modelo, color, cantidad, precio unitario y personalización).
+ * * @returns Componente que renderiza la vista detallada del pedido para el administrador.
+ */
 export default function DetallesPedidoAdmin() {
     const { id } = useLocalSearchParams(); 
     const router = useRouter();
@@ -11,6 +18,11 @@ export default function DetallesPedidoAdmin() {
     const [cargando, setCargando] = useState(true);
 
     useEffect(() => {
+        /**
+         * Realiza una petición a la API para obtener los datos asociados al pedido actual.
+         * Requiere que el usuario administrador tenga una sesión activa en Supabase.
+         * Si la respuesta es exitosa, guarda los datos (información del pedido y productos) en el estado local.
+         */
         const cargarDetalle = async () => {
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) return;
