@@ -1,8 +1,9 @@
 ## 📝 Descripción
-Este Pull Request se centra en arreglar un error en el diseño de la pagina para crear nuevos productos del administrador
+Este Pull Request se centra en agregar en las pantallas de editar productos y en detalles que se muestre el atributo descripcion de los productos que antes no se usaba en ninguna pantalla
 
 **1. Frontend:**
-* **Productos nuevo** campo Permite texto personalizado ajustar ancho
+* **Editar producto** Agregar campo para la descripcion
+* **Detalles** Agregar la descripcion del producto
 
 
 **2. Backend y Base de Datos:**
@@ -12,7 +13,7 @@ Este Pull Request se centra en arreglar un error en el diseño de la pagina para
 Closes #
 
 ## 🚀 Tipo de cambio
-- [ ] ✨ Nueva funcionalidad (feature)
+- [X] ✨ Nueva funcionalidad (feature)
 - [ ] 🐛 Corrección de error (bugfix)
 - [ ] ♻️ Refactorización (mejora de código sin añadir nueva funcionalidad)
 - [X] 🎨 Mejoras de UI/UX o estilos (Tailwind / NativeWind / StyleSheet)
@@ -20,8 +21,8 @@ Closes #
 
 ## 📱 Cambios en la Interfaz (Si aplica)
 | Antes | Después |
-| ![alt text](adminProdNuevoPCAnt.png) | ![alt text](adminProdNuevoPCDsp.png) |
-| --- | |
+| ![alt text](DetallesAntPC.png)  | ![alt text](DetallesdspPC.png) |
+| ![alt text](EditarProdAntPC.png) |![alt text](EditarProdDspPC.png)  |
 | --- | |
 | --- | |
 | --- | |
