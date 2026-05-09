@@ -1,0 +1,83 @@
+<!DOCTYPE html><html class="default" lang="en" data-base="./"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>customlayer</title><meta name="description" content="Documentation for customlayer"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="assets/style.css"/><link rel="stylesheet" href="assets/highlight.css"/><script defer src="assets/main.js"></script><script async src="assets/icons.js" id="tsd-icons-script"></script><script async src="assets/search.js" id="tsd-search-script"></script><script async src="assets/navigation.js" id="tsd-nav-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar"><div class="tsd-toolbar-contents container"><a href="index.html" class="title">customlayer</a><div id="tsd-toolbar-links"><a href="../index.html">⬅ Volver al Menú Principal</a></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/><ul role="listbox" id="tsd-search-results"></ul><div id="tsd-search-status" aria-live="polite" aria-atomic="true"><div>Preparing search index...</div></div></dialog><a href="#" class="tsd-widget menu" id="tsd-toolbar-menu-trigger" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-menu"></use></svg></a></div></header><div class="container container-main"><div class="col-content"><div class="tsd-page-title"><h1>customlayer</h1></div><div class="tsd-panel tsd-typography"><h1 id="custom-layers-documentación-del-proyecto" class="tsd-anchor-link">Custom Layers - Documentación del Proyecto<a href="#custom-layers-documentación-del-proyecto" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h1>
+<p>Bienvenido a la documentación técnica de <strong>Custom Layers</strong>, una plataforma integral para la gestión e impresión 3D. El sistema utiliza un modelo de despliegue unificado en la web y un despliegue nativo para dispositivos móviles.</p>
+<hr>
+<h2 id="variables-de-entorno-desarrollo-local" class="tsd-anchor-link">Variables de Entorno (Desarrollo Local)<a href="#variables-de-entorno-desarrollo-local" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Para el desarrollo local, es necesario configurar los siguientes archivos .env:</p>
+<h3 id="1-backend-apienv" class="tsd-anchor-link">1. Backend (api/.env)<a href="#1-backend-apienv" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Configura la conexión de la API de FastAPI con Supabase:
+SUPABASE_URL=<a href="https://tu-proyecto.supabase.co">https://tu-proyecto.supabase.co</a>
+SUPABASE_KEY=tu_clave_de_servicio_o_anonima</p>
+<h3 id="2-frontend-customlayerenv" class="tsd-anchor-link">2. Frontend (customLayer/.env)<a href="#2-frontend-customlayerenv" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Configura la App para que apunte a tu servidor local (usa tu IP local, no localhost):
+EXPO_PUBLIC_API_URL=http://TU_IP_LOCAL:8000
+EXPO_PUBLIC_SUPABASE_URL=<a href="https://tu-proyecto.supabase.co">https://tu-proyecto.supabase.co</a>
+EXPO_PUBLIC_SUPABASE_ANON_KEY=tu_clave_anonima_jwt</p>
+<blockquote>
+<p><strong>Nota:</strong> Estas variables locales son exclusivas para desarrollo y no se suben al repositorio.</p>
+</blockquote>
+<hr>
+<h2 id="instalación-y-ejecución-local" class="tsd-anchor-link">Instalación y Ejecución Local<a href="#instalación-y-ejecución-local" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<h3 id="paso-1-backend-api" class="tsd-anchor-link">Paso 1: Backend (API)<a href="#paso-1-backend-api" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>cd api
+pip install -r requirements.txt
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload</p>
+<h3 id="paso-2-frontend-appweb" class="tsd-anchor-link">Paso 2: Frontend (App/Web)<a href="#paso-2-frontend-appweb" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>cd customLayer
+npm install
+npx expo start</p>
+<hr>
+<h2 id="despliegue-a-producción-vercel-eas" class="tsd-anchor-link">Despliegue a Producción (Vercel + EAS)<a href="#despliegue-a-producción-vercel-eas" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>El despliegue de producción se gestiona de forma unificada para la web y la API, y de forma nativa para móviles.</p>
+<h3 id="1-despliegue-unificado-en-vercel-api-web" class="tsd-anchor-link">1. Despliegue Unificado en Vercel (API + Web)<a href="#1-despliegue-unificado-en-vercel-api-web" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Vercel utiliza el archivo <code>vercel.json</code> de la raíz para servir la API (FastAPI) y la versión Web de la App simultáneamente.</p>
+<ol>
+<li>Sube tu código a GitHub.</li>
+<li>En la web de Vercel (<a href="http://vercel.com">vercel.com</a>), importa tu repositorio único.</li>
+<li><strong>Configuración del Proyecto:</strong>
+<ul>
+<li><strong>Build Command:</strong> <code>cd customLayer &amp;&amp; npm install &amp;&amp; npx expo export</code> (para generar la versión web).</li>
+<li><strong>Output Directory:</strong> <code>customLayer/dist</code> (o la ruta donde Expo genere el build).</li>
+</ul>
+</li>
+<li><strong>Environment Variables (En la web de Vercel):</strong>
+Añade TODAS las claves necesarias en el mismo proyecto:
+<ul>
+<li><code>SUPABASE_URL</code></li>
+<li><code>SUPABASE_KEY</code></li>
+<li><code>EXPO_PUBLIC_SUPABASE_URL</code></li>
+<li><code>EXPO_PUBLIC_SUPABASE_ANON_KEY</code></li>
+</ul>
+</li>
+<li>Haz clic en <strong>Deploy</strong>. Ahora tu API y tu Web viven en la misma URL.</li>
+</ol>
+<h3 id="2-despliegue-de-la-aplicación-móvil-eas" class="tsd-anchor-link">2. Despliegue de la Aplicación Móvil (EAS)<a href="#2-despliegue-de-la-aplicación-móvil-eas" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h3>
+<p>Para generar el archivo <code>.apk</code> de Android, usamos Expo Application Services. Las variables de producción se inyectan en el archivo <code>eas.json</code>.</p>
+<ol>
+<li>
+<p>Instala EAS CLI y loguéate:
+npm install -g eas-cli
+eas login</p>
+</li>
+<li>
+<p><strong>Configuración en eas.json:</strong>
+Añade el bloque de entorno en el perfil de construcción (ej. preview):
+&quot;build&quot;: {
+&quot;preview&quot;: {
+&quot;android&quot;: { &quot;buildType&quot;: &quot;apk&quot; },
+&quot;env&quot;: {
+&quot;EXPO_PUBLIC_API_URL&quot;: &quot;<a href="https://tu-proyecto-unificado.vercel.app">https://tu-proyecto-unificado.vercel.app</a>&quot;,
+&quot;EXPO_PUBLIC_SUPABASE_URL&quot;: &quot;<a href="https://tu-proyecto.supabase.co">https://tu-proyecto.supabase.co</a>&quot;,
+&quot;EXPO_PUBLIC_SUPABASE_ANON_KEY&quot;: &quot;tu_clave_anonima_jwt&quot;
+}
+}
+}</p>
+</li>
+<li>
+<p>Ejecuta la compilación desde la carpeta <code>customLayer/</code>:
+eas build -p android --profile preview</p>
+</li>
+<li>
+<p>En la pagina de EXPO con tu cuenta deberia de aparecer la aplicacion compilando, desde hay la puedes descargar cuando termine.</p>
+</li>
+</ol>
+</div></div><div class="col-sidebar"><div class="page-menu"><div class="tsd-navigation settings"><details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-chevronDown"></use></svg><h3>Settings</h3></summary><div class="tsd-accordion-details"><div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span><ul id="tsd-filter-options"><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-external" name="external"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>External</span></label></li></ul></div><div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div><details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-chevronDown"></use></svg><h3>On This Page</h3></summary><div class="tsd-accordion-details"><a href="#custom-layers-documentación-del-proyecto"><span>Custom <wbr/>Layers -<wbr/> <wbr/>Documentación del <wbr/>Proyecto</span></a><ul><li><a href="#variables-de-entorno-desarrollo-local"><span>Variables de <wbr/>Entorno (<wbr/>Desarrollo <wbr/>Local)</span></a></li><li><ul><li><a href="#1-backend-apienv"><span>1. <wbr/>Backend (api/.env)</span></a></li><li><a href="#2-frontend-customlayerenv"><span>2. <wbr/>Frontend (custom<wbr/>Layer/.env)</span></a></li></ul></li><li><a href="#instalación-y-ejecución-local"><span>Instalación y <wbr/>Ejecución <wbr/>Local</span></a></li><li><ul><li><a href="#paso-1-backend-api"><span>Paso 1: <wbr/>Backend (<wbr/>API)</span></a></li><li><a href="#paso-2-frontend-appweb"><span>Paso 2: <wbr/>Frontend (<wbr/>App/<wbr/>Web)</span></a></li></ul></li><li><a href="#despliegue-a-producción-vercel-eas"><span>Despliegue a <wbr/>Producción (<wbr/>Vercel + <wbr/>EAS)</span></a></li><li><ul><li><a href="#1-despliegue-unificado-en-vercel-api-web"><span>1. <wbr/>Despliegue <wbr/>Unificado en <wbr/>Vercel (<wbr/>API + <wbr/>Web)</span></a></li><li><a href="#2-despliegue-de-la-aplicación-móvil-eas"><span>2. <wbr/>Despliegue de la <wbr/>Aplicación <wbr/>Móvil (<wbr/>EAS)</span></a></li></ul></li></ul></div></details></div><div class="site-menu"><nav id="tsd-sidebar-links" class="tsd-navigation"><a href="../index.html" class="tsd-nav-link">⬅ Volver al Menú Principal</a></nav><nav class="tsd-navigation"><a href="modules.html">customlayer</a><ul class="tsd-small-nested-navigation" id="tsd-nav-container"><li>Loading...</li></ul></nav></div></div></div><footer><p class="tsd-generator">Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></footer><div class="overlay"></div></body></html>
