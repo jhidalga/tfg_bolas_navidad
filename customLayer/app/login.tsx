@@ -6,6 +6,7 @@ import Footer from '../componentes/footer';
 import { supabase } from '../lib/supabase';
 import { setEsAdminGlobal } from '../lib/supabase';
 import Toast from 'react-native-toast-message';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 /**
  * Pantalla principal de inicio de sesión.
@@ -58,6 +59,7 @@ export default function Login() {
                 if (res.ok) {
                     const perfil = await res.json();
                     setEsAdminGlobal(perfil.administrador === true);
+                    await AsyncStorage.setItem('esAdminPersistente', perfil.administrador === true ? 'true' : 'false');
                 }
             } catch (e) {
                 console.error('Error al obtener el perfil del usuario:', e);
