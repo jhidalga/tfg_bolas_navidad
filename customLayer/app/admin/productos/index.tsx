@@ -4,6 +4,14 @@ import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { styles } from '../../../styles/adminProductos/adminProductos.styles';
 
+/**
+ * Pantalla principal de administración del Catálogo de Productos.
+ * Muestra una lista paginada de todos los productos disponibles en la base de datos, 
+ * incluyendo aquellos marcados como ocultos o deshabilitados. 
+ * Permite buscar productos por nombre, acceder a sus detalles de edición y navegar 
+ * hacia el formulario de creación de un nuevo producto.
+ * * @returns Componente que renderiza el gestor de productos.
+ */
 export default function AdminProductos() {
     const router = useRouter();
     const [productos, setProductos] = useState<any[]>([]);
@@ -20,6 +28,11 @@ export default function AdminProductos() {
         setPaginaActual(1);
     }, [busqueda]);
 
+    /**
+     * Obtiene la lista del catálogo completo de productos desde la API.
+     * Se solicita explícitamente incluir los productos ocultos (`incluir_ocultos=true`)
+     * para que los administradores puedan gestionarlos.
+     */
     const cargarProductos = async () => {
         try {
             const { data: { session } } = await supabase.auth.getSession();
@@ -37,6 +50,10 @@ export default function AdminProductos() {
         }
     };
 
+    /**
+     * Filtra la lista de productos en memoria basándose en el texto introducido
+     * en la barra de búsqueda (evaluación parcial de nombre, case-insensitive).
+     */
     const productosFiltrados = useMemo(() => {
         return productos.filter(p => 
             p.nombre.toLowerCase().includes(busqueda.toLowerCase())

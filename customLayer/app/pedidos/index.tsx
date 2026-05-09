@@ -5,6 +5,13 @@ import Navbar from '../../componentes/navbar';
 import { supabase } from '../../lib/supabase';
 import { styles } from '../../styles/pedidos/pedidos.styles';
 
+/**
+ * Pantalla que lista el historial de pedidos realizados por el usuario activo.
+ * Se conecta a la API para recuperar la lista de pedidos y los muestra en 
+ * formato de tarjetas, indicando su estado actual, fecha, cantidad de productos y precio total.
+ * Permite la navegación hacia los detalles específicos de cada pedido.
+ * * @returns Componente principal que renderiza la vista de "Mis Pedidos".
+ */
 export default function MisPedidos() {
     const router = useRouter();
     const [pedidos, setPedidos] = useState<any[]>([]);
@@ -14,6 +21,11 @@ export default function MisPedidos() {
         cargarMisPedidos();
     }, []);
 
+    /**
+     * Recupera el historial de pedidos del usuario actual desde la API.
+     * Verifica que exista una sesión activa en Supabase; de lo contrario, 
+     * redirige al usuario a la pantalla de login.
+     */
     const cargarMisPedidos = async () => {
         try {
             const { data: { session } } = await supabase.auth.getSession();
@@ -41,6 +53,12 @@ export default function MisPedidos() {
         }
     };
 
+    /**
+     * Devuelve los estilos visuales (color de fondo y texto) correspondientes 
+     * al estado actual del pedido para renderizar las insignias (badges).
+     * * @param estado - Estado del pedido en texto (ej. 'Cancelado', 'Entregado').
+     * @returns Objeto con las clases de estilo para el fondo (`bg`) y el texto (`txt`).
+     */
     const getEstilosBadge = (estado: string) => {
         switch (estado) {
             case 'Cancelado': return { bg: styles.bgRojo, txt: styles.txtRojo };

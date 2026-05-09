@@ -8,6 +8,14 @@ import { styles } from '../styles/detalles/detalles.styles';
 import Navbar from '@/componentes/navbar';
 import { supabase } from '../lib/supabase';
 
+/**
+ * Pantalla de detalles de un producto específico.
+ * Recupera el identificador del producto mediante parámetros de ruta (Expo Router)
+ * y obtiene su información detallada desde la API. 
+ * Permite al usuario interactuar seleccionando el modelo, el color, la cantidad 
+ * y añadiendo un texto de personalización antes de agregarlo al carrito.
+ * * @returns Componente principal que renderiza la vista de detalles del producto.
+ */
 export default function DetallesProducto() {
     const { id } = useLocalSearchParams();
     const [producto, setProducto] = useState<any>(null);
@@ -63,6 +71,12 @@ export default function DetallesProducto() {
     const extraPersonalizacion = (producto.personalizable && personalizacion.trim() !== '') ? (producto.precio_personalizacion || 0) : 0;
     const precioTotal = (producto.precio + extraPersonalizacion).toFixed(2);
 
+    /**
+     * Procesa la adición del producto configurado al carrito.
+     * Verifica que el usuario tenga sesión iniciada, construye el objeto de datos
+     * con el modelo, color, cantidad y personalización elegida, y lo envía a la API.
+     * Muestra notificaciones (Toast) con el resultado de la operación.
+     */
     const agregarAlCarrito = async () => {
         try {
             setAgregando(true);

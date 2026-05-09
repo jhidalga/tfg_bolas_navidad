@@ -1,11 +1,8 @@
 ## 📝 Descripción
-Este Pull Request se centra en la modificacion de las alertas de las paginas registro/login/index(admin productos) para que usen las alertas del Toas
+Este Pull Request se centra en la modificacion del codigo para agregar comentarios compatibles con TypeDocs y la creacion de la carpeta documentacion
 
 **1. Frontend:**
-* **Pagina de admin productos(index)** Interfaz modificada para reemplazar alertas de navegador por las de Toast
-* **Pagina registro** Interfaz modificada para reemplazar alertas de navegador por las de Toast
-* **Pagina login** Interfaz modificada para reemplazar alertas de navegador por las de Toast
-
+* **No hay cambios en el frontend**
 
 
 **2. Backend y Base de Datos:**
@@ -18,12 +15,12 @@ Closes #
 - [ ] ✨ Nueva funcionalidad (feature)
 - [ ] 🐛 Corrección de error (bugfix)
 - [ ] ♻️ Refactorización (mejora de código sin añadir nueva funcionalidad)
-- [X] 🎨 Mejoras de UI/UX o estilos (Tailwind / NativeWind / StyleSheet)
-- [ ] 🔧 Configuración del proyecto / Dependencias
+- [ ] 🎨 Mejoras de UI/UX o estilos (Tailwind / NativeWind / StyleSheet)
+- [X] 🔧 Configuración del proyecto / Dependencias
 
 ## 📱 Cambios en la Interfaz (Si aplica)
 | Antes | Después |
-| --- |![alt text](dspAdminNuevoPC.png)  |
+| --- | |
 | --- | |
 | --- | |
 | --- | |
@@ -40,3 +37,4 @@ Closes #
 - [x] Mi código sigue la arquitectura y el estilo definido en el proyecto.
 
 ## 💡 Notas adicionales para el revisor / Tutor
+* **No hay cambios en interfaz o backend solo he agregado la documentacion**

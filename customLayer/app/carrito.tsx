@@ -7,24 +7,41 @@ import Navbar from '@/componentes/navbar';
 import { styles } from '../styles/carrito/carrito.styles';
 import { supabase } from '../lib/supabase';
 
-interface ItemCarrito {
+/**
+ * Estructura de datos que representa un producto añadido al carrito.
+ */
+export interface ItemCarrito {
+    /** Identificador único del registro en el carrito */
     id: string; 
+    /** Identificador del producto genérico */
     producto_id: string;
+    /** Identificador de la variante/modelo específico */
     modelo_id: string;
+    /** Color seleccionado por el usuario */
     color: string;
+    /** Texto de personalización (o 'Sin texto' si no se aplica) */
     personalizacion: string; 
+    /** Datos anidados del modelo (nombre e imagen visual) */
     modelos: {
         nombre: string;
         imagen: string;
     };
+    /** Datos anidados del producto (nombre y precios) */
     productos: {
         nombre: string;
         precio: number;
         precio_personalizacion?: number;
     };
+    /** Cantidad de unidades solicitadas de este mismo producto */
     cantidad: number;
 }
 
+/**
+ * Pantalla del Carrito de la Compra.
+ * Permite al usuario visualizar los productos añadidos, revisar las personalizaciones,
+ * ver el desglose de precios, eliminar productos no deseados y confirmar el pedido (Checkout).
+ * * @returns Componente principal que renderiza la vista del carrito.
+ */
 export default function PantallaCarrito() {
     const insets = useSafeAreaInsets();
     const [carrito, setCarrito] = useState<ItemCarrito[]>([]);
@@ -37,6 +54,10 @@ export default function PantallaCarrito() {
         }, [])
     );
 
+    /**
+     * Obtiene los productos del carrito del usuario autenticado conectándose a la API.
+     * Actualiza el estado local con la respuesta o detiene la carga si no hay sesión activa.
+     */
     const cargarCarrito = async () => {
         setCargando(true);
         try {
@@ -61,6 +82,11 @@ export default function PantallaCarrito() {
         }
     };
 
+    /**
+     * Elimina un producto específico del carrito a través de la API.
+     * Si la operación es exitosa, lo retira visualmente de la lista local y muestra un aviso.
+     * * @param id - Identificador único del registro en el carrito a eliminar.
+     */
     const eliminarProducto = async (id: string) => {
         try {
             const { data: { session } } = await supabase.auth.getSession();
@@ -94,6 +120,13 @@ export default function PantallaCarrito() {
         }
     };
 
+    /**
+     * Calcula el precio unitario final de un artículo en el carrito.
+     * Suma el precio base del producto y, si incluye texto de personalización, 
+     * añade el coste extra por personalización.
+     * * @param item - Objeto con los datos del artículo en el carrito.
+     * @returns Precio total por unidad (formato numérico).
+     */
     const calcularPrecioItem = (item: ItemCarrito) => {
         const extra = (item.personalizacion && item.personalizacion !== 'Sin texto') ? (Number(item.productos.precio_personalizacion) || 0) : 0;
         return Number(item.productos.precio) + extra;
@@ -101,6 +134,11 @@ export default function PantallaCarrito() {
 
     const totalCarrito = carrito.reduce((suma, item) => suma + (calcularPrecioItem(item) * item.cantidad), 0);
 
+    /**
+     * Procesa la compra de los artículos actuales del carrito.
+     * Envía la petición de 'checkout' a la API con el total calculado.
+     * Si el pedido se crea correctamente, vacía el carrito local y muestra el ID del pedido.
+     */
     const crearPedido = async () => {
         try {
             const { data: { session } } = await supabase.auth.getSession();

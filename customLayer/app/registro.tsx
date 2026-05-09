@@ -7,6 +7,13 @@ import { supabase } from '../lib/supabase';
 import { setEsAdminGlobal } from '../lib/supabase';
 import Toast from 'react-native-toast-message';
 
+/**
+ * Pantalla de registro para nuevos usuarios.
+ * Gestiona el proceso de creación de cuentas mediante Supabase, incluyendo 
+ * la validación de dominios educativos autorizados y un flujo de dos pasos 
+ * (registro de credenciales + verificación de código OTP por correo).
+ * * @returns Componente principal que renderiza el formulario de registro y verificación.
+ */
 export default function Registro() {
     const router = useRouter();
     const [correo, setCorreo] = useState('');
@@ -18,6 +25,15 @@ export default function Registro() {
     const [paso, setPaso] = useState(1);
     const [codigo, setCodigo] = useState('');
 
+    /**
+     * Valida los datos introducidos en el primer paso del registro e intenta
+     * registrar al usuario en Supabase.
+     * * Requisitos:
+     * - Ningún campo puede estar vacío.
+     * - El correo debe pertenecer al dominio `@g.educaand.es`.
+     * * Si el registro es correcto, Supabase enviará un correo con un código OTP
+     * y se avanzará al paso 2 de la interfaz.
+     */
     async function comprobarCredenciales() {
         const correoLimpio = correo.trim();
         const contrasenaLimpia = contrasena.trim();
@@ -61,6 +77,11 @@ export default function Registro() {
         }
     }
 
+    /**
+     * Verifica el código OTP de 6 dígitos enviado al correo del usuario.
+     * Si la verificación es exitosa, se establece la sesión en Supabase,
+     * se comprueba el rol de administrador en la API y se redirige a la pantalla de inicio.
+     */
     async function verificarCodigo() {
         const codigoLimpio = codigo.trim();
         
