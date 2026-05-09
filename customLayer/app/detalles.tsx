@@ -158,6 +158,11 @@ export default function DetallesProducto() {
                                 <Text style={styles.precioValor}>{precioTotal} €</Text>
                             </View>
                         </View>
+                        
+                        {producto.descripcion ? (
+                            <Text style={styles.descripcion}>{producto.descripcion}</Text>
+                        ) : null}
+
                         <View style={styles.divisor} />
                         <View style={styles.seccionOpciones}>
                             {producto.modelos && producto.modelos.length > 0 && (

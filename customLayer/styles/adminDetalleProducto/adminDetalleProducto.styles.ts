@@ -35,6 +35,10 @@ export const styles = StyleSheet.create({
         fontSize: 16,
         color: "#1e293b",
     },
+    inputMultiline: {
+        height: 100,
+        textAlignVertical: "top",
+    },
 
     contenedorSwitches: { flexDirection: "column", gap: 10, marginBottom: 25 },
     switchBox: {

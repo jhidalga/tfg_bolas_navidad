@@ -61,6 +61,12 @@ export const styles = StyleSheet.create({
         fontWeight: '700',
         color: '#ffffff',
     },
+    descripcion: {
+        fontSize: 18,
+        color: '#4b5563',
+        lineHeight: 28,
+        marginTop: 15,
+    },
     divisor: {
         height: 1,
         backgroundColor: '#e9ecef',

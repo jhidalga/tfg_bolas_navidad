@@ -1,9 +1,9 @@
 ## 📝 Descripción
-Este Pull Request se centra en arreglar estilos de las paginas de los pedidos del usuario y del carrito
+Este Pull Request se centra en agregar en las pantallas de editar productos y en detalles que se muestre el atributo descripcion de los productos que antes no se usaba en ninguna pantalla
 
 **1. Frontend:**
-* **Pedidos** tamaño ajustado para ser similar al del carrito y titulo modificado
-* **Carrito** Letra del titulo modificao al diseño correcto
+* **Editar producto** Agregar campo para la descripcion
+* **Detalles** Agregar la descripcion del producto
 
 
 **2. Backend y Base de Datos:**
@@ -13,7 +13,7 @@ Este Pull Request se centra en arreglar estilos de las paginas de los pedidos de
 Closes #
 
 ## 🚀 Tipo de cambio
-- [ ] ✨ Nueva funcionalidad (feature)
+- [X] ✨ Nueva funcionalidad (feature)
 - [ ] 🐛 Corrección de error (bugfix)
 - [ ] ♻️ Refactorización (mejora de código sin añadir nueva funcionalidad)
 - [X] 🎨 Mejoras de UI/UX o estilos (Tailwind / NativeWind / StyleSheet)
@@ -21,8 +21,8 @@ Closes #
 
 ## 📱 Cambios en la Interfaz (Si aplica)
 | Antes | Después |
-| ![alt text](PedidosUsuarioAntPC.png) | ![alt text](PedidosUsuarioDspPC.png) |
-|![alt text](CarritoAntPC.png) | ![alt text](CarritoDspPC.png) |
+| ![alt text](DetallesAntPC.png)  | ![alt text](DetallesdspPC.png) |
+| ![alt text](EditarProdAntPC.png) |![alt text](EditarProdDspPC.png)  |
 | --- | |
 | --- | |
 | --- | |
