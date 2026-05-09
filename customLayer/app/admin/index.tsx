@@ -6,10 +6,17 @@ import DropDownPicker from 'react-native-dropdown-picker';
 import { styles } from '../../styles/adminPedidos/adminPedidos.styles';
 import FontAwesome5 from '@expo/vector-icons/build/FontAwesome5';
 import { Entypo, FontAwesome } from '@expo/vector-icons';
-import * as FileSystem from 'expo-file-system/legacy';
+import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import Toast from 'react-native-toast-message';
 
+/**
+ * Pantalla principal del panel de administración para la gestión de pedidos.
+ * Permite a los administradores visualizar todos los pedidos del sistema, 
+ * filtrarlos por estado y curso, cambiar su estado de preparación, 
+ * eliminarlos en lote y exportar una hoja de fabricación en formato CSV.
+ * * @returns Componente que renderiza el gestor de pedidos completo.
+ */
 export default function ListaPedidosAdmin() {
     const router = useRouter();
     const [pedidos, setPedidos] = useState<any[]>([]);
@@ -41,6 +48,11 @@ export default function ListaPedidosAdmin() {
         setPaginaActual(1);
     }, [filtroEstado, filtroCurso]);
 
+    /**
+     * Obtiene la lista completa de pedidos desde la API para el panel de administración.
+     * También extrae dinámicamente los cursos únicos de los usuarios que han hecho pedidos 
+     * para rellenar el menú desplegable de filtrado por curso.
+     */
     const cargarPedidos = async () => {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) return;
@@ -66,6 +78,11 @@ export default function ListaPedidosAdmin() {
         }
     };
 
+    /**
+     * Actualiza el estado de preparación o entrega de un pedido específico.
+     * * @param id - Identificador del pedido.
+     * @param nuevoEstado - El nuevo estado a asignar (ej. 'Completado').
+     */
     const cambiarEstado = async (id: string, nuevoEstado: string) => {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) return;
@@ -88,10 +105,18 @@ export default function ListaPedidosAdmin() {
         }
     };
 
+    /**
+     * Alterna la selección de un pedido para su eliminación múltiple (batch delete).
+     * * @param id - Identificador del pedido a seleccionar o deseleccionar.
+     */
     const seleccionarEliminar = (id: string) => {
         setSeleccionados(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
     };
 
+    /**
+     * Ejecuta la eliminación concurrente de todos los pedidos seleccionados 
+     * en el "modo eliminación" comunicándose con la API.
+     */
     const borrarPedidosSeleccionados = async () => {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) return;
@@ -114,6 +139,10 @@ export default function ListaPedidosAdmin() {
         }
     };
 
+    /**
+     * Filtra la lista de pedidos en memoria basándose en los estados 
+     * y cursos seleccionados en los menús desplegables.
+     */
     const pedidosFiltrados = useMemo(() => {
         return pedidos.filter(pedido => {
             const coincideEstado = filtroEstado.length === 0 || filtroEstado.includes(pedido.estado);
@@ -129,6 +158,11 @@ export default function ListaPedidosAdmin() {
         paginaActual * itemsPorPagina
     );
 
+    /**
+     * Devuelve los estilos visuales del badge correspondientes al estado del pedido.
+     * * @param estado - Estado del pedido.
+     * @returns Objeto con las clases CSS/estilos para el fondo y el texto.
+     */
     const getEstilosBadge = (estado: string) => {
         switch (estado) {
             case 'Cancelado': return { bg: styles.bgRojo, txt: styles.txtRojo };
@@ -138,7 +172,12 @@ export default function ListaPedidosAdmin() {
         }
     };
 
-const exportarCSV = async () => {
+    /**
+     * Genera un archivo CSV ("hoja de fabricación") con los detalles de todos los 
+     * pedidos actualmente filtrados en la vista. 
+     * Gestiona la descarga directa en la web o la interfaz de compartir nativa en móviles.
+     */
+    const exportarCSV = async () => {
         const cabeceras = "Producto,Modelo,Personalización (Nombre),Color,Cantidad,Cliente,Curso,Estado \n";
         
         let filas = "";
@@ -171,26 +210,13 @@ const exportarCSV = async () => {
                 link.click();
                 document.body.removeChild(link);
             } else {
-                // Forzamos "any" para evitar el error de TypeScript con los tipos locales de Expo
-                const FS = FileSystem as any;
-                const Share = Sharing as any;
-                
-                const dir = FS.documentDirectory || '';
+                const dir = (FileSystem as any).documentDirectory || '';
                 const uri = dir + 'hoja_fabricacion.csv';
                 
-                // Aseguramos codificación UTF-8
-                await FS.writeAsStringAsync(uri, contenidoCSV, {
-                    encoding: FS.EncodingType ? FS.EncodingType.UTF8 : 'utf8'
-                });
+                await (FileSystem as any).writeAsStringAsync(uri, contenidoCSV);
                 
-                const isAvailable = await Share.isAvailableAsync();
-                if (isAvailable) {
-                    // Los metadatos son la clave para que el móvil reconozca que es un archivo y te deje compartirlo/guardarlo
-                    await Share.shareAsync(uri, {
-                        mimeType: 'text/csv',
-                        dialogTitle: 'Exportar pedidos CSV',
-                        UTI: 'public.comma-separated-values-text'
-                    });
+                if (await (Sharing as any).isAvailableAsync()) {
+                    await (Sharing as any).shareAsync(uri);
                 } else {
                     Toast.show({ type: 'error', text1: 'No se puede compartir en este dispositivo' });
                 }
@@ -198,9 +224,6 @@ const exportarCSV = async () => {
         } catch (error) {
             console.error("Error al exportar:", error);
             Toast.show({ type: 'error', text1: 'Hubo un error al exportar los datos.' });
-            if (Platform.OS !== 'web') {
-                alert("Hubo un error al exportar los datos.");
-            }
         }
     };
 

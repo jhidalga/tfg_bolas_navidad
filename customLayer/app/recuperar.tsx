@@ -6,6 +6,13 @@ import Footer from '../componentes/footer';
 import { supabase } from '../lib/supabase';
 import Toast from 'react-native-toast-message';
 
+/**
+ * Pantalla de recuperación de contraseña.
+ * Gestiona un flujo de dos pasos mediante Supabase:
+ * 1. Solicitud de un código de recuperación (OTP) al correo institucional.
+ * 2. Verificación del código y establecimiento de una nueva contraseña.
+ * * @returns Componente que renderiza el formulario de recuperación de contraseña.
+ */
 export default function RecuperarPassword() {
     const router = useRouter();
     const [correo, setCorreo] = useState('');
@@ -14,6 +21,11 @@ export default function RecuperarPassword() {
     const [paso, setPaso] = useState(1);
     const [cargando, setCargando] = useState(false);
 
+    /**
+     * Solicita a Supabase el envío de un correo electrónico con un código 
+     * de verificación (OTP) para restablecer la contraseña.
+     * Si la petición tiene éxito, avanza el formulario al paso 2.
+     */
     const enviarCodigo = async () => {
         if (!correo.trim()) return Toast.show({ type: 'error', text1: 'Introduce tu correo' });
         setCargando(true);
@@ -27,6 +39,11 @@ export default function RecuperarPassword() {
         setPaso(2);
     };
 
+    /**
+     * Verifica el código OTP proporcionado por el usuario y, si es correcto,
+     * actualiza la cuenta con la nueva contraseña introducida.
+     * Si el proceso es exitoso, redirige al usuario a la pantalla de inicio de sesión.
+     */
     const cambiarContrasena = async () => {
         if (!codigo.trim() || !nuevaContrasena.trim()) return Toast.show({ type: 'error', text1: 'Rellena todos los campos' });
         setCargando(true);

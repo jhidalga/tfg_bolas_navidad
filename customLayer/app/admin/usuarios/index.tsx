@@ -7,6 +7,13 @@ import Toast from 'react-native-toast-message';
 
 const API_URL = `${process.env.EXPO_PUBLIC_API_URL || ''}/api`;
 
+/**
+ * Pantalla de administración para la gestión de usuarios registrados.
+ * Muestra una tabla con la información de todos los usuarios (nombre, email, curso, 
+ * estado de profesor, cantidad de pedidos y rol actual). Permite buscar usuarios 
+ * por nombre y alternar sus privilegios de administrador.
+ * * @returns Componente que renderiza el gestor de usuarios.
+ */
 export default function GestorUsuariosAdmin() {
     const router = useRouter();
     const [cargando, setCargando] = useState(true);
@@ -21,11 +28,20 @@ export default function GestorUsuariosAdmin() {
         setPaginaActual(1);
     }, [busqueda]);
 
+    /**
+     * Muestra una notificación emergente (Toast) en pantalla.
+     * * @param mensaje - Texto a mostrar en la notificación.
+     * @param color - Color en formato HEX para determinar si es de éxito o error.
+     */
     const triggerToast = (mensaje: string, color = '#3b82f6') => {
         const tipo = color === '#ef4444' ? 'error' : 'success';
         Toast.show({ type: tipo, text1: mensaje });
     };
 
+    /**
+     * Obtiene la lista completa de usuarios registrados desde la API.
+     * Requiere que el solicitante tenga una sesión activa y privilegios de administrador.
+     */
     const cargarUsuarios = async () => {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) return;
@@ -44,6 +60,12 @@ export default function GestorUsuariosAdmin() {
         }
     };
 
+    /**
+     * Alterna los privilegios de administrador de un usuario específico.
+     * Envía una petición PATCH a la API y, si es exitosa, actualiza el estado local.
+     * * @param id - Identificador único del usuario a modificar.
+     * @param estadoActual - El valor booleano actual del privilegio de administrador.
+     */
     const toggleAdmin = async (id: string, estadoActual: boolean) => {
         const { data: { session } } = await supabase.auth.getSession();
         const nuevoEstado = !estadoActual;
@@ -65,6 +87,10 @@ export default function GestorUsuariosAdmin() {
         }
     };
 
+    /**
+     * Filtra la lista de usuarios en memoria basándose en el texto de búsqueda.
+     * Se evalúa coincidencia parcial con el nombre del usuario (case-insensitive).
+     */
     const usuariosFiltrados = useMemo(() => {
         return usuarios.filter(u => {
             if (!busqueda) return true;

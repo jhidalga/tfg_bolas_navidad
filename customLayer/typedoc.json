@@ -1,0 +1,11 @@
+{
+  "entryPoints": [
+    "./app",
+    "./componentes",
+    "./lib"
+  ],
+  "out": "../documentacion/frontend",
+  "navigationLinks": {
+    "⬅ Volver al Menú Principal": "../index.html"
+  }
+}

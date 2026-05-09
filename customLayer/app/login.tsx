@@ -7,12 +7,25 @@ import { supabase } from '../lib/supabase';
 import { setEsAdminGlobal } from '../lib/supabase';
 import Toast from 'react-native-toast-message';
 
+/**
+ * Pantalla principal de inicio de sesión.
+ * Gestiona la autenticación de usuarios mediante Supabase y la validación
+ * de campos. Redirige a la pantalla de inicio tras un login exitoso.
+ * * @returns Componente ScrollView que contiene el formulario de inicio de sesión y el pie de página.
+ */
 export default function Login() {
     const router = useRouter();
     const [correo, setCorreo] = useState('');
     const [contrasena, setContrasena] = useState('');
     const [cargando, setCargando] = useState(false);
 
+    /**
+     * Valida las credenciales introducidas en el formulario e intenta 
+     * autenticar al usuario mediante Supabase. 
+     * * Si la autenticación es exitosa, realiza una petición a la API para
+     * comprobar si el usuario tiene rol de administrador y actualiza el estado global.
+     * Muestra mensajes (Toast) en caso de error (campos vacíos, correo inválido o error del servidor).
+     */
     async function comprobarCredenciales() {
         const correoLimpio = correo.trim();
         const contrasenaLimpia = contrasena.trim();

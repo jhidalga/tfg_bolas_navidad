@@ -9,6 +9,12 @@ import { useCallback } from 'react';
 
 let cachedEsAdmin: boolean | null = null;
 
+/**
+ * Componente visual que representa la barra de navegación superior (Navbar).
+ * Gestiona la navegación principal de la aplicación, la comprobación del rol del usuario 
+ * en tiempo real y muestra dinámicamente el botón de administración si corresponde.
+ * * @returns Componente View que contiene el logotipo y los iconos de navegación.
+ */
 export default function Navbar() {
     const router = useRouter();
     const [esAdmin, setEsAdmin] = useState(cachedEsAdmin || false);
@@ -28,6 +34,11 @@ export default function Navbar() {
         return () => subscription.unsubscribe();
     }, []);
 
+    /**
+     * Realiza una petición segura a la API para verificar si el usuario autenticado
+     * tiene privilegios de administrador.
+     * Si la petición es exitosa, actualiza la caché global y el estado local del componente.
+     */
     async function comprobarRolAPI() {
         const { data: { session } } = await supabase.auth.getSession();
         
@@ -53,12 +64,17 @@ export default function Navbar() {
             }
         }
     }
+    
     useFocusEffect(
         useCallback(() => {
             setEsAdmin(esAdminGlobal);
         }, [])
     );
 
+    /**
+     * Finaliza la sesión del usuario en Supabase, limpia la caché de administrador
+     * y redirige de vuelta a la pantalla de Login.
+     */
     async function cerrarSesion() {
         cachedEsAdmin = null;
         await supabase.auth.signOut();

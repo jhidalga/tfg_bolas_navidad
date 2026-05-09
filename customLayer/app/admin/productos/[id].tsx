@@ -7,6 +7,13 @@ import { decode } from 'base64-arraybuffer';
 import { styles } from '../../../styles/adminDetalleProducto/adminDetalleProducto.styles';
 import Toast from 'react-native-toast-message';
 
+/**
+ * Pantalla de administración para editar un producto existente.
+ * Permite modificar los datos generales (nombre, precio), los estados booleanos 
+ * (visibilidad, disponibilidad, personalización) y gestionar de forma avanzada 
+ * los "Modelos" o variantes asociadas al producto, permitiendo crearlos, editarlos o eliminarlos en bloque.
+ * * @returns Componente interactivo para la gestión profunda de un producto.
+ */
 export default function DetalleProductoAdmin() {
     const { id } = useLocalSearchParams();
     const router = useRouter();
@@ -22,6 +29,10 @@ export default function DetalleProductoAdmin() {
         Toast.show({ type: tipo, text1: mensaje });
     };
 
+    /**
+     * Recupera la información del producto actual desde la API, incluyendo sus variantes/modelos.
+     * Rellena el estado del formulario con los datos obtenidos.
+     */
     const cargarProducto = async () => {
         const { data: { session } } = await supabase.auth.getSession();
         const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/productos/${id}?incluir_ocultos=true`, {
@@ -42,6 +53,10 @@ export default function DetalleProductoAdmin() {
         }
     };
 
+    /**
+     * Guarda los cambios aplicados en la sección de "Información General" y "Configuración".
+     * Realiza una petición PATCH a la API con los nuevos datos.
+     */
     const guardarDatosPrincipales = async () => {
         const { data: { session } } = await supabase.auth.getSession();
         const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/admin/productos/${id}`, {
@@ -56,10 +71,19 @@ export default function DetalleProductoAdmin() {
         }
     };
 
+    /**
+     * Agrega o quita el identificador de un modelo al array de elementos seleccionados,
+     * utilizado para el borrado múltiple.
+     * * @param idMod - Identificador único del modelo de producto.
+     */
     const toggleSeleccion = (idMod: string) => {
         setSeleccionados(prev => prev.includes(idMod) ? prev.filter(i => i !== idMod) : [...prev, idMod]);
     };
 
+    /**
+     * Elimina de la base de datos todos los modelos que han sido marcados/seleccionados.
+     * Usa peticiones concurrentes para mejorar el rendimiento de red.
+     */
     const borrarModelos = async () => {
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) return;
@@ -80,6 +104,12 @@ export default function DetalleProductoAdmin() {
         }
     };
 
+    /**
+     * Abre la galería, procesa la imagen seleccionada y la sube a Supabase.
+     * Puede actualizar la imagen de un modelo ya existente o de un modelo en fase de creación.
+     * * @param idx - Índice de la fila del modelo que se está editando.
+     * @param esNuevo - Indicador booleano (true si la fila pertenece al array de `nuevosModelos`).
+     */
     const subirImagen = async (idx: number, esNuevo: boolean) => {
         const result = await ImagePicker.launchImageLibraryAsync({ allowsEditing: true, base64: true, quality: 0.8 });
         if (!result.canceled && result.assets[0].base64) {
@@ -96,6 +126,11 @@ export default function DetalleProductoAdmin() {
         }
     };
 
+    /**
+     * Guarda en la base de datos los cambios de nombre y/o imagen 
+     * realizados a un modelo ya existente.
+     * * @param idx - Índice del modelo en el array `modelos` local.
+     */
     const guardarModelo = async (idx: number) => {
         const { data: { session } } = await supabase.auth.getSession();
         const mod = modelos[idx];
@@ -107,6 +142,10 @@ export default function DetalleProductoAdmin() {
         if (res.ok) triggerToast("Modelo guardado");
     };
 
+    /**
+     * Crea un nuevo registro de modelo asociado a este producto en la base de datos.
+     * * @param idx - Índice del modelo en el array temporal `nuevosModelos`.
+     */
     const crearModelo = async (idx: number) => {
         const mod = nuevosModelos[idx];
         if (!mod.nombre || !mod.imagen) {
