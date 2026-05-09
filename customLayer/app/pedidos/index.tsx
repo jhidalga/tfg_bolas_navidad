@@ -73,7 +73,7 @@ export default function MisPedidos() {
             <Navbar />
             
             <View style={styles.cabeceraPrincipal}>
-                <Text style={styles.tituloHeader}>Mis Pedidos</Text>
+                <Text style={styles.tituloHeader}>Tus Pedidos</Text>
             </View>
 
             <ScrollView contentContainerStyle={styles.scrollContent}>

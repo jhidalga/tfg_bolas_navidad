@@ -13,9 +13,9 @@ export const styles = StyleSheet.create({
         maxWidth: Platform.OS === 'web' ? 800 : '100%',
     },
     tituloCentral: {
-        fontSize: 28,
-        fontWeight: 'bold',
-        color: '#1a1a1a',
+        fontSize: 24,
+        fontWeight: "800",
+        color: "#1e293b",
         marginBottom: 20,
     },
     cargandoContenedor: {

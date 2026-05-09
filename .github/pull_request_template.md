@@ -1,8 +1,9 @@
 ## 📝 Descripción
-Este Pull Request se centra en arreglar un error en el diseño de la pagina para crear nuevos productos del administrador
+Este Pull Request se centra en arreglar estilos de las paginas de los pedidos del usuario y del carrito
 
 **1. Frontend:**
-* **Productos nuevo** campo Permite texto personalizado ajustar ancho
+* **Pedidos** tamaño ajustado para ser similar al del carrito y titulo modificado
+* **Carrito** Letra del titulo modificao al diseño correcto
 
 
 **2. Backend y Base de Datos:**
@@ -20,8 +21,8 @@ Closes #
 
 ## 📱 Cambios en la Interfaz (Si aplica)
 | Antes | Después |
-| ![alt text](adminProdNuevoPCAnt.png) | ![alt text](adminProdNuevoPCDsp.png) |
-| --- | |
+| ![alt text](PedidosUsuarioAntPC.png) | ![alt text](PedidosUsuarioDspPC.png) |
+|![alt text](CarritoAntPC.png) | ![alt text](CarritoDspPC.png) |
 | --- | |
 | --- | |
 | --- | |
