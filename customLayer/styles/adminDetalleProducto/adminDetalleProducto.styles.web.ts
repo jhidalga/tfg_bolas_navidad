@@ -38,6 +38,10 @@ export const styles = StyleSheet.create({
         transition: "border-color 0.2s",
         "&:focus": { borderColor: "#3b82f6" },
     } as any,
+    inputMultiline: {
+        height: 100,
+        textAlignVertical: "top",
+    },
 
     contenedorSwitches: {
         flexDirection: "row",

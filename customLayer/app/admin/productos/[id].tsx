@@ -18,7 +18,7 @@ export default function DetalleProductoAdmin() {
     const { id } = useLocalSearchParams();
     const router = useRouter();
     const [cargando, setCargando] = useState(true);
-    const [form, setForm] = useState({ nombre: '', precio: 0.0, precio_personalizacion: 0.0, deshabilitado: false, oculto: false, personalizable: false });
+    const [form, setForm] = useState({ nombre: '', descripcion: '', precio: 0.0, precio_personalizacion: 0.0, deshabilitado: false, oculto: false, personalizable: false });
     const [modelos, setModelos] = useState<any[]>([]);
     const [nuevosModelos, setNuevosModelos] = useState<any[]>([]);
     const [seleccionados, setSeleccionados] = useState<string[]>([]);
@@ -42,6 +42,7 @@ export default function DetalleProductoAdmin() {
             const datos = await res.json();
             setForm({
                 nombre: datos.nombre,
+                descripcion: datos.descripcion || '',
                 precio: datos.precio,
                 precio_personalizacion: datos.precio_personalizacion || 0.0,
                 deshabilitado: datos.deshabilitado,
@@ -187,6 +188,17 @@ export default function DetalleProductoAdmin() {
                             <Text style={styles.label}>Precio (€)</Text>
                             <TextInput style={styles.input} keyboardType="numeric" value={form.precio.toString()} onChangeText={t => setForm({ ...form, precio: parseFloat(t) || 0 })} />
                         </View>
+                    </View>
+
+                    <View style={[styles.inputGroup, { marginBottom: 20 }]}>
+                        <Text style={styles.label}>Descripción</Text>
+                        <TextInput 
+                            style={[styles.input, styles.inputMultiline]} 
+                            multiline 
+                            numberOfLines={4} 
+                            value={form.descripcion} 
+                            onChangeText={t => setForm({ ...form, descripcion: t })} 
+                        />
                     </View>
 
                     <Text style={[styles.tituloSeccion, { marginTop: 10 }]}>Configuración</Text>
