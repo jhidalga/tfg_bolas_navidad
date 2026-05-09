@@ -61,7 +61,6 @@ export const styles = StyleSheet.create({
         borderColor: "#e2e8f0",
         borderRadius: 10,
         padding: 15,
-        maxWidth: 400,
     },
     labelSwitch: { fontSize: 14, color: "#1e293b", fontWeight: "bold" },
     btnToggleSwitch: {
