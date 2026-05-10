@@ -10,6 +10,7 @@ import { esAdminGlobal, supabase } from '../lib/supabase';
 import { Platform } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context'; 
 
 /**
  * Pantalla principal (Catálogo de productos).
@@ -20,6 +21,8 @@ import { useCallback } from 'react';
  * * * @returns Componente que renderiza el layout principal con Navbar, Grid de productos, Filtros y Footer.
  */
 export default function Inicio() {
+    const insets = useSafeAreaInsets();
+
     const [productos, setProductos] = useState<any[]>([]);
     const [cargando, setCargando] = useState(true);
 
@@ -172,7 +175,7 @@ export default function Inicio() {
     );
 
     return (
-        <View style={styles.contenedorPrincipal}>
+        <View style={[styles.contenedorPrincipal, { paddingTop: insets.top }]}>
             <Navbar />
 
             {(esAdmin || mensajeAdmin.trim() !== '') && (
