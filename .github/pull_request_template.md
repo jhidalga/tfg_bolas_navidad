@@ -1,5 +1,5 @@
 ## 📝 Descripción
-Este Pull Request se centra en arreglar un bug en la redireccion de paginas, con el cambio anterior hace que de igual en la pagina que estes si salias del navegador para entrar en otra aplicacion te redirigia al login
+Este Pull Request se centra en arreglar un bug en los precios de los producos que no admitia decimales en los precios
 
 **1. Frontend:**
 * **No hay cambios en el front**
