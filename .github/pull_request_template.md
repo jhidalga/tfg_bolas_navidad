@@ -1,5 +1,5 @@
 ## 📝 Descripción
-Este Pull Request se centra en arreglar un bug en los precios de los producos que no admitia decimales en los precios
+Este Pull Request se centra en arreglar errores en los estilos del movil relacionados con la navbar siendo tapada por los botones y los placeholder desaparecian en modo oscuro
 
 **1. Frontend:**
 * **No hay cambios en el front**
