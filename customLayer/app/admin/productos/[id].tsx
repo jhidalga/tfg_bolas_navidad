@@ -18,7 +18,7 @@ export default function DetalleProductoAdmin() {
     const { id } = useLocalSearchParams();
     const router = useRouter();
     const [cargando, setCargando] = useState(true);
-    const [form, setForm] = useState({ nombre: '', descripcion: '', precio: 0.0, precio_personalizacion: 0.0, deshabilitado: false, oculto: false, personalizable: false });
+    const [form, setForm] = useState({ nombre: '', descripcion: '', precio: '', precio_personalizacion: '', deshabilitado: false, oculto: false, personalizable: false });
     const [modelos, setModelos] = useState<any[]>([]);
     const [nuevosModelos, setNuevosModelos] = useState<any[]>([]);
     const [seleccionados, setSeleccionados] = useState<string[]>([]);
@@ -43,8 +43,8 @@ export default function DetalleProductoAdmin() {
             setForm({
                 nombre: datos.nombre,
                 descripcion: datos.descripcion || '',
-                precio: datos.precio,
-                precio_personalizacion: datos.precio_personalizacion || 0.0,
+                precio: datos.precio ? datos.precio.toString() : '',
+                precio_personalizacion: datos.precio_personalizacion ? datos.precio_personalizacion.toString() : '',
                 deshabilitado: datos.deshabilitado,
                 oculto: datos.oculto,
                 personalizable: datos.personalizable
@@ -60,10 +60,16 @@ export default function DetalleProductoAdmin() {
      */
     const guardarDatosPrincipales = async () => {
         const { data: { session } } = await supabase.auth.getSession();
+        const payload = {
+            ...form,
+            precio: parseFloat(form.precio) || 0,
+            precio_personalizacion: parseFloat(form.precio_personalizacion) || 0
+        };
+
         const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/admin/productos/${id}`, {
             method: 'PATCH',
             headers: { 'Authorization': `Bearer ${session?.access_token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify(form)
+            body: JSON.stringify(payload)
         });
         if (res.ok) {
             triggerToast("Producto actualizado correctamente");
@@ -186,7 +192,12 @@ export default function DetalleProductoAdmin() {
                         </View>
                         <View style={[styles.inputGroup, { flex: 0.4 }]}>
                             <Text style={styles.label}>Precio (€)</Text>
-                            <TextInput style={styles.input} keyboardType="numeric" value={form.precio.toString()} onChangeText={t => setForm({ ...form, precio: parseFloat(t) || 0 })} />
+                            <TextInput 
+                                style={styles.input} 
+                                keyboardType="numeric" 
+                                value={form.precio} 
+                                onChangeText={t => setForm({ ...form, precio: t.replace(',', '.') })} 
+                            />
                         </View>
                     </View>
 
@@ -247,8 +258,8 @@ export default function DetalleProductoAdmin() {
                             <TextInput 
                                 style={styles.input} 
                                 keyboardType="numeric" 
-                                value={form.precio_personalizacion.toString()} 
-                                onChangeText={t => setForm({...form, precio_personalizacion: parseFloat(t) || 0})} 
+                                value={form.precio_personalizacion} 
+                                onChangeText={t => setForm({...form, precio_personalizacion: t.replace(',', '.')})} 
                             />
                         </View>
                     )}
