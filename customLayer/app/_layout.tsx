@@ -3,32 +3,26 @@ import Toast from 'react-native-toast-message';
 import { useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 
-/**
- * Componente raíz del enrutamiento de la aplicación (Expo Router).
- */
 export default function RootLayout() {
   const router = useRouter();
   const segments = useSegments();
 
-  useEffect(() => {
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        router.replace('/inicio'); 
-      }
-    };
-    checkSession();
+useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      const paginaActiva = segments[0] as string | undefined;
+      const enPaginaPublica = !paginaActiva || paginaActiva === 'login' || paginaActiva === 'registro' || paginaActiva === 'recuperar';
       if (event === 'SIGNED_IN' && session) {
-        router.replace('/inicio');
+        if (enPaginaPublica) {
+          router.replace('/inicio');
+        }
       } else if (event === 'SIGNED_OUT') {
-        router.replace('/'); 
+        router.replace('/');
       }
     });
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, []);
+  }, [segments]);
 
   return (
     <>
