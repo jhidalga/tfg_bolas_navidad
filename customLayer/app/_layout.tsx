@@ -1,15 +1,35 @@
-import { Stack } from "expo-router";
+import { Stack, useRouter, useSegments } from "expo-router";
 import Toast from 'react-native-toast-message';
+import { useEffect } from 'react';
+import { supabase } from '../lib/supabase';
 
 /**
  * Componente raíz del enrutamiento de la aplicación (Expo Router).
- * Define la estructura principal de navegación usando un Stack navigator 
- * donde se oculta la cabecera nativa (`headerShown: false`) para usar un Navbar personalizado.
- * También integra el proveedor global de notificaciones (Toast) para mostrar
- * mensajes emergentes en cualquier pantalla.
- * * @returns Componente de layout raíz.
  */
 export default function RootLayout() {
+  const router = useRouter();
+  const segments = useSegments();
+
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        router.replace('/inicio'); 
+      }
+    };
+    checkSession();
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        router.replace('/inicio');
+      } else if (event === 'SIGNED_OUT') {
+        router.replace('/'); 
+      }
+    });
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
+
   return (
     <>
       <Stack screenOptions={{ headerShown: false }} />
