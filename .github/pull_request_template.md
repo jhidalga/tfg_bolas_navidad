@@ -1,9 +1,8 @@
 ## 📝 Descripción
-Este Pull Request se centra en agregar en las pantallas de editar productos y en detalles que se muestre el atributo descripcion de los productos que antes no se usaba en ninguna pantalla
+Este Pull Request se centra en usar la persistencia de sesion del localstorage para que si hay sesion guardada rediriga al inicio sin tener que volver a hacer login
 
 **1. Frontend:**
-* **Editar producto** Agregar campo para la descripcion
-* **Detalles** Agregar la descripcion del producto
+* **No hay cambios en el front**
 
 
 **2. Backend y Base de Datos:**
@@ -16,13 +15,13 @@ Closes #
 - [X] ✨ Nueva funcionalidad (feature)
 - [ ] 🐛 Corrección de error (bugfix)
 - [ ] ♻️ Refactorización (mejora de código sin añadir nueva funcionalidad)
-- [X] 🎨 Mejoras de UI/UX o estilos (Tailwind / NativeWind / StyleSheet)
+- [ ] 🎨 Mejoras de UI/UX o estilos (Tailwind / NativeWind / StyleSheet)
 - [ ] 🔧 Configuración del proyecto / Dependencias
 
 ## 📱 Cambios en la Interfaz (Si aplica)
 | Antes | Después |
-| ![alt text](DetallesAntPC.png)  | ![alt text](DetallesdspPC.png) |
-| ![alt text](EditarProdAntPC.png) |![alt text](EditarProdDspPC.png)  |
+|---|---|
+|---|---|
 | --- | |
 | --- | |
 | --- | |
