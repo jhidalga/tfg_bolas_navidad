@@ -1,5 +1,5 @@
 ## 📝 Descripción
-Este Pull Request se centra en usar la persistencia de sesion del localstorage para que si hay sesion guardada rediriga al inicio sin tener que volver a hacer login
+Este Pull Request se centra en arreglar un bug en la redireccion de paginas, con el cambio anterior hace que de igual en la pagina que estes si salias del navegador para entrar en otra aplicacion te redirigia al login
 
 **1. Frontend:**
 * **No hay cambios en el front**
@@ -12,8 +12,8 @@ Este Pull Request se centra en usar la persistencia de sesion del localstorage p
 Closes #
 
 ## 🚀 Tipo de cambio
-- [X] ✨ Nueva funcionalidad (feature)
-- [ ] 🐛 Corrección de error (bugfix)
+- [ ] ✨ Nueva funcionalidad (feature)
+- [X] 🐛 Corrección de error (bugfix)
 - [ ] ♻️ Refactorización (mejora de código sin añadir nueva funcionalidad)
 - [ ] 🎨 Mejoras de UI/UX o estilos (Tailwind / NativeWind / StyleSheet)
 - [ ] 🔧 Configuración del proyecto / Dependencias
