@@ -21,7 +21,7 @@
       "package": "com.parallax10.customLayer"
     },
     "web": {
-      "output": "static",
+      "output": "single",
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
