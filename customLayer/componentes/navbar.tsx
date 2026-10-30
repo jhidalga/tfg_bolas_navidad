@@ -1,12 +1,12 @@
-import { View, Text, Pressable,Image } from 'react-native';
+import { View, Text, Pressable, Image } from 'react-native'; 
 import { useRouter } from "expo-router";
-import { useEffect, useState } from 'react';
-import { esAdminGlobal, supabase } from '../lib/supabase';
+import { useEffect, useState, useCallback } from 'react';
+import { supabase } from '../lib/supabase';
 import { styles } from '../styles/navbar/navbar.styles';
 import { FontAwesome, FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
-import { useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 let cachedEsAdmin: boolean | null = null;
 
@@ -19,6 +19,7 @@ let cachedEsAdmin: boolean | null = null;
 export default function Navbar() {
     const router = useRouter();
     const [esAdmin, setEsAdmin] = useState(cachedEsAdmin || false);
+    const insets = useSafeAreaInsets();
 
     useEffect(() => {
         if (cachedEsAdmin === null) {
@@ -95,8 +96,12 @@ export default function Navbar() {
         await supabase.auth.signOut();
         router.replace('/login');
     }
+
     return (
-        <View style={styles.contenedor}>
+        <View style={[
+            styles.contenedor, 
+            { paddingBottom: Math.max(insets.bottom, 15) } 
+        ]}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <Image source={require('../assets/images/icon.png')} style={{ width: 30, height: 30, marginBottom: -5 }} resizeMode="contain" />
                 <Text style={styles.logo}>Custom Layers</Text>

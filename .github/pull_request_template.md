@@ -1,5 +1,5 @@
 ## 📝 Descripción
-Este Pull Request se centra en arreglar un bug en la redireccion de paginas, con el cambio anterior hace que de igual en la pagina que estes si salias del navegador para entrar en otra aplicacion te redirigia al login
+Este Pull Request se centra en arreglar errores en los estilos del movil relacionados con la navbar siendo tapada por los botones y los placeholder desaparecian en modo oscuro
 
 **1. Frontend:**
 * **No hay cambios en el front**

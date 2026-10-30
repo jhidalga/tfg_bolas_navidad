@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "customlayer",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true
@@ -21,7 +21,7 @@
       "package": "com.parallax10.customLayer"
     },
     "web": {
-      "output": "static",
+      "output": "single",
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
@@ -32,10 +32,7 @@
           "image": "./assets/images/icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
-          "dark": {
-            "backgroundColor": "#000000"
-          }
+          "backgroundColor": "#ffffff"
         }
       ]
     ],
@@ -46,8 +43,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "46cf222a-8710-4741-950c-0fd571867ef4"
+        "projectId": "ea0d1c20-93d7-418a-aff2-018314f1463d"
       }
-    }
+    },
+    "owner": "parallax101010"
   }
 }

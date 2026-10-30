@@ -21,8 +21,8 @@ export default function NuevoProductoAdmin() {
     const [form, setForm] = useState({
         nombre: '', 
         descripcion: '', 
-        precio: 0.0, 
-        precio_personalizacion: 0.0,
+        precio: '', 
+        precio_personalizacion: '',
         personalizable: false, 
         imagen: ""
     });
@@ -48,7 +48,6 @@ export default function NuevoProductoAdmin() {
     /**
      * Abre la galería del dispositivo para seleccionar una imagen, la comprime, 
      * la convierte de Base64 a ArrayBuffer y la sube al bucket 'fotos_productos' en Supabase.
-     * Si tiene éxito, guarda la URL pública generada en el estado del formulario.
      */
     const seleccionarYSubirImagen = async () => {
         const result = await ImagePicker.launchImageLibraryAsync({
@@ -75,8 +74,7 @@ export default function NuevoProductoAdmin() {
 
     /**
      * Valida los datos introducidos en el formulario y envía la petición a la API 
-     * para crear el producto. Si el producto se crea exitosamente, realiza una segunda 
-     * petición para crear automáticamente su "Modelo Base" asociando la imagen subida.
+     * para crear el producto.
      */
     const crearProducto = async () => {
         if (!form.nombre || !form.precio || !form.imagen) {
@@ -91,8 +89,8 @@ export default function NuevoProductoAdmin() {
         const payloadProducto = {
             nombre: form.nombre,
             descripcion: form.descripcion,
-            precio: form.precio,
-            precio_personalizacion: form.precio_personalizacion,
+            precio: parseFloat(form.precio) || 0,
+            precio_personalizacion: parseFloat(form.precio_personalizacion) || 0,
             personalizable: form.personalizable,
             colores: arrayColores
         };
@@ -138,12 +136,18 @@ export default function NuevoProductoAdmin() {
                         </View>
                         <View style={[styles.inputGroup, { flex: 0.4 }]}>
                             <Text style={styles.label}>Precio (€) *</Text>
-                            <TextInput style={styles.input} keyboardType="numeric" value={form.precio.toString()} onChangeText={t => setForm({...form, precio: parseFloat(t) || 0})} />
+                            <TextInput 
+                                style={styles.input} 
+                                keyboardType="numeric" 
+                                value={form.precio} 
+                                onChangeText={t => setForm({...form, precio: t.replace(',', '.')})} 
+                                placeholder="Ej: 15.50"
+                            />
                         </View>
                     </View>
 
                     <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Descripción(Opcional)</Text>
+                        <Text style={styles.label}>Descripción (Opcional)</Text>
                         <TextInput style={[styles.input, styles.inputMultiline]} multiline numberOfLines={3} value={form.descripcion} onChangeText={t => setForm({...form, descripcion: t})} placeholder="Detalles del producto..." />
                     </View>
 
@@ -173,8 +177,9 @@ export default function NuevoProductoAdmin() {
                             <TextInput 
                                 style={styles.input} 
                                 keyboardType="numeric" 
-                                value={form.precio_personalizacion.toString()} 
-                                onChangeText={t => setForm({...form, precio_personalizacion: parseFloat(t) || 0})} 
+                                value={form.precio_personalizacion} 
+                                onChangeText={t => setForm({...form, precio_personalizacion: t.replace(',', '.')})} 
+                                placeholder="Ej: 2.00"
                             />
                         </View>
                     )}

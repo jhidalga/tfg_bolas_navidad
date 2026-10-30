@@ -1,6 +1,7 @@
 import os
 from typing import List, Optional
 from fastapi import FastAPI, HTTPException, Header
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from supabase import ClientOptions, create_client, Client
 from dotenv import load_dotenv
@@ -64,9 +65,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/")
+@app.get("/api")
 def read_root():
     return {"message": "¡Bienvenido a la API de Custom Layers!"}
+
+@app.get("/api/health")
+def health():
+    return {"status": "ok"}
 
 @app.get("/api/productos")
 def obtener_productos(incluir_ocultos: Optional[bool] = False):
@@ -423,3 +428,19 @@ def actualizar_mensaje_admin(datos: MensajeAdminUpdate, authorization: Optional[
         return res.data[0]
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+# Sirve la versión web exportada por Expo (solo en el despliegue con Docker/Railway).
+# Debe declararse al final para que las rutas /api tengan prioridad.
+WEB_DIR = os.getenv("WEB_DIR", os.path.join(os.path.dirname(__file__), "..", "customLayer", "dist"))
+
+if os.path.isdir(WEB_DIR):
+    WEB_DIR = os.path.realpath(WEB_DIR)
+
+    @app.get("/{ruta:path}", include_in_schema=False)
+    def servir_web(ruta: str):
+        if ruta.startswith("api/"):
+            raise HTTPException(status_code=404, detail="Not Found")
+        archivo = os.path.realpath(os.path.join(WEB_DIR, ruta))
+        if archivo.startswith(WEB_DIR + os.sep) and os.path.isfile(archivo):
+            return FileResponse(archivo)
+        return FileResponse(os.path.join(WEB_DIR, "index.html"))
