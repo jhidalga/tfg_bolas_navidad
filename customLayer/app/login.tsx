@@ -98,9 +98,9 @@ export default function Login() {
                         <Text style={styles.textoBoton}>Iniciar Sesion</Text>
                     </Pressable>
 
-                    <Pressable style={{ marginTop: 20, alignSelf: 'center' }} onPress={() => router.push('/recuperar' as any)}>
-                        <Text style={{ color: '#4338ca', fontSize: 13, fontWeight: '600' }}>¿Has olvidado tu contraseña?</Text>
-                    </Pressable>
+                    <Text style={styles.avisoRecuperacion}>
+                        Si has olvidado tu contraseña, contacta con el administrador.
+                    </Text>
 
                     <Pressable style={styles.botonVolver} onPress={() => router.push('/')}>
                         <Text style={styles.textoBotonVolver}>Volver</Text>

@@ -60,6 +60,12 @@ export const styles = StyleSheet.create({
         fontSize: 12,
         fontWeight: '500',
     },
+    avisoRecuperacion: {
+        marginTop: 20,
+        textAlign: 'center',
+        color: '#555555',
+        fontSize: 13,
+    },
     botonVolver: {
         marginTop: 20,
         alignSelf: 'center',
