@@ -35,8 +35,8 @@ export default function Login() {
             return;
         }
 
-        if (!correoLimpio.endsWith('@g.educaand.es') || correoLimpio === '@g.educaand.es') {
-            Toast.show({ type: 'error', text1: 'Debes introducir un usuario válido delante de @g.educaand.es' });
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correoLimpio)) {
+            Toast.show({ type: 'error', text1: 'Introduce un correo electrónico válido' });
             return;
         }
 
@@ -81,7 +81,7 @@ export default function Login() {
                         style={styles.input}
                         value={correo}
                         onChangeText={setCorreo}
-                        placeholder='tuCorreo@g.educaand.es'
+                        placeholder='tuCorreo@ejemplo.com'
                         autoCapitalize='none'
                     />
 

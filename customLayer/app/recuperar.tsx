@@ -9,7 +9,7 @@ import Toast from 'react-native-toast-message';
 /**
  * Pantalla de recuperación de contraseña.
  * Gestiona un flujo de dos pasos mediante Supabase:
- * 1. Solicitud de un código de recuperación (OTP) al correo institucional.
+ * 1. Solicitud de un código de recuperación (OTP) al correo de la cuenta.
  * 2. Verificación del código y establecimiento de una nueva contraseña.
  * * @returns Componente que renderiza el formulario de recuperación de contraseña.
  */
@@ -85,7 +85,7 @@ export default function RecuperarPassword() {
                                 style={styles.input}
                                 value={correo}
                                 onChangeText={setCorreo}
-                                placeholder='tuCorreo@g.educaand.es'
+                                placeholder='tuCorreo@ejemplo.com'
                                 autoCapitalize='none'
                             />
                             <Pressable style={styles.botonLogin} onPress={enviarCodigo} disabled={cargando}>

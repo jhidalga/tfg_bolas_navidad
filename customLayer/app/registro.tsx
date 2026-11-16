@@ -10,7 +10,7 @@ import Toast from 'react-native-toast-message';
 /**
  * Pantalla de registro para nuevos usuarios.
  * Gestiona el proceso de creación de cuentas mediante Supabase, incluyendo 
- * la validación de dominios educativos autorizados y un flujo de dos pasos 
+ * la validación del correo electrónico y un flujo de dos pasos
  * (registro de credenciales + verificación de código OTP por correo).
  * * @returns Componente principal que renderiza el formulario de registro y verificación.
  */
@@ -30,7 +30,7 @@ export default function Registro() {
      * registrar al usuario en Supabase.
      * * Requisitos:
      * - Ningún campo puede estar vacío.
-     * - El correo debe pertenecer al dominio `@g.educaand.es`.
+     * - El correo debe tener un formato válido.
      * * Si el registro es correcto, Supabase enviará un correo con un código OTP
      * y se avanzará al paso 2 de la interfaz.
      */
@@ -45,8 +45,8 @@ export default function Registro() {
             return;
         }
 
-        if (!correoLimpio.endsWith('@g.educaand.es') || correoLimpio === '@g.educaand.es') {
-            Toast.show({ type: 'error', text1: 'Debes introducir un usuario válido delante de @g.educaand.es' });
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correoLimpio)) {
+            Toast.show({ type: 'error', text1: 'Introduce un correo electrónico válido' });
             return;
         }
 
@@ -138,7 +138,7 @@ export default function Registro() {
                                 style={styles.input}
                                 value={correo}
                                 onChangeText={setCorreo}
-                                placeholder='tuCorreo@g.educaand.es'
+                                placeholder='tuCorreo@ejemplo.com'
                                 autoCapitalize='none'
                             />
 
