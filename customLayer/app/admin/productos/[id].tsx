@@ -230,7 +230,7 @@ export default function DetalleProductoAdmin() {
                             <Text style={styles.label}>Nombre del Producto</Text>
                             <TextInput style={styles.input} value={form.nombre} onChangeText={t => setForm({ ...form, nombre: t })} />
                         </View>
-                        <View style={[styles.inputGroup, { flex: 0.4 }]}>
+                        <View style={[styles.inputGroup, styles.grupoPrecio]}>
                             <Text style={styles.label}>Precio (€)</Text>
                             <TextInput 
                                 style={styles.input} 

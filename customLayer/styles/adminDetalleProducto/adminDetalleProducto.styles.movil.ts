@@ -24,6 +24,7 @@ export const styles = StyleSheet.create({
     },
 
     filaInputs: { flexDirection: "column", gap: 15, marginBottom: 20 },
+    grupoPrecio: {},
     inputGroup: { flex: 1 },
     label: { fontSize: 14, fontWeight: "600", color: "#64748b", marginBottom: 8 },
     input: {

@@ -36,6 +36,7 @@ export const styles = StyleSheet.create({
         marginBottom: 20,
     },
     filaInputs: { flexDirection: "row", gap: 20, marginBottom: 20 },
+    grupoPrecio: { flex: 0.4 },
     inputGroup: { flex: 1 },
     label: { fontSize: 14, fontWeight: "600", color: "#64748b", marginBottom: 8 },
     input: {
