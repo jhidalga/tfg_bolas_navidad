@@ -241,6 +241,9 @@ export default function ListaPedidosAdmin() {
                             <Pressable style={styles.btnExportar} onPress={() => router.push('/admin/impresion' as any)}>
                                 <Text style={styles.txtBtnExportar}><FontAwesome5 name="print" size={14} color="white" /> Cola de impresión</Text>
                             </Pressable>
+                            <Pressable style={styles.btnExportar} onPress={() => router.push('/admin/incidencias' as any)}>
+                                <Text style={styles.txtBtnExportar}><FontAwesome5 name="user-lock" size={14} color="white" /> Incidencias</Text>
+                            </Pressable>
                             <Pressable style={styles.btnExportar} onPress={exportarCSV}>
                                 <Text style={styles.txtBtnExportar}><Entypo name="export" size={16} color="white" /> Exportar</Text>
                             </Pressable>

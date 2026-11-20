@@ -61,6 +61,16 @@ class ModeloAdminData(BaseModel):
     nombre: str
     imagen: Optional[str] = ""
 
+class IncidenciaRegistro(BaseModel):
+    nombre: str
+    apellido1: str
+    apellido2: str
+    curso: str
+    correo: str
+
+class EstadoIncidencia(BaseModel):
+    estado: str
+
 class UsuarioUpdate(BaseModel):
     nombre: Optional[str] = None
     curso: Optional[str] = None
@@ -377,6 +387,30 @@ if MODO_PRUEBA:
             {"id": "u1", "nombre": "Admin de prueba", "email": "admin@g.educaand.es", "curso": "2DAM", "profesor": True, "administrador": True, "num_pedidos": 0},
             {"id": "u2", "nombre": "Ana Lopez", "email": "ana@g.educaand.es", "curso": "1DAM", "profesor": False, "administrador": False, "num_pedidos": 1},
         ]
+
+    # --- Incidencias de registro (prueba, en memoria) ---
+    _INCIDENCIAS = []
+
+    @app.post("/api/registro/incidencia")
+    def crear_incidencia_prueba(datos: IncidenciaRegistro):
+        _INCIDENCIAS.append({"id": f"i{len(_INCIDENCIAS)+1}", "created_at": "2026-11-20T20:00:00", "estado": "Pendiente", **datos.dict()})
+        return {"mensaje": "Incidencia enviada"}
+
+    @app.get("/api/registro/permitido")
+    def correo_permitido_prueba(correo: str):
+        return {"permitido": any(i["correo"].lower() == correo.lower() and i["estado"] == "Aprobada" for i in _INCIDENCIAS)}
+
+    @app.get("/api/admin/incidencias")
+    def incidencias_prueba(request: Request):
+        return list(reversed(_INCIDENCIAS))
+
+    @app.patch("/api/admin/incidencias/{incidencia_id}")
+    def estado_incidencia_prueba(incidencia_id: str, datos: EstadoIncidencia, request: Request):
+        for i in _INCIDENCIAS:
+            if i["id"] == incidencia_id:
+                i["estado"] = datos.estado
+                return i
+        raise HTTPException(status_code=404, detail="No existe")
 
 @app.get("/api")
 def read_root():
@@ -906,6 +940,85 @@ def actualizar_mensaje_admin(datos: MensajeAdminUpdate, authorization: Optional[
         return res.data[0]
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+# ---------------------------------------------------------------
+# Incidencias de registro: quien no puede registrarse avisa y un admin
+# puede permitir ese correo. Hace falta la tabla incidencias_registro
+# (ver documentacion/incidencias_registro.sql).
+# ---------------------------------------------------------------
+def _exigir_admin(authorization: Optional[str]):
+    """Devuelve un cliente con el token del usuario si es administrador."""
+    if not authorization:
+        raise HTTPException(status_code=401, detail="No autorizado")
+    token = authorization.replace("Bearer ", "")
+    cliente = create_client(SUPABASE_URL, SUPABASE_KEY, options=ClientOptions(headers={"Authorization": f"Bearer {token}"}))
+    user_id = cliente.auth.get_user(token).user.id
+    perfil = cliente.table("usuarios").select("administrador").eq("id", user_id).single().execute()
+    if not perfil.data or not perfil.data.get("administrador"):
+        raise HTTPException(status_code=403, detail="Solo administradores")
+    return cliente
+
+
+@app.post("/api/registro/incidencia")
+def crear_incidencia_registro(datos: IncidenciaRegistro):
+    """Publico: lo usa quien no consigue registrarse."""
+    campos = {k: v.strip() for k, v in datos.dict().items()}
+    if not all(campos.values()):
+        raise HTTPException(status_code=400, detail="Rellena todos los campos")
+    if any(len(v) > 120 for v in campos.values()):
+        raise HTTPException(status_code=400, detail="Algun campo es demasiado largo")
+    if "@" not in campos["correo"]:
+        raise HTTPException(status_code=400, detail="Correo no valido")
+    try:
+        cliente = create_client(SUPABASE_URL, SUPABASE_KEY)
+        existe = cliente.rpc("incidencia_pendiente", {"p_correo": campos["correo"]}).execute()
+        if existe.data:
+            return {"mensaje": "Ya tenias una incidencia abierta con ese correo"}
+        cliente.table("incidencias_registro").insert(campos).execute()
+        return {"mensaje": "Incidencia enviada"}
+    except Exception:
+        raise HTTPException(status_code=500, detail="No se pudo enviar la incidencia")
+
+
+@app.get("/api/registro/permitido")
+def correo_permitido(correo: str):
+    """Publico: dice si un admin ha permitido saltar la regla del correo para esta direccion."""
+    if len(correo) > 200:
+        return {"permitido": False}
+    try:
+        cliente = create_client(SUPABASE_URL, SUPABASE_KEY)
+        r = cliente.rpc("correo_permitido", {"p_correo": correo}).execute()
+        return {"permitido": bool(r.data)}
+    except Exception:
+        return {"permitido": False}
+
+
+@app.get("/api/admin/incidencias")
+def listar_incidencias(authorization: Optional[str] = Header(None)):
+    try:
+        cliente = _exigir_admin(authorization)
+        return cliente.table("incidencias_registro").select("*").order("created_at", desc=True).execute().data
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=500, detail="No se pudieron cargar las incidencias")
+
+
+@app.patch("/api/admin/incidencias/{incidencia_id}")
+def cambiar_estado_incidencia(incidencia_id: str, datos: EstadoIncidencia, authorization: Optional[str] = Header(None)):
+    if datos.estado not in ("Pendiente", "Aprobada", "Rechazada"):
+        raise HTTPException(status_code=400, detail="Estado no valido")
+    try:
+        cliente = _exigir_admin(authorization)
+        r = cliente.table("incidencias_registro").update({"estado": datos.estado}).eq("id", incidencia_id).execute()
+        if not r.data:
+            raise HTTPException(status_code=404, detail="La incidencia no existe")
+        return r.data[0]
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=500, detail="No se pudo actualizar la incidencia")
+
 
 # Sirve la versión web exportada por Expo (solo en el despliegue con Docker/Railway).
 # Debe declararse al final para que las rutas /api tengan prioridad.
