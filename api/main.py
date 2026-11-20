@@ -1,12 +1,18 @@
 import os
 from typing import List, Optional
-from fastapi import FastAPI, HTTPException, Header
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, HTTPException, Header, Response
+from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from supabase import ClientOptions, create_client, Client
 from dotenv import load_dotenv
 from pydantic import BaseModel
 import jwt
+try:
+    from .bolas3d import zip_pedido, zip_lineas, generar_3mf, nombre_fichero
+    from .bolas3d.preview import preview_png
+except ImportError:
+    from bolas3d import zip_pedido, zip_lineas, generar_3mf, nombre_fichero
+    from bolas3d.preview import preview_png
 
 load_dotenv()
 SUPABASE_URL = os.getenv("SUPABASE_URL")
@@ -14,6 +20,8 @@ SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 app = FastAPI()
+# Nunca se activa en Railway aunque la variable estuviera puesta
+MODO_PRUEBA = os.getenv("MODO_PRUEBA") == "1" and not os.getenv("RAILWAY_ENVIRONMENT") and not os.getenv("RAILWAY_PROJECT_ID")
 
 class ItemCarrito(BaseModel):
     producto_id: str
@@ -65,6 +73,311 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+def _respuesta_3mf_pedido(pedido_id: str, detalles: list, detalle: Optional[str] = None):
+    """Un 3MF suelto (si se da el id de la linea) o un zip con todas las bolas con nombre del pedido."""
+    lineas = [d for d in detalles if d.get("personalizacion") and d["personalizacion"] != "Sin texto"]
+    try:
+        if detalle:
+            fila = next((d for d in lineas if str(d.get("id")) == str(detalle)), None)
+            if not fila:
+                raise HTTPException(status_code=404, detail="Esa linea no tiene nombre o no existe")
+            datos = generar_3mf(fila["modelo"], fila["personalizacion"])
+            return Response(content=datos, media_type="model/3mf",
+                            headers={"Content-Disposition": f'attachment; filename="{nombre_fichero(fila["modelo"], fila["personalizacion"])}"'})
+        if not lineas:
+            raise HTTPException(status_code=404, detail="El pedido no tiene bolas con nombre")
+        datos = zip_pedido([(d["modelo"], d["personalizacion"], d.get("cantidad") or 1) for d in lineas])
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    return Response(content=datos, media_type="application/zip",
+                    headers={"Content-Disposition": f'attachment; filename="pedido_{pedido_id}_3mf.zip"'})
+
+
+def _cola_impresion(pedidos: list):
+    """Agrupa por color las bolas con nombre de los pedidos dados. Sirve para imprimir varias a la vez."""
+    import re as _re
+    import unicodedata as _ud
+    def clave(c):
+        return _re.sub(r"\s+", " ", _ud.normalize("NFKD", c or "").encode("ascii", "ignore").decode().lower()).strip() or "sin color"
+    grupos = {}
+    for p in pedidos:
+        for d in p.get("detalles_pedido") or []:
+            nombre = d.get("personalizacion")
+            if not nombre or nombre == "Sin texto":
+                continue
+            k = clave(d.get("color"))
+            g = grupos.setdefault(k, {"color": d.get("color") or "Sin color", "bolas": 0, "lineas": []})
+            cant = d.get("cantidad") or 1
+            g["bolas"] += cant
+            u = p.get("usuarios") or {}
+            g["lineas"].append({"id": d.get("id"), "color": d.get("color") or "Sin color", "pedido_id": p["id"], "pedido": str(p["id"])[:8].upper(),
+                                "modelo": d.get("modelo"), "personalizacion": nombre, "cantidad": cant,
+                                "estado": p.get("estado"), "cliente": u.get("nombre"), "curso": u.get("curso")})
+    return sorted(grupos.values(), key=lambda g: g["color"].lower())
+
+
+def _zip_cola(grupo: dict):
+    items = []
+    for l in grupo["lineas"]:
+        quien = "".join(ch if ch.isalnum() else "_" for ch in (l.get("cliente") or "sin_cliente")).strip("_") or "sin_cliente"
+        fn = f'{quien}_{l["pedido"]}_{nombre_fichero(l["modelo"], l["personalizacion"], l["cantidad"])}'
+        items.append((fn, l["modelo"], l["personalizacion"]))
+    return zip_lineas(items)
+
+
+def _respuesta_cola(grupos: list, color: Optional[str], cliente: Optional[str] = None):
+    """Sin color ni cliente devuelve los grupos. Con color o con cliente devuelve el zip de esas bolas."""
+    if color is None and cliente is None:
+        return grupos
+    import unicodedata as _ud
+    norm = lambda c: _ud.normalize("NFKD", c or "").encode("ascii", "ignore").decode().lower().strip()
+    lineas = [l for g in grupos for l in g["lineas"]
+              if (color is None or norm(l["color"]) == norm(color)) and (cliente is None or norm(l["cliente"]) == norm(cliente))]
+    if not lineas:
+        raise HTTPException(status_code=404, detail="No hay bolas para eso en la cola")
+    try:
+        datos = _zip_cola({"lineas": lineas})
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    etiqueta = norm(color if color is not None else cliente)
+    fichero = "".join(ch if ch.isalnum() else "_" for ch in etiqueta) or "cola"
+    return Response(content=datos, media_type="application/zip",
+                    headers={"Content-Disposition": f'attachment; filename="cola_{fichero}_3mf.zip"'})
+
+
+# ---------------------------------------------------------------- MODO PRUEBA (sin base de datos)
+# Con MODO_PRUEBA=1 la API devuelve productos de ejemplo con sus imagenes, para ver la web sin Supabase.
+# Estas rutas van antes que las reales para que ganen. Nunca activar en produccion.
+if MODO_PRUEBA:
+    from fastapi import Request
+    from fastapi.responses import FileResponse
+
+    _MUESTRAS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "bolas3d", "muestras")
+    _MODELOS = {  # nombre en la tienda -> imagen
+        "Galleta de Jengibre": "Gingerbread", "Oso de navidad": "Bear", "Reno de Navidad": "Reindeer",
+        "Estrella": "Star", "Arbol de Navidad": "ChristmasTree",
+    }
+
+    def _productos_prueba(base: str):
+        def mod(i, nombre):
+            return {"id": f"m{i}-{_MODELOS[nombre]}", "nombre": nombre, "imagen": f"{base}api/prueba/img/{_MODELOS[nombre]}.png"}
+        def prod(pid, nombre, desc, modelos, colores):
+            return {"id": pid, "nombre": nombre, "descripcion": desc, "precio": 1.0, "precio_personalizacion": 0.0,
+                    "deshabilitado": False, "oculto": False, "personalizable": True, "colores": colores,
+                    "modelos": [mod(i, n) for i, n in enumerate(modelos)]}
+        return [
+            prod("p1", "Bolas de Navidad (Color marr\u00f3n)", "Bola de navidad con distintos modelos y nombre personalizado",
+                 ["Galleta de Jengibre", "Oso de navidad", "Reno de Navidad"], ["Marr\u00f3n"]),
+            prod("p2", "Bola de Navidad Estrella", "Bola de navidad con forma de estrella y nombre personalizado", ["Estrella"], ["Dorado"]),
+            prod("p3", "Bola de Navidad \u00c1rbol", "Bola de navidad con forma de \u00e1rbol y nombre personalizado", ["Arbol de Navidad"], ["Verde"]),
+        ]
+
+    @app.get("/api/prueba/img/{figura}.png")
+    def imagen_prueba(figura: str):
+        ruta = os.path.join(_MUESTRAS, os.path.basename(figura) + ".png")
+        if not os.path.exists(ruta):
+            raise HTTPException(status_code=404, detail="No existe")
+        return FileResponse(ruta, media_type="image/png")
+
+    _ESTADO = {"productos": None, "estados": {}, "n": 0}
+
+    def _lista(base: str):
+        if _ESTADO["productos"] is None:
+            _ESTADO["productos"] = _productos_prueba(base)
+        return _ESTADO["productos"]
+
+    def _buscar(base: str, pid: str):
+        for p in _lista(base):
+            if p["id"] == pid:
+                return p
+        raise HTTPException(status_code=404, detail="Producto no encontrado")
+
+    @app.get("/api/productos")
+    def productos_prueba(request: Request, incluir_ocultos: Optional[bool] = False):
+        lista = _lista(str(request.base_url))
+        return lista if incluir_ocultos else [p for p in lista if not p.get("oculto")]
+
+    @app.get("/api/productos/{producto_id}")
+    def producto_prueba(producto_id: str, request: Request, incluir_ocultos: Optional[bool] = False):
+        return _buscar(str(request.base_url), producto_id)
+
+    @app.post("/api/admin/productos")
+    def crear_producto_prueba(datos: ProductoAdminCrear, request: Request):
+        _ESTADO["n"] += 1
+        nuevo = datos.dict(); nuevo["id"] = f"n{_ESTADO['n']}"; nuevo["modelos"] = []
+        _lista(str(request.base_url)).append(nuevo)
+        return nuevo
+
+    @app.patch("/api/admin/productos/{producto_id}")
+    def actualizar_producto_prueba(producto_id: str, datos: ProductoAdminUpdate, request: Request):
+        p = _buscar(str(request.base_url), producto_id)
+        p.update({k: v for k, v in datos.dict().items() if v is not None})
+        return [p]
+
+    @app.delete("/api/admin/productos/{producto_id}")
+    def eliminar_producto_prueba(producto_id: str, request: Request):
+        lista = _lista(str(request.base_url)); p = _buscar(str(request.base_url), producto_id)
+        lista.remove(p)
+        return {"mensaje": "Producto eliminado", "ocultado": False}
+
+    @app.post("/api/admin/productos/{producto_id}/modelos")
+    def crear_modelo_prueba(producto_id: str, datos: ModeloAdminData, request: Request):
+        p = _buscar(str(request.base_url), producto_id)
+        _ESTADO["n"] += 1
+        m = {"id": f"mn{_ESTADO['n']}", "nombre": datos.nombre, "imagen": datos.imagen, "producto_id": producto_id}
+        p["modelos"].append(m)
+        return [m]
+
+    @app.patch("/api/admin/modelos/{modelo_id}")
+    def actualizar_modelo_prueba(modelo_id: str, datos: ModeloAdminData, request: Request):
+        for p in _lista(str(request.base_url)):
+            for m in p["modelos"]:
+                if m["id"] == modelo_id:
+                    m.update(datos.dict()); return [m]
+        raise HTTPException(status_code=404, detail="Modelo no encontrado")
+
+    @app.delete("/api/admin/modelos/{modelo_id}")
+    def eliminar_modelo_prueba(modelo_id: str, request: Request):
+        for p in _lista(str(request.base_url)):
+            for m in p["modelos"]:
+                if m["id"] == modelo_id:
+                    p["modelos"].remove(m); return {"mensaje": "Modelo eliminado con exito"}
+        raise HTTPException(status_code=404, detail="Modelo no encontrado")
+
+    @app.get("/api/mensajes")
+    def mensaje_prueba():
+        return {"id": 1, "mensaje": ""}
+
+    @app.get("/api/usuarios/perfil")
+    def perfil_prueba():
+        return {"id": "demo", "nombre": "Admin de prueba", "curso": "2DAM", "administrador": True, "profesor": True}
+
+    def _detalle_prueba(modelo, nombre, color="Marr\u00f3n", cantidad=1, producto=None):
+        return {"id": f"d{abs(hash((modelo, nombre, color, cantidad))) % 10**8}", "modelo": modelo, "color": color, "personalizacion": nombre,
+                "precio_unitario": 1.0, "cantidad": cantidad,
+                "productos": producto or {"nombre": "Bolas de Navidad", "modelos": []}}
+
+    def _pedidos(base: str):
+        if "pedidos" not in _ESTADO:
+            prods = {p["id"]: p for p in _lista(base)}
+            def prod(pid):
+                p = prods[pid]; return {"nombre": p["nombre"], "modelos": p["modelos"]}
+            _ESTADO["pedidos"] = [
+                {"id": "11111111-aaaa", "total": 3.0, "estado": "Pendiente", "created_at": "2026-11-17T09:30:00",
+                 "usuarios": {"nombre": "Ana Lopez", "curso": "1DAM"},
+                 "detalles_pedido": [_detalle_prueba("Galleta de Jengibre", "Ana", producto=prod("p1")),
+                                     _detalle_prueba("Oso de navidad", "Luis", producto=prod("p1")),
+                                     _detalle_prueba("Reno de Navidad", "María José", producto=prod("p1"))]},
+                {"id": "22222222-bbbb", "total": 1.0, "estado": "Pendiente", "created_at": "2026-11-16T12:10:00",
+                 "usuarios": {"nombre": "Pedro Gil", "curso": "Profesorado"},
+                 "detalles_pedido": [_detalle_prueba("Estrella", "Pedro", "Dorado", producto=prod("p2")),
+                                     _detalle_prueba("Estrella", "Sara", "Dorado", producto=prod("p2"))]},
+                {"id": "33333333-cccc", "total": 2.0, "estado": "Pendiente", "created_at": "2026-11-15T10:00:00",
+                 "usuarios": {"nombre": "Marta Ruiz", "curso": "2DAM"},
+                 "detalles_pedido": [_detalle_prueba("Arbol de Navidad", "Marta", "Verde", producto=prod("p3")),
+                                     _detalle_prueba("Arbol de Navidad", "Jos\u00e9 Luis", "Verde", producto=prod("p3")),
+                                     _detalle_prueba("Galleta de Jengibre", "Marta", producto=prod("p1"))]},
+            ]
+            _ESTADO["carrito"] = []
+        return _ESTADO["pedidos"]
+
+    @app.get("/api/admin/pedidos")
+    def pedidos_prueba(request: Request):
+        return _pedidos(str(request.base_url))
+
+    @app.get("/api/admin/pedidos/{pedido_id}")
+    def pedido_prueba(pedido_id: str, request: Request):
+        for p in _pedidos(str(request.base_url)):
+            if p["id"] == pedido_id:
+                return {"pedido": {k: v for k, v in p.items() if k != "detalles_pedido"}, "productos": p["detalles_pedido"]}
+        raise HTTPException(status_code=404, detail="Pedido no encontrado")
+
+    @app.get("/api/admin/pedidos/{pedido_id}/3mf")
+    def pedido_3mf_prueba(pedido_id: str, request: Request, detalle: Optional[str] = None):
+        for p in _pedidos(str(request.base_url)):
+            if p["id"] == pedido_id:
+                return _respuesta_3mf_pedido(pedido_id, p["detalles_pedido"], detalle)
+        raise HTTPException(status_code=404, detail="Pedido no encontrado")
+
+    @app.patch("/api/admin/pedidos/{pedido_id}/estado")
+    def estado_prueba(pedido_id: str, nuevo_estado: EstadoPedido, request: Request):
+        for p in _pedidos(str(request.base_url)):
+            if p["id"] == pedido_id:
+                p["estado"] = nuevo_estado.estado
+        return {"mensaje": "Estado actualizado", "data": [{"id": pedido_id, "estado": nuevo_estado.estado}]}
+
+    @app.delete("/api/admin/pedidos/{pedido_id}")
+    def borrar_pedido_prueba(pedido_id: str, request: Request):
+        lista = _pedidos(str(request.base_url))
+        lista[:] = [p for p in lista if p["id"] != pedido_id]
+        return {"mensaje": "Pedido eliminado correctamente", "data": []}
+
+    @app.get("/api/pedidos/usuario")
+    def mis_pedidos_prueba(request: Request):
+        return [dict(p, detalles_pedido=[{"id": d["id"]} for d in p["detalles_pedido"]]) for p in _pedidos(str(request.base_url))]
+
+    # ---- carrito y checkout de prueba: lo que compras aparece luego en el admin
+    @app.get("/api/carrito")
+    def carrito_prueba(request: Request):
+        _pedidos(str(request.base_url))
+        return _ESTADO["carrito"]
+
+    @app.post("/api/carrito")
+    def anadir_carrito_prueba(item: ItemCarrito, request: Request):
+        base = str(request.base_url); _pedidos(base)
+        p = _buscar(base, item.producto_id)
+        modelo = next((m for m in p["modelos"] if m["id"] == item.modelo_id), None) or {"nombre": item.modelo, "imagen": None}
+        _ESTADO["n"] += 1
+        fila = item.dict()
+        fila.update({"id": f"c{_ESTADO['n']}", "user_id": "demo",
+                     "productos": {"nombre": p["nombre"], "precio": p["precio"], "precio_personalizacion": 0.0},
+                     "modelos": {"nombre": modelo["nombre"], "imagen": modelo["imagen"]}})
+        _ESTADO["carrito"].append(fila)
+        return {"mensaje": "Añadido al carrito", "data": [fila]}
+
+    @app.delete("/api/carrito/{item_id}")
+    def quitar_carrito_prueba(item_id: str, request: Request):
+        _pedidos(str(request.base_url))
+        _ESTADO["carrito"][:] = [c for c in _ESTADO["carrito"] if c["id"] != item_id]
+        return {"mensaje": "Producto eliminado del carrito"}
+
+    @app.post("/api/pedidos/checkout")
+    def checkout_prueba(checkout: CheckoutPedido, request: Request):
+        base = str(request.base_url); lista = _pedidos(base)
+        if not _ESTADO["carrito"]:
+            raise HTTPException(status_code=400, detail="El carrito está vacío")
+        _ESTADO["n"] += 1
+        detalles = []
+        for c in _ESTADO["carrito"]:
+            p = _buscar(base, c["producto_id"])
+            d = _detalle_prueba(c["modelo"], c["personalizacion"], c["color"], c.get("cantidad", 1),
+                                {"nombre": p["nombre"], "modelos": p["modelos"]})
+            d["id"] = f"d{_ESTADO['n']}-{len(detalles) + 1}"
+            detalles.append(d)
+        pedido = {"id": f"{_ESTADO['n']:08d}-nuevo", "total": checkout.total, "estado": "Pendiente",
+                  "created_at": "2026-11-17T14:30:00", "usuarios": {"nombre": "Admin de prueba", "curso": "2DAM"},
+                  "detalles_pedido": detalles}
+        lista.insert(0, pedido)
+        _ESTADO["carrito"].clear()
+        return {"mensaje": "Pedido procesado correctamente", "pedido_id": pedido["id"]}
+
+    @app.get("/api/admin/impresion")
+    def cola_prueba(request: Request, estado: str = "Pendiente"):
+        return _cola_impresion([p for p in _pedidos(str(request.base_url)) if p["estado"] == estado])
+
+    @app.get("/api/admin/impresion/3mf")
+    def cola_3mf_prueba(request: Request, color: Optional[str] = None, cliente: Optional[str] = None, estado: str = "Pendiente"):
+        if color is None and cliente is None:
+            raise HTTPException(status_code=400, detail="Indica color o cliente")
+        return _respuesta_cola(_cola_impresion([p for p in _pedidos(str(request.base_url)) if p["estado"] == estado]), color, cliente)
+
+    @app.get("/api/admin/usuarios")
+    def usuarios_prueba():
+        return [
+            {"id": "u1", "nombre": "Admin de prueba", "email": "admin@g.educaand.es", "curso": "2DAM", "profesor": True, "administrador": True, "num_pedidos": 0},
+            {"id": "u2", "nombre": "Ana Lopez", "email": "ana@g.educaand.es", "curso": "1DAM", "profesor": False, "administrador": False, "num_pedidos": 1},
+        ]
+
 @app.get("/api")
 def read_root():
     return {"message": "¡Bienvenido a la API de Custom Layers!"}
@@ -72,6 +385,10 @@ def read_root():
 @app.get("/api/health")
 def health():
     return {"status": "ok"}
+
+@app.get("/")
+def read_root():
+    return {"message": "¡Bienvenido a la API de Custom Layers!"}
 
 @app.get("/api/productos")
 def obtener_productos(incluir_ocultos: Optional[bool] = False):
@@ -197,7 +514,7 @@ def realizar_pedido(checkout: CheckoutPedido, authorization: Optional[str] = Hea
         
         detalles = []
         for item in items_carrito:
-            extra = float(item["productos"].get("precio_personalizacion") or 0.0) if item.get("personalizacion") and item.get("personalizacion") != "Sin texto" else 0.0
+            extra = 0.0  # la personalizacion no se cobra aparte
             detalles.append({
                 "pedido_id": pedido_id,
                 "producto_id": item["producto_id"],
@@ -256,6 +573,141 @@ def cambiar_estado_pedido(pedido_id: str, nuevo_estado: EstadoPedido, authorizat
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+_HTML_PRUEBA = r"""<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Prueba de bolas</title>
+<style>
+body{font-family:Arial,sans-serif;margin:0;background:#f8f9fa;color:#111}
+main{max-width:1000px;margin:0 auto;padding:24px}
+h1{font-size:22px} .fila{display:flex;gap:16px;flex-wrap:wrap;align-items:end;margin-bottom:20px}
+label{font-size:12px;color:#6b7280;display:block;margin-bottom:4px;text-transform:uppercase}
+select,input{padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:15px}
+#bolas{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
+.bola{background:#fff;border-radius:12px;padding:12px;box-shadow:0 1px 4px #0001}
+.bola img{width:100%;aspect-ratio:1;object-fit:contain;background:#fff;border-radius:8px}
+.bola input{width:100%;box-sizing:border-box;margin:8px 0}
+.bola a{display:block;text-align:center;background:#111827;color:#fff;padding:10px;border-radius:8px;text-decoration:none;font-weight:bold}
+.aviso{font-size:13px;color:#6b7280}
+</style></head><body><main>
+<h1>Prueba de bolas con nombre</h1>
+<p class="aviso">Pagina de prueba sin base de datos. Solo existe con MODO_PRUEBA=1.</p>
+<div class="fila">
+ <div><label>Modelo</label><select id="modelo">
+  <option>Galleta de Jengibre</option><option>Arbol de Navidad</option><option>Saco de Papa Noel</option>
+  <option>Pudin de Navidad</option><option>Calcetin</option><option>Oso de navidad</option>
+  <option>Estrella</option><option>Reno de Navidad</option></select></div>
+ <div><label>Cantidad</label><input id="cantidad" type="number" min="1" max="12" value="1" style="width:80px"></div>
+</div>
+<div id="bolas"></div>
+<script>
+const $=id=>document.getElementById(id);
+const temporizadores={};
+function pinta(){
+  const n=Math.max(1,Math.min(12,parseInt($('cantidad').value)||1));
+  const cont=$('bolas'); const previos=[...cont.querySelectorAll('input')].map(i=>i.value);
+  cont.innerHTML='';
+  for(let i=0;i<n;i++){
+    const d=document.createElement('div'); d.className='bola';
+    d.innerHTML='<img alt="vista previa"><input placeholder="'+(n>1?'Nombre de la bola '+(i+1):'Escribe un nombre')+'"><a href="#" target="_blank">Descargar 3MF</a>';
+    const inp=d.querySelector('input'); inp.value=previos[i]||'';
+    inp.addEventListener('input',()=>{clearTimeout(temporizadores[i]);temporizadores[i]=setTimeout(()=>actualiza(d),500)});
+    cont.appendChild(d); actualiza(d);
+  }
+}
+function actualiza(d){
+  const nombre=d.querySelector('input').value.trim(), modelo=$('modelo').value;
+  const img=d.querySelector('img'), a=d.querySelector('a');
+  if(!nombre){img.removeAttribute('src');a.style.opacity=.4;a.removeAttribute('href');return}
+  const q='modelo='+encodeURIComponent(modelo)+'&nombre='+encodeURIComponent(nombre);
+  img.src='/api/preview?'+q; a.href='/api/prueba/3mf?'+q; a.style.opacity=1;
+}
+$('modelo').addEventListener('change',pinta); $('cantidad').addEventListener('input',pinta); pinta();
+</script></main></body></html>"""
+
+if MODO_PRUEBA:
+    @app.get("/prueba", response_class=HTMLResponse)
+    def pagina_prueba():
+        """Pagina de prueba sin base de datos. Solo con MODO_PRUEBA=1."""
+        return _HTML_PRUEBA
+
+    @app.get("/api/prueba/3mf")
+    def descargar_3mf_prueba(modelo: str, nombre: str):
+        """Descarga un 3MF suelto. Solo con MODO_PRUEBA=1, nunca en produccion."""
+        try:
+            datos = generar_3mf(modelo, nombre)
+        except ValueError as e:
+            raise HTTPException(status_code=422, detail=str(e))
+        return Response(content=datos, media_type="model/3mf",
+                        headers={"Content-Disposition": f'attachment; filename="{nombre_fichero(modelo, nombre)}"'})
+
+@app.get("/api/preview")
+def vista_previa_bola(modelo: str, nombre: str):
+    """Imagen PNG de la bola con el nombre puesto. Es publica porque la usa el cliente antes de comprar."""
+    if len(modelo) > 80 or len(nombre) > 60:
+        raise HTTPException(status_code=400, detail="Texto demasiado largo")
+    try:
+        datos = preview_png(modelo, nombre)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    return Response(content=datos, media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
+
+@app.get("/api/admin/pedidos/{pedido_id}/3mf")
+def descargar_3mf_pedido(pedido_id: str, detalle: Optional[str] = None, authorization: Optional[str] = Header(None)):
+    """Genera al vuelo el 3MF de una bola (?detalle=ID) o un zip con todas las del pedido."""
+    if not authorization:
+        raise HTTPException(status_code=401, detail="No autorizado")
+    token = authorization.replace("Bearer ", "")
+    try:
+        cliente = create_client(SUPABASE_URL, SUPABASE_KEY, options=ClientOptions(headers={"Authorization": f"Bearer {token}"}))
+        user_id = cliente.auth.get_user(token).user.id
+        perfil = cliente.table("usuarios").select("administrador").eq("id", user_id).single().execute()
+        if not perfil.data or not perfil.data.get("administrador"):
+            raise HTTPException(status_code=403, detail="Solo administradores")
+        detalles = cliente.table("detalles_pedido").select("id, modelo, personalizacion, cantidad").eq("pedido_id", pedido_id).execute().data
+        return _respuesta_3mf_pedido(pedido_id, detalles, detalle)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+def _pedidos_para_cola(authorization: Optional[str], estado: str):
+    if not authorization:
+        raise HTTPException(status_code=401, detail="No autorizado")
+    token = authorization.replace("Bearer ", "")
+    cliente = create_client(SUPABASE_URL, SUPABASE_KEY, options=ClientOptions(headers={"Authorization": f"Bearer {token}"}))
+    user_id = cliente.auth.get_user(token).user.id
+    perfil = cliente.table("usuarios").select("administrador").eq("id", user_id).single().execute()
+    if not perfil.data or not perfil.data.get("administrador"):
+        raise HTTPException(status_code=403, detail="Solo administradores")
+    return cliente.table("pedidos").select("id, estado, usuarios!user_id(nombre, curso), detalles_pedido(id, modelo, color, personalizacion, cantidad)") \
+        .eq("estado", estado).execute().data
+
+
+@app.get("/api/admin/impresion")
+def cola_impresion(estado: str = "Pendiente", authorization: Optional[str] = Header(None)):
+    """Bolas con nombre de los pedidos en ese estado, agrupadas por color."""
+    try:
+        return _cola_impresion(_pedidos_para_cola(authorization, estado))
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/admin/impresion/3mf")
+def cola_impresion_3mf(color: Optional[str] = None, cliente: Optional[str] = None, estado: str = "Pendiente", authorization: Optional[str] = Header(None)):
+    """Zip con los 3MF de las bolas de un color (para imprimirlas juntas) o de una persona."""
+    if color is None and cliente is None:
+        raise HTTPException(status_code=400, detail="Indica color o cliente")
+    try:
+        return _respuesta_cola(_cola_impresion(_pedidos_para_cola(authorization, estado)), color, cliente)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.delete("/api/admin/pedidos/{pedido_id}")
 def eliminar_pedido_admin(pedido_id: str, authorization: Optional[str] = Header(None)):
     token = authorization.replace("Bearer ", "") if authorization else ""
@@ -285,6 +737,32 @@ def actualizar_producto_admin(producto_id: str, datos: ProductoAdminUpdate, auth
         update_data = {k: v for k, v in datos.dict().items() if v is not None}
         res = cliente_seguro.table("productos").update(update_data).eq("id", producto_id).execute()
         return res.data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/api/admin/productos/{producto_id}")
+def eliminar_producto_admin(producto_id: str, authorization: Optional[str] = Header(None)):
+    """Borra un producto con sus modelos. Si ya esta en pedidos o carritos no se puede borrar:
+    en ese caso se oculta y se deshabilita para que no se vea en la tienda."""
+    if not authorization:
+        raise HTTPException(status_code=401, detail="No autorizado")
+    token = authorization.replace("Bearer ", "")
+    try:
+        cliente = create_client(SUPABASE_URL, SUPABASE_KEY, options=ClientOptions(headers={"Authorization": f"Bearer {token}"}))
+        en_pedidos = cliente.table("detalles_pedido").select("id").eq("producto_id", producto_id).limit(1).execute().data
+        en_carritos = cliente.table("carrito").select("id").eq("producto_id", producto_id).limit(1).execute().data
+        if en_pedidos or en_carritos:
+            res = cliente.table("productos").update({"oculto": True, "deshabilitado": True}).eq("id", producto_id).execute()
+            if not res.data:
+                raise HTTPException(status_code=403, detail="No tienes permisos")
+            return {"mensaje": "El producto tiene pedidos o carritos y no se puede borrar. Se ha ocultado y deshabilitado.", "ocultado": True}
+        cliente.table("modelos").delete().eq("producto_id", producto_id).execute()
+        res = cliente.table("productos").delete().eq("id", producto_id).execute()
+        if not res.data:
+            raise HTTPException(status_code=403, detail="No tienes permisos o el producto no existe")
+        return {"mensaje": "Producto eliminado", "ocultado": False}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
