@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, FlatList, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, Image, TouchableOpacity, ActivityIndicator, Platform, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from 'expo-router';
 import Toast from 'react-native-toast-message';
@@ -90,7 +90,19 @@ export default function PantallaCarrito() {
      * Si la operación es exitosa, lo retira visualmente de la lista local y muestra un aviso.
      * * @param id - Identificador único del registro en el carrito a eliminar.
      */
+    const confirmarEliminar = (): Promise<boolean> => {
+        const mensaje = '¿Quitar esta bola del carrito?';
+        if (Platform.OS === 'web') return Promise.resolve(window.confirm(mensaje));
+        return new Promise((resolve) => {
+            Alert.alert('Quitar del carrito', mensaje, [
+                { text: 'Cancelar', style: 'cancel', onPress: () => resolve(false) },
+                { text: 'Quitar', style: 'destructive', onPress: () => resolve(true) },
+            ]);
+        });
+    };
+
     const eliminarProducto = async (id: string) => {
+        if (!(await confirmarEliminar())) return;
         try {
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) return;
@@ -239,7 +251,7 @@ export default function PantallaCarrito() {
                             <View style={styles.footerResumen}>
                                 <Text style={styles.textoTotal}>Total: {totalCarrito.toFixed(2)} €</Text>
                                 <TouchableOpacity style={styles.botonPagar} onPress={crearPedido}>
-                                    <Text style={styles.textoBotonPagar}>Pedir</Text>
+                                    <Text style={styles.textoBotonPagar}>Realizar pedido</Text>
                                 </TouchableOpacity>
                             </View>
                         )}

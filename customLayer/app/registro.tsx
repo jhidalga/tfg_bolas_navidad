@@ -24,6 +24,8 @@ export default function Registro() {
     const router = useRouter();
     const [correo, setCorreo] = useState('');
     const [contrasena, setContrasena] = useState('');
+    const [contrasena2, setContrasena2] = useState('');
+    const [verContrasena, setVerContrasena] = useState(false);
     const [curso, setCurso] = useState('');
     const [profesor, setProfesor] = useState(false);
     const [nombre, setNombre] = useState('');
@@ -109,6 +111,11 @@ export default function Registro() {
                 if (res.ok && (await res.json()).permitido === true) errorCorreo = null;
             } catch (e) {}
         }
+        if (contrasenaLimpia !== contrasena2.trim()) {
+            Toast.show({ type: 'error', text1: 'Las contraseñas no coinciden.' });
+            return;
+        }
+
         if (errorCorreo) {
             Toast.show({ type: 'error', text1: errorCorreo, text2: 'Si crees que es un error, pulsa "¿No te deja registrarte? Avísanos".' });
             return;
@@ -198,8 +205,22 @@ export default function Registro() {
                         value={contrasena}
                         onChangeText={setContrasena}
                         placeholder='tuContraseña'
-                        secureTextEntry
+                        secureTextEntry={!verContrasena}
                     />
+
+                    <Text style={styles.etiqueta}>Repite la contraseña</Text>
+                    <TextInput
+                        style={styles.input}
+                        value={contrasena2}
+                        onChangeText={setContrasena2}
+                        placeholder='Repite tu contraseña'
+                        secureTextEntry={!verContrasena}
+                    />
+                    <Pressable onPress={() => setVerContrasena(!verContrasena)} style={{ marginTop: -12, marginBottom: 16 }}>
+                        <Text style={{ color: '#4731d9', fontWeight: '600', fontSize: 13 }}>
+                            {verContrasena ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                        </Text>
+                    </Pressable>
 
                     <Text style={styles.etiqueta}>¿Eres profesor?</Text>
                     <View style={styles.contenedorBotonesProfesor}>

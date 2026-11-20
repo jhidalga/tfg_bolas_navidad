@@ -72,6 +72,14 @@ export default function DetallesProducto() {
         setActivo((a) => Math.min(a, cantidad - 1));
     }, [cantidad]);
 
+    // Como maximo 3 espacios en el nombre y no puede ir vacio
+    const errorNombre = (texto: string): string | null => {
+        const t = texto.trim().replace(/\s+/g, ' ');
+        if (!t) return 'Escribe el nombre de la bola';
+        if ((t.match(/ /g) || []).length > 3) return 'El nombre puede tener como máximo 3 espacios';
+        return null;
+    };
+
     const cambiarNombre = (i: number, valor: string) => {
         setPersonalizaciones((prev) => prev.map((t, k) => (k === i ? valor : t)));
     };
@@ -138,6 +146,19 @@ export default function DetallesProducto() {
                 });
                 setAgregando(false);
                 return;
+            }
+
+            // Cada bola necesita nombre y como maximo 3 espacios
+            if (producto.personalizable) {
+                for (let i = 0; i < cantidad; i++) {
+                    const fallo = errorNombre(personalizaciones[i] || '');
+                    if (fallo) {
+                        setActivo(i);
+                        Toast.show({ type: 'error', text1: cantidad > 1 ? `Bola ${i + 1}: ${fallo}` : fallo });
+                        setAgregando(false);
+                        return;
+                    }
+                }
             }
 
             const apiUrl = `${process.env.EXPO_PUBLIC_API_URL || ''}/api`;
@@ -241,7 +262,13 @@ export default function DetallesProducto() {
 
                         <View style={styles.divisor} />
                         <View style={styles.seccionOpciones}>
-                            {producto.colores && producto.colores.length > 0 && (
+                            {producto.colores && producto.colores.length === 1 && (
+                                <View style={styles.opcionContainer}>
+                                    <Text style={styles.tituloOpcion}>Color</Text>
+                                    <Text style={{ fontSize: 16, color: '#111827', fontWeight: '600' }}>{producto.colores[0]}</Text>
+                                </View>
+                            )}
+                            {producto.colores && producto.colores.length > 1 && (
                                 <View style={styles.opcionContainer}>
                                     <Text style={styles.tituloOpcion}>Color disponible</Text>
                                     <View style={styles.pickerCard}>
@@ -290,9 +317,14 @@ export default function DetallesProducto() {
                                             />
                                             <Text style={{ color: '#6b7280', fontSize: 12, marginTop: 4 }}>
                                                 {(personalizaciones[i] ?? '').trim()
-                                                    ? "Solo se imprimen letras, espacios y - . '"
-                                                    : 'Si lo dejas vacío, la bola irá sin nombre.'}
+                                                    ? "Solo se imprimen letras, espacios y - . '  Máximo 3 espacios."
+                                                    : 'Escribe el nombre que llevará la bola.'}
                                             </Text>
+                                            {(personalizaciones[i] ?? '').trim() !== '' && errorNombre(personalizaciones[i] ?? '') && (
+                                                <Text style={{ color: '#dc2626', fontSize: 12, marginTop: 2 }}>
+                                                    {errorNombre(personalizaciones[i] ?? '')}
+                                                </Text>
+                                            )}
                                         </>
                                     )}
                                 </View>

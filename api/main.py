@@ -1,4 +1,5 @@
 import os
+import re
 from typing import List, Optional
 from fastapi import FastAPI, HTTPException, Header, Response
 from fastapi.responses import HTMLResponse, FileResponse
@@ -22,6 +23,18 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 app = FastAPI()
 # Nunca se activa en Railway aunque la variable estuviera puesta
 MODO_PRUEBA = os.getenv("MODO_PRUEBA") == "1" and not os.getenv("RAILWAY_ENVIRONMENT") and not os.getenv("RAILWAY_PROJECT_ID")
+
+MAX_ESPACIOS_NOMBRE = 3
+
+def _error_nombre_bola(nombre: str, personalizable: bool):
+    """Texto del error si el nombre de la bola no vale, o None. Como maximo 3 espacios y no puede ir vacio."""
+    n = re.sub(r"\s+", " ", (nombre or "").strip())
+    if personalizable and (not n or n == "Sin texto"):
+        return "Escribe el nombre de la bola"
+    if n.count(" ") > MAX_ESPACIOS_NOMBRE:
+        return f"El nombre puede tener como maximo {MAX_ESPACIOS_NOMBRE} espacios"
+    return None
+
 
 class ItemCarrito(BaseModel):
     producto_id: str
@@ -337,6 +350,9 @@ if MODO_PRUEBA:
         base = str(request.base_url); _pedidos(base)
         p = _buscar(base, item.producto_id)
         modelo = next((m for m in p["modelos"] if m["id"] == item.modelo_id), None) or {"nombre": item.modelo, "imagen": None}
+        error_nombre = _error_nombre_bola(item.personalizacion, bool(p.get("personalizable")))
+        if error_nombre:
+            raise HTTPException(status_code=400, detail=error_nombre)
         _ESTADO["n"] += 1
         fila = item.dict()
         fila.update({"id": f"c{_ESTADO['n']}", "user_id": "demo",
@@ -506,11 +522,17 @@ def agregar_al_carrito(item: ItemCarrito, authorization: Optional[str] = Header(
         payload = jwt.decode(token, options={"verify_signature": False})
         user_id = payload.get("sub")
         cliente_seguro = create_client(SUPABASE_URL, SUPABASE_KEY, options=ClientOptions(headers={"Authorization": f"Bearer {token}"}))
+        prod = cliente_seguro.table("productos").select("personalizable").eq("id", item.producto_id).execute().data
+        error_nombre = _error_nombre_bola(item.personalizacion, bool(prod and prod[0].get("personalizable")))
+        if error_nombre:
+            raise HTTPException(status_code=400, detail=error_nombre)
         datos_insertar = item.dict()
         datos_insertar["user_id"] = user_id
         respuesta = cliente_seguro.table("carrito").insert(datos_insertar).execute()
         return {"mensaje": "Añadido al carrito", "data": respuesta.data}
     except Exception as e:
+        if isinstance(e, HTTPException):
+            raise e
         raise HTTPException(status_code=500, detail=f"Error al añadir al carrito: {str(e)}")
 
 @app.delete("/api/carrito/{item_id}")
