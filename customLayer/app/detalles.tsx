@@ -6,7 +6,7 @@ import { useLocalSearchParams } from 'expo-router';
 import Toast from 'react-native-toast-message';
 import { styles as estilosEscritorio } from '../styles/detalles/detalles.styles';
 import { styles as estilosMovil } from '../styles/detalles/detalles.styles.movil';
-import { useEstilos } from '../lib/responsive';
+import { useEstilos, useEsMovilWeb } from '../lib/responsive';
 import Navbar from '@/componentes/navbar';
 import { supabase } from '../lib/supabase';
 
@@ -28,7 +28,9 @@ export default function DetallesProducto() {
     
     const insets = useSafeAreaInsets();
     const { width, height } = Dimensions.get('window');
-    const esHorizontal = width > height;
+    const esMovilWeb = useEsMovilWeb();
+    // En el móvil web siempre en vertical y con la vista previa fija arriba
+    const esHorizontal = !esMovilWeb && width > height;
     
     // Cada bola puede ser de un modelo distinto: un modelo por bola
     const [modeloBase, setModeloBase] = useState('');
@@ -195,11 +197,27 @@ export default function DetallesProducto() {
                     { paddingBottom: insets.bottom + 110 },
                     esHorizontal && styles.contenedorHorizontal
                 ]}>
-                    <View style={[styles.bloqueImagen, esHorizontal && styles.bloqueImagenHorizontal]}>
+                    <View style={[
+                        styles.bloqueImagen,
+                        esHorizontal && styles.bloqueImagenHorizontal,
+                        esMovilWeb && ({
+                            position: 'sticky',
+                            top: 0,
+                            zIndex: 10,
+                            aspectRatio: undefined,
+                            height: Math.round(Math.min(260, Math.max(180, height * 0.3))),
+                            borderBottomWidth: 1,
+                            borderBottomColor: '#e5e7eb',
+                            shadowColor: '#000',
+                            shadowOpacity: 0.08,
+                            shadowRadius: 6,
+                            shadowOffset: { width: 0, height: 3 },
+                        } as any),
+                    ]}>
                         <Image 
                             source={{ uri: vistaPrevia || imagenAMostrar }} 
                             style={styles.imagenPrincipal} 
-                            resizeMode={vistaPrevia ? 'contain' : 'cover'}
+                            resizeMode={vistaPrevia || esMovilWeb ? 'contain' : 'cover'}
                             onLoadEnd={() => setCargandoPrevia(false)}
                             onError={() => setVistaPrevia(null)}
                         />
