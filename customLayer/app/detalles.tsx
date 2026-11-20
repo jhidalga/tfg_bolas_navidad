@@ -27,9 +27,16 @@ export default function DetallesProducto() {
     const { width, height } = Dimensions.get('window');
     const esHorizontal = width > height;
     
-    const [modelo, setModelo] = useState('');
+    // Cada bola puede ser de un modelo distinto: un modelo por bola
+    const [modeloBase, setModeloBase] = useState('');
+    const [modelosSel, setModelosSel] = useState<string[]>(['']);
     const [color, setColor] = useState('');
-    const [personalizacion, setPersonalizacion] = useState('');
+    // Un nombre por cada bola: con cantidad 4 hay 4 campos
+    const [personalizaciones, setPersonalizaciones] = useState<string[]>(['']);
+    const [activo, setActivo] = useState(0);
+    const textoActivo = personalizaciones[activo] ?? '';
+    const [vistaPrevia, setVistaPrevia] = useState<string | null>(null);
+    const [cargandoPrevia, setCargandoPrevia] = useState(false);
 
     useEffect(() => {
         const cargarDetalles = async () => {
@@ -38,7 +45,9 @@ export default function DetallesProducto() {
                 if (res.ok) {
                     const data = await res.json();
                     setProducto(data);
-                    setModelo(data.modelos?.[0]?.id || '');
+                    const primero = data.modelos?.[0]?.id || '';
+                    setModeloBase(primero);
+                    setModelosSel((prev) => prev.map((m) => m || primero));
                     setColor(data.colores?.[0] || '');
                 }
             } catch (error) {
@@ -51,6 +60,40 @@ export default function DetallesProducto() {
             cargarDetalles();
         }
     }, [id]);
+
+    useEffect(() => {
+        setPersonalizaciones((prev) => Array.from({ length: cantidad }, (_, i) => prev[i] ?? ''));
+        setModelosSel((prev) => Array.from({ length: cantidad }, (_, i) => prev[i] || prev[prev.length - 1] || modeloBase));
+        setActivo((a) => Math.min(a, cantidad - 1));
+    }, [cantidad]);
+
+    const cambiarNombre = (i: number, valor: string) => {
+        setPersonalizaciones((prev) => prev.map((t, k) => (k === i ? valor : t)));
+    };
+
+    const cambiarModelo = (i: number, valor: string) => {
+        setModelosSel((prev) => prev.map((m, k) => (k === i ? valor : m)));
+        setActivo(i);
+    };
+
+    const modelo = modelosSel[activo] || modeloBase;
+    const nombreModelo = producto?.modelos?.find((m: any) => m.id === modelo)?.nombre;
+
+    // Vista previa en vivo: espera 500 ms desde la ultima tecla y pide la imagen a la API
+    useEffect(() => {
+        const texto = textoActivo.trim();
+        if (!producto?.personalizable || !texto || !nombreModelo) {
+            setVistaPrevia(null);
+            setCargandoPrevia(false);
+            return;
+        }
+        setCargandoPrevia(true);
+        const espera = setTimeout(() => {
+            const base = `${process.env.EXPO_PUBLIC_API_URL || ''}/api/preview`;
+            setVistaPrevia(`${base}?modelo=${encodeURIComponent(nombreModelo)}&nombre=${encodeURIComponent(texto)}`);
+        }, 500);
+        return () => clearTimeout(espera);
+    }, [textoActivo, nombreModelo, producto]);
 
     if (cargando) {
         return (
@@ -68,8 +111,8 @@ export default function DetallesProducto() {
     const modeloSeleccionado = producto.modelos?.find((m: any) => m.id === modelo);
     const imagenAMostrar = modeloSeleccionado?.imagen;
 
-    const extraPersonalizacion = (producto.personalizable && personalizacion.trim() !== '') ? (producto.precio_personalizacion || 0) : 0;
-    const precioTotal = (producto.precio + extraPersonalizacion).toFixed(2);
+    // La personalizacion no se cobra aparte: el precio es el de la bola por la cantidad
+    const precioTotal = (producto.precio * cantidad).toFixed(2);
 
     /**
      * Procesa la adición del producto configurado al carrito.
@@ -92,30 +135,35 @@ export default function DetallesProducto() {
                 return;
             }
 
-            const itemCarrito = {
-                producto_id: producto.id,
-                modelo_id: modelo,
-                modelo: modeloSeleccionado?.nombre || 'Unico',
-                color: color || 'Unico',
-                personalizacion: personalizacion || 'Sin texto',
-                cantidad: cantidad
-            };
-
             const apiUrl = `${process.env.EXPO_PUBLIC_API_URL || ''}/api`;
-            const response = await fetch(`${apiUrl}/carrito`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${session.access_token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(itemCarrito)
-            });
+            let fallos = 0;
+            // Cada bola es una figura distinta: un elemento del carrito por bola, con su nombre
+            for (let i = 0; i < cantidad; i++) {
+                const modeloBola = producto.modelos?.find((m: any) => m.id === (modelosSel[i] || modeloBase));
+                const itemCarrito = {
+                    producto_id: producto.id,
+                    modelo_id: modeloBola?.id || modeloBase,
+                    modelo: modeloBola?.nombre || 'Unico',
+                    color: color || 'Unico',
+                    personalizacion: (personalizaciones[i] || '').trim() || 'Sin texto',
+                    cantidad: 1
+                };
+                const response = await fetch(`${apiUrl}/carrito`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${session.access_token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(itemCarrito)
+                });
+                if (!response.ok) fallos++;
+            }
 
-            if (response.ok) {
+            if (fallos === 0) {
                 Toast.show({
                     type: 'success',
                     text1: '¡Añadido!',
-                    text2: 'Producto añadido al carrito correctamente.'
+                    text2: cantidad > 1 ? `${cantidad} bolas añadidas al carrito.` : 'Producto añadido al carrito correctamente.'
                 });
             } else {
                 Toast.show({
@@ -146,10 +194,17 @@ export default function DetallesProducto() {
                 ]}>
                     <View style={[styles.bloqueImagen, esHorizontal && styles.bloqueImagenHorizontal]}>
                         <Image 
-                            source={{ uri: imagenAMostrar }} 
+                            source={{ uri: vistaPrevia || imagenAMostrar }} 
                             style={styles.imagenPrincipal} 
-                            resizeMode="cover"
+                            resizeMode={vistaPrevia ? 'contain' : 'cover'}
+                            onLoadEnd={() => setCargandoPrevia(false)}
+                            onError={() => setVistaPrevia(null)}
                         />
+                        {cargandoPrevia && (
+                            <View style={{ position: 'absolute', top: 12, right: 12 }}>
+                                <ActivityIndicator size="small" color="#3b82f6" />
+                            </View>
+                        )}
                     </View>
                     <View style={[styles.bloqueInfo, esHorizontal && styles.bloqueInfoHorizontal]}>
                         <View style={styles.cabeceraInfo}>
@@ -165,22 +220,6 @@ export default function DetallesProducto() {
 
                         <View style={styles.divisor} />
                         <View style={styles.seccionOpciones}>
-                            {producto.modelos && producto.modelos.length > 0 && (
-                                <View style={styles.opcionContainer}>
-                                    <Text style={styles.tituloOpcion}>Seleccionar Modelo</Text>
-                                    <View style={styles.pickerCard}>
-                                        <Picker
-                                            selectedValue={modelo}
-                                            onValueChange={(val) => setModelo(val)}
-                                            style={styles.picker}
-                                        >
-                                            {producto.modelos.map((m: any) => (
-                                                <Picker.Item key={m.id} label={m.nombre} value={m.id} />
-                                            ))}
-                                        </Picker>
-                                    </View>
-                                </View>
-                            )}
                             {producto.colores && producto.colores.length > 0 && (
                                 <View style={styles.opcionContainer}>
                                     <Text style={styles.tituloOpcion}>Color disponible</Text>
@@ -197,20 +236,40 @@ export default function DetallesProducto() {
                                     </View>
                                 </View>
                             )}
-                            {producto.personalizable && (
-                                <View style={styles.opcionContainer}>
-                                    <Text style={styles.tituloOpcion}>
-                                        Personalización {producto.precio_personalizacion ? `(+${producto.precio_personalizacion}€)` : ''}
-                                    </Text>
-                                    <TextInput
-                                        style={styles.inputPersonalizado}
-                                        placeholder="Escribe el nombre o frase aquí..."
-                                        value={personalizacion}
-                                        onChangeText={setPersonalizacion}
-                                        placeholderTextColor="#adb5bd"
-                                    />
+                            {Array.from({ length: cantidad }, (_, i) => (
+                                <View key={i} style={[styles.opcionContainer, cantidad > 1 && { padding: 12, borderWidth: 1, borderColor: i === activo ? '#3b82f6' : '#e5e7eb', borderRadius: 10 }]}>
+                                    {cantidad > 1 && <Text style={styles.tituloOpcion}>Bola {i + 1}</Text>}
+                                    {producto.modelos && producto.modelos.length > 0 && (
+                                        <>
+                                            <Text style={styles.tituloOpcion}>Seleccionar Modelo</Text>
+                                            <View style={styles.pickerCard}>
+                                                <Picker
+                                                    selectedValue={modelosSel[i] || modeloBase}
+                                                    onValueChange={(val) => cambiarModelo(i, val)}
+                                                    style={styles.picker}
+                                                >
+                                                    {producto.modelos.map((m: any) => (
+                                                        <Picker.Item key={m.id} label={m.nombre} value={m.id} />
+                                                    ))}
+                                                </Picker>
+                                            </View>
+                                        </>
+                                    )}
+                                    {producto.personalizable && (
+                                        <>
+                                            <Text style={[styles.tituloOpcion, { marginTop: 8 }]}>Personalización</Text>
+                                            <TextInput
+                                                style={styles.inputPersonalizado}
+                                                placeholder={cantidad > 1 ? `Nombre de la bola ${i + 1}...` : 'Escribe el nombre o frase aquí...'}
+                                                value={personalizaciones[i] ?? ''}
+                                                onChangeText={(v) => cambiarNombre(i, v)}
+                                                onFocus={() => setActivo(i)}
+                                                placeholderTextColor="#adb5bd"
+                                            />
+                                        </>
+                                    )}
                                 </View>
-                            )}
+                            ))}
                         </View>
                         <View style={styles.opcionContainer}>
                             <Text style={styles.tituloOpcion}>Cantidad</Text>

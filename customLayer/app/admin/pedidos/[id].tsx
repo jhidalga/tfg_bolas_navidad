@@ -1,4 +1,5 @@
-import { View, Text, ScrollView, Pressable, Image } from 'react-native';
+import { View, Text, ScrollView, Pressable, Image, Platform } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { supabase } from '../../../lib/supabase';
@@ -46,6 +47,38 @@ export default function DetallesPedidoAdmin() {
         cargarDetalle();
     }, [id]);
 
+    const API = process.env.EXPO_PUBLIC_API_URL || '';
+
+    /**
+     * Descarga un 3MF (una bola) o el zip de todo el pedido. Solo en la version web.
+     * El archivo se genera al vuelo con el nombre que puso el cliente.
+     */
+    const descargar3mf = async (detalleId: string | null, nombreArchivo: string) => {
+        if (Platform.OS !== 'web') {
+            Toast.show({ type: 'info', text1: 'La descarga del 3MF solo funciona en la versión web' });
+            return;
+        }
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const consulta = detalleId ? `?detalle=${encodeURIComponent(detalleId)}` : '';
+            const res = await fetch(`${API}/api/admin/pedidos/${id}/3mf${consulta}`, {
+                headers: { 'Authorization': `Bearer ${session?.access_token}` }
+            });
+            if (!res.ok) {
+                const e = await res.json().catch(() => ({}));
+                Toast.show({ type: 'error', text1: 'No se pudo generar el 3MF', text2: e.detail || '' });
+                return;
+            }
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = nombreArchivo; a.click();
+            URL.revokeObjectURL(url);
+        } catch (e) {
+            Toast.show({ type: 'error', text1: 'Error de conexión' });
+        }
+    };
+
     if (cargando) return <Text style={styles.mensajeEstado}>Cargando pedido...</Text>;
     if (!datos) return <Text style={styles.mensajeEstado}>Error al cargar el pedido (o no existe)</Text>;
 
@@ -57,6 +90,13 @@ export default function DetallesPedidoAdmin() {
 
             <Text style={styles.titulo}>Detalles del Pedido #{datos.pedido.id.slice(0,8).toUpperCase()}</Text>
             <Text style={styles.totalInfo}>Importe Total: {datos.pedido.total}€</Text>
+
+            <Pressable
+                style={{ backgroundColor: '#111827', paddingVertical: 12, paddingHorizontal: 16, borderRadius: 10, alignSelf: 'flex-start', marginVertical: 10 }}
+                onPress={() => descargar3mf(null, `pedido_${String(datos.pedido.id).slice(0, 8)}_3mf.zip`)}
+            >
+                <Text style={{ color: '#fff', fontWeight: 'bold' }}>Descargar todos los 3MF (zip)</Text>
+            </Pressable>
 
             <Text style={styles.subtitulo}>Productos:</Text>
             
@@ -86,6 +126,23 @@ export default function DetallesPedidoAdmin() {
                             ) : (
                                 <Text style={styles.txtNormal}>Sin personalizar</Text>
                             )}
+
+                            {prod.personalizacion && prod.personalizacion !== 'Sin texto' ? (
+                                <View style={{ marginTop: 10 }}>
+                                    <Text style={styles.txtNormalSecundario}>Así saldrá el 3D:</Text>
+                                    <Image
+                                        source={{ uri: `${API}/api/preview?modelo=${encodeURIComponent(prod.modelo)}&nombre=${encodeURIComponent(prod.personalizacion)}` }}
+                                        style={{ width: 200, height: 200, backgroundColor: '#fff', borderRadius: 8, marginTop: 6 }}
+                                        resizeMode="contain"
+                                    />
+                                    <Pressable
+                                        style={{ backgroundColor: '#2563eb', paddingVertical: 10, paddingHorizontal: 14, borderRadius: 8, marginTop: 8, alignSelf: 'flex-start' }}
+                                        onPress={() => descargar3mf(prod.id, `${String(prod.modelo).replace(/[^A-Za-z0-9]+/g, '_')}_${String(prod.personalizacion).replace(/[^A-Za-z0-9]+/g, '_')}.3mf`)}
+                                    >
+                                        <Text style={{ color: '#fff', fontWeight: 'bold' }}>Descargar 3MF</Text>
+                                    </Pressable>
+                                </View>
+                            ) : null}
                         </View>
                     </View>
                 );

@@ -12,13 +12,13 @@ export const styles = StyleSheet.create({
     },
     imagenContenedor: {
         width: '100%',
-        aspectRatio: 16 / 9,
-        backgroundColor: '#1a1a1a',
+        aspectRatio: 1,
+        backgroundColor: '#ffffff',
     },
     imagen: {
         width: '100%',
         height: '100%',
-        resizeMode: 'cover',
+        resizeMode: 'contain',
     },
     placeholder: {
         width: '100%',

@@ -235,6 +235,9 @@ export default function ListaPedidosAdmin() {
                 <View style={styles.contenedorAccionesHeader}>
                     {!modoEliminar ? (
                         <>
+                            <Pressable style={styles.btnExportar} onPress={() => router.push('/admin/impresion' as any)}>
+                                <Text style={styles.txtBtnExportar}><FontAwesome5 name="print" size={14} color="white" /> Cola de impresión</Text>
+                            </Pressable>
                             <Pressable style={styles.btnExportar} onPress={exportarCSV}>
                                 <Text style={styles.txtBtnExportar}><Entypo name="export" size={16} color="white" /> Exportar</Text>
                             </Pressable>

@@ -1,4 +1,4 @@
-import { View, Text, TextInput, Pressable, ScrollView, Image, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, Pressable, ScrollView, Image, ActivityIndicator, Platform, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase';
@@ -172,6 +172,43 @@ export default function DetalleProductoAdmin() {
         }
     };
 
+    /**
+     * Pide confirmacion y elimina el producto entero con sus modelos.
+     * Si el producto ya esta en pedidos o carritos, la API no lo borra: lo oculta y lo deshabilita.
+     */
+    const confirmar = (mensaje: string): Promise<boolean> => {
+        if (Platform.OS === 'web') {
+            return Promise.resolve(window.confirm(mensaje));
+        }
+        return new Promise((resolve) => {
+            Alert.alert('Confirmar', mensaje, [
+                { text: 'Cancelar', style: 'cancel', onPress: () => resolve(false) },
+                { text: 'Eliminar', style: 'destructive', onPress: () => resolve(true) },
+            ]);
+        });
+    };
+
+    const eliminarProducto = async () => {
+        const ok = await confirmar(`¿Eliminar "${form.nombre}" y todos sus modelos? No se puede deshacer.`);
+        if (!ok) return;
+        const { data: { session } } = await supabase.auth.getSession();
+        try {
+            const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/admin/productos/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${session?.access_token}` }
+            });
+            const datos = await res.json().catch(() => ({}));
+            if (res.ok) {
+                triggerToast(datos.mensaje || 'Producto eliminado', datos.ocultado ? 'info' : 'success');
+                router.replace('/admin/productos');
+            } else {
+                triggerToast(datos.detail || 'No se pudo eliminar el producto', 'error');
+            }
+        } catch (e) {
+            triggerToast('Error de conexión', 'error');
+        }
+    };
+
     if (cargando) return <View style={styles.contenedorCarga}><ActivityIndicator size="large" color="#3b82f6" /></View>;
 
     return (
@@ -252,20 +289,15 @@ export default function DetalleProductoAdmin() {
                         </View>
                     </View>
 
-                    {form.personalizable && (
-                        <View style={[styles.inputGroup, { marginBottom: 20 }]}>
-                            <Text style={styles.label}>Precio Extra por Personalización (€)</Text>
-                            <TextInput 
-                                style={styles.input} 
-                                keyboardType="numeric" 
-                                value={form.precio_personalizacion} 
-                                onChangeText={t => setForm({...form, precio_personalizacion: t.replace(',', '.')})} 
-                            />
-                        </View>
-                    )}
-
                     <Pressable style={styles.btnGuardarMain} onPress={guardarDatosPrincipales}>
                         <Text style={styles.txtBtnGuardarMain}>Guardar Cambios</Text>
+                    </Pressable>
+
+                    <Pressable
+                        style={[styles.btnGuardarMain, { backgroundColor: '#dc2626', marginTop: 12 }]}
+                        onPress={eliminarProducto}
+                    >
+                        <Text style={styles.txtBtnGuardarMain}>Eliminar producto</Text>
                     </Pressable>
                 </View>
 

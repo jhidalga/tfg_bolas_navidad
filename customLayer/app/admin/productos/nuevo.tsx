@@ -170,19 +170,6 @@ export default function NuevoProductoAdmin() {
                             </Text>
                         </Pressable>
                     </View>
-                    
-                    {form.personalizable && (
-                        <View style={[styles.inputGroup, { marginTop: 15 }]}>
-                            <Text style={styles.label}>Precio Extra por Personalización (€)</Text>
-                            <TextInput 
-                                style={styles.input} 
-                                keyboardType="numeric" 
-                                value={form.precio_personalizacion} 
-                                onChangeText={t => setForm({...form, precio_personalizacion: t.replace(',', '.')})} 
-                                placeholder="Ej: 2.00"
-                            />
-                        </View>
-                    )}
                 </View>
 
                 <View style={styles.tarjeta}>
