@@ -542,7 +542,9 @@ def realizar_pedido(checkout: CheckoutPedido, authorization: Optional[str] = Hea
         if not items_carrito:
             raise HTTPException(status_code=400, detail="El carrito está vacío")
             
-        nuevo_pedido = {"user_id": user_id, "total": checkout.total, "estado": "Pendiente"}
+        # El total lo calcula el servidor con los precios de la base de datos, no el que manda la web
+        total_servidor = round(sum(float(i["productos"]["precio"]) * int(i.get("cantidad", 1) or 1) for i in items_carrito), 2)
+        nuevo_pedido = {"user_id": user_id, "total": total_servidor, "estado": "Pendiente"}
         pedido_res = cliente_seguro.table("pedidos").insert(nuevo_pedido).execute()
         pedido_id = pedido_res.data[0]["id"]
         

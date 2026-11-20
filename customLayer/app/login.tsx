@@ -77,7 +77,7 @@ export default function Login() {
         <ScrollView contentContainerStyle={styles.scrollFondo}>
             <View style={styles.contenedorCentral}>
                 <View style={styles.tarjetaLogin}>
-                    <Text style={styles.titulo}>Inicia sesion</Text>
+                    <Text style={styles.titulo}>Inicia sesión</Text>
 
                     <Text style={styles.etiqueta}>Email</Text>
                     <TextInput
@@ -88,7 +88,7 @@ export default function Login() {
                         autoCapitalize='none'
                     />
 
-                    <Text style={styles.etiqueta}>Password</Text>
+                    <Text style={styles.etiqueta}>Contraseña</Text>
                     <TextInput
                         style={styles.input}
                         value={contrasena}
@@ -98,7 +98,7 @@ export default function Login() {
                     />
 
                     <Pressable style={styles.botonLogin} onPress={() => comprobarCredenciales()}>
-                        <Text style={styles.textoBoton}>Iniciar Sesion</Text>
+                        <Text style={styles.textoBoton}>Iniciar sesión</Text>
                     </Pressable>
 
                     <Text style={styles.avisoRecuperacion}>

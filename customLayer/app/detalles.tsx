@@ -285,8 +285,14 @@ export default function DetallesProducto() {
                                                 value={personalizaciones[i] ?? ''}
                                                 onChangeText={(v) => cambiarNombre(i, v)}
                                                 onFocus={() => setActivo(i)}
+                                                maxLength={40}
                                                 placeholderTextColor="#adb5bd"
                                             />
+                                            <Text style={{ color: '#6b7280', fontSize: 12, marginTop: 4 }}>
+                                                {(personalizaciones[i] ?? '').trim()
+                                                    ? "Solo se imprimen letras, espacios y - . '"
+                                                    : 'Si lo dejas vacío, la bola irá sin nombre.'}
+                                            </Text>
                                         </>
                                     )}
                                 </View>

@@ -125,14 +125,13 @@ export default function PantallaCarrito() {
 
     /**
      * Calcula el precio unitario final de un artículo en el carrito.
-     * Suma el precio base del producto y, si incluye texto de personalización, 
-     * añade el coste extra por personalización.
+     * Devuelve el precio base del producto. La personalización no tiene coste extra.
      * * @param item - Objeto con los datos del artículo en el carrito.
      * @returns Precio total por unidad (formato numérico).
      */
     const calcularPrecioItem = (item: ItemCarrito) => {
-        const extra = (item.personalizacion && item.personalizacion !== 'Sin texto') ? (Number(item.productos.precio_personalizacion) || 0) : 0;
-        return Number(item.productos.precio) + extra;
+        // La personalización no se cobra aparte
+        return Number(item.productos.precio);
     };
 
     const totalCarrito = carrito.reduce((suma, item) => suma + (calcularPrecioItem(item) * item.cantidad), 0);
