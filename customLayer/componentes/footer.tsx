@@ -14,9 +14,9 @@ export default function Footer() {
     return (
         <View style={styles.contenedorFooter}>
             <View style={styles.columna}>
-                <Text style={styles.tituloColumna}>Custom Layers</Text>
+                <Text style={styles.tituloColumna}>Adornos navideños</Text>
                 <Text style={styles.textoDescripcion}>
-                    Tus pedidos personalizados desde la comodidad de tu centro
+                    Dpto. Informática | 2º DAM
                 </Text>
             </View>
         </View>

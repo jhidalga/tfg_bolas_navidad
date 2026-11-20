@@ -106,8 +106,8 @@ export default function Navbar() {
             { paddingBottom: Math.max(insets.bottom, 15) } 
         ]}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Image source={require('../assets/images/icon.png')} style={{ width: 30, height: 30, marginBottom: -5 }} resizeMode="contain" />
-                <Text style={styles.logo}>Custom Layers</Text>
+                <Image source={require('../assets/images/favicon.png')} style={{ width: 30, height: 30, marginBottom: -5 }} resizeMode="contain" />
+                <Text style={styles.logo}>Adornos navideños</Text>
             </View>
             <View style={styles.enlaces}>
                 <Pressable style={styles.boton} onPress={() => router.push('../inicio')}>
