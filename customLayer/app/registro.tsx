@@ -1,5 +1,7 @@
 import { View, Text, TextInput, ScrollView, Pressable, ActivityIndicator } from 'react-native';
-import { styles } from '../styles/registro/registro.styles';
+import { styles as estilosEscritorio } from '../styles/registro/registro.styles';
+import { styles as estilosMovil } from '../styles/registro/registro.styles.movil';
+import { useEstilos } from '../lib/responsive';
 import { useRouter } from "expo-router";
 import { useState } from 'react';
 import Footer from '../componentes/footer';
@@ -17,6 +19,7 @@ const GRUPOS: Record<string, string[]> = {
 };
 
 export default function Registro() {
+    const styles = useEstilos(estilosEscritorio, estilosMovil);
     const router = useRouter();
     const [correo, setCorreo] = useState('');
     const [contrasena, setContrasena] = useState('');

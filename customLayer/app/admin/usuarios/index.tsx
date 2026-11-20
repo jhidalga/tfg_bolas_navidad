@@ -2,7 +2,9 @@ import { View, Text, Pressable, ScrollView, ActivityIndicator, TextInput } from 
 import { useRouter } from 'expo-router';
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../../lib/supabase';
-import { styles } from '../../../styles/adminUsuarios/adminUsuarios.styles';
+import { styles as estilosEscritorio } from '../../../styles/adminUsuarios/adminUsuarios.styles';
+import { styles as estilosMovil } from '../../../styles/adminUsuarios/adminUsuarios.styles.movil';
+import { useEstilos } from '../../../lib/responsive';
 import Toast from 'react-native-toast-message';
 
 const API_URL = `${process.env.EXPO_PUBLIC_API_URL || ''}/api`;
@@ -15,6 +17,7 @@ const API_URL = `${process.env.EXPO_PUBLIC_API_URL || ''}/api`;
  * * @returns Componente que renderiza el gestor de usuarios.
  */
 export default function GestorUsuariosAdmin() {
+    const styles = useEstilos(estilosEscritorio, estilosMovil);
     const router = useRouter();
     const [cargando, setCargando] = useState(true);
     const [usuarios, setUsuarios] = useState<any[]>([]);

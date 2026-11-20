@@ -2,7 +2,9 @@ import { View, Text, Pressable, ScrollView, Image, ActivityIndicator, TextInput 
 import { useRouter } from 'expo-router';
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../../lib/supabase';
-import { styles } from '../../../styles/adminProductos/adminProductos.styles';
+import { styles as estilosEscritorio } from '../../../styles/adminProductos/adminProductos.styles';
+import { styles as estilosMovil } from '../../../styles/adminProductos/adminProductos.styles.movil';
+import { useEstilos } from '../../../lib/responsive';
 
 /**
  * Pantalla principal de administración del Catálogo de Productos.
@@ -13,6 +15,7 @@ import { styles } from '../../../styles/adminProductos/adminProductos.styles';
  * * @returns Componente que renderiza el gestor de productos.
  */
 export default function AdminProductos() {
+    const styles = useEstilos(estilosEscritorio, estilosMovil);
     const router = useRouter();
     const [productos, setProductos] = useState<any[]>([]);
     const [cargando, setCargando] = useState(true);

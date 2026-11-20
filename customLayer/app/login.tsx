@@ -1,5 +1,7 @@
 import { View, Text, TextInput, ScrollView, Pressable } from 'react-native';
-import { styles } from '../styles/login/login.styles';
+import { styles as estilosEscritorio } from '../styles/login/login.styles';
+import { styles as estilosMovil } from '../styles/login/login.styles.movil';
+import { useEstilos } from '../lib/responsive';
 import { useRouter } from "expo-router";
 import { useState } from 'react';
 import Footer from '../componentes/footer';
@@ -15,6 +17,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
  * * @returns Componente ScrollView que contiene el formulario de inicio de sesión y el pie de página.
  */
 export default function Login() {
+    const styles = useEstilos(estilosEscritorio, estilosMovil);
     const router = useRouter();
     const [correo, setCorreo] = useState('');
     const [contrasena, setContrasena] = useState('');

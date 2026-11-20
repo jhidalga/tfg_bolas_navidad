@@ -4,7 +4,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from 'expo-router';
 import Toast from 'react-native-toast-message';
 import Navbar from '@/componentes/navbar';
-import { styles } from '../styles/carrito/carrito.styles';
+import { styles as estilosEscritorio } from '../styles/carrito/carrito.styles';
+import { styles as estilosMovil } from '../styles/carrito/carrito.styles.movil';
+import { useEstilos } from '../lib/responsive';
 import { supabase } from '../lib/supabase';
 
 /**
@@ -43,6 +45,7 @@ export interface ItemCarrito {
  * * @returns Componente principal que renderiza la vista del carrito.
  */
 export default function PantallaCarrito() {
+    const styles = useEstilos(estilosEscritorio, estilosMovil);
     const insets = useSafeAreaInsets();
     const [carrito, setCarrito] = useState<ItemCarrito[]>([]);
     const [cargando, setCargando] = useState(true);

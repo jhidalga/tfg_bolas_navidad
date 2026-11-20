@@ -4,7 +4,9 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase';
 import * as ImagePicker from 'expo-image-picker';
 import { decode } from 'base64-arraybuffer';
-import { styles } from '../../../styles/adminDetalleProducto/adminDetalleProducto.styles';
+import { styles as estilosEscritorio } from '../../../styles/adminDetalleProducto/adminDetalleProducto.styles';
+import { styles as estilosMovil } from '../../../styles/adminDetalleProducto/adminDetalleProducto.styles.movil';
+import { useEstilos } from '../../../lib/responsive';
 import Toast from 'react-native-toast-message';
 
 /**
@@ -15,6 +17,7 @@ import Toast from 'react-native-toast-message';
  * * @returns Componente interactivo para la gestión profunda de un producto.
  */
 export default function DetalleProductoAdmin() {
+    const styles = useEstilos(estilosEscritorio, estilosMovil);
     const { id } = useLocalSearchParams();
     const router = useRouter();
     const [cargando, setCargando] = useState(true);

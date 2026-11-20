@@ -1,5 +1,7 @@
 import { Text, View, Image, Pressable } from "react-native";
-import { styles } from "../styles/landing/Index.styles";
+import { styles as estilosEscritorio } from '../styles/landing/Index.styles';
+import { styles as estilosMovil } from '../styles/landing/Index.styles.movil';
+import { useEstilos } from '../lib/responsive';
 import { useRouter } from "expo-router";
 import Footer from "../componentes/footer";
 
@@ -11,6 +13,7 @@ import Footer from "../componentes/footer";
  * * @returns Componente visual que renderiza la portada de la aplicación.
  */
 export default function Index() {
+    const styles = useEstilos(estilosEscritorio, estilosMovil);
   const router = useRouter();
   
   return (

@@ -1,6 +1,8 @@
 import { View } from 'react-native';
 import Card from './cardProductos';
-import { styles } from '../styles/grid/grid.styles';
+import { styles as estilosEscritorio } from '../styles/grid/grid.styles';
+import { styles as estilosMovil } from '../styles/grid/grid.styles.movil';
+import { useEstilos } from '../lib/responsive';
 import Toast from 'react-native-toast-message';
 import { useRouter } from 'expo-router';
 
@@ -24,6 +26,7 @@ export interface GridProps {
  * @returns Componente View contenedor de la cuadrícula de productos.
  */
 export default function Grid({ productos }: GridProps) {
+    const styles = useEstilos(estilosEscritorio, estilosMovil);
     const router = useRouter();
 
     return (

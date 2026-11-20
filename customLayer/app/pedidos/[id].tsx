@@ -2,7 +2,9 @@ import { View, Text, ScrollView, Pressable, Image } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
-import { styles } from '../../styles/adminDetallePedido/adminDetallePedido.styles';
+import { styles as estilosEscritorio } from '../../styles/adminDetallePedido/adminDetallePedido.styles';
+import { styles as estilosMovil } from '../../styles/adminDetallePedido/adminDetallePedido.styles.movil';
+import { useEstilos } from '../../lib/responsive';
 
 /**
  * Pantalla de detalles de un pedido específico.
@@ -12,6 +14,7 @@ import { styles } from '../../styles/adminDetallePedido/adminDetallePedido.style
  * * @returns Componente principal que renderiza la vista de detalles del pedido.
  */
 export default function DetallesPedidoAdmin() {
+    const styles = useEstilos(estilosEscritorio, estilosMovil);
     const { id } = useLocalSearchParams(); 
     const router = useRouter();
     const [datos, setDatos] = useState<any>(null);

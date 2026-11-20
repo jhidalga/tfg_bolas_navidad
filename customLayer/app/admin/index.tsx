@@ -3,7 +3,9 @@ import { useRouter } from 'expo-router';
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../lib/supabase';
 import DropDownPicker from 'react-native-dropdown-picker';
-import { styles } from '../../styles/adminPedidos/adminPedidos.styles';
+import { styles as estilosEscritorio } from '../../styles/adminPedidos/adminPedidos.styles';
+import { styles as estilosMovil } from '../../styles/adminPedidos/adminPedidos.styles.movil';
+import { useEstilos } from '../../lib/responsive';
 import FontAwesome5 from '@expo/vector-icons/build/FontAwesome5';
 import { Entypo, FontAwesome } from '@expo/vector-icons';
 import * as FileSystem from 'expo-file-system';
@@ -18,6 +20,7 @@ import Toast from 'react-native-toast-message';
  * * @returns Componente que renderiza el gestor de pedidos completo.
  */
 export default function ListaPedidosAdmin() {
+    const styles = useEstilos(estilosEscritorio, estilosMovil);
     const router = useRouter();
     const [pedidos, setPedidos] = useState<any[]>([]);
     

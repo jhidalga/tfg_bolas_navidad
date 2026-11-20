@@ -1,6 +1,8 @@
 import React, { useRef } from 'react';
 import { View, Text, Image, Pressable, Animated } from 'react-native';
-import { styles } from '../styles/card/card.styles';
+import { styles as estilosEscritorio } from '../styles/card/card.styles';
+import { styles as estilosMovil } from '../styles/card/card.styles.movil';
+import { useEstilos } from '../lib/responsive';
 
 /**
  * Propiedades para el componente CardProducto.
@@ -41,6 +43,7 @@ export default function CardProducto({
     deshabilitado, 
     onPress 
 }: CardProps) {
+    const styles = useEstilos(estilosEscritorio, estilosMovil);
     const scaleAnim = useRef(new Animated.Value(1)).current;
 
     /**

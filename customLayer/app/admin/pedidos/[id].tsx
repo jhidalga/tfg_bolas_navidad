@@ -3,7 +3,9 @@ import Toast from 'react-native-toast-message';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { supabase } from '../../../lib/supabase';
-import { styles } from '../../../styles/adminDetallePedido/adminDetallePedido.styles';
+import { styles as estilosEscritorio } from '../../../styles/adminDetallePedido/adminDetallePedido.styles';
+import { styles as estilosMovil } from '../../../styles/adminDetallePedido/adminDetallePedido.styles.movil';
+import { useEstilos } from '../../../lib/responsive';
 
 /**
  * Pantalla de administración para ver los detalles de un pedido específico.
@@ -13,6 +15,7 @@ import { styles } from '../../../styles/adminDetallePedido/adminDetallePedido.st
  * * @returns Componente que renderiza la vista detallada del pedido para el administrador.
  */
 export default function DetallesPedidoAdmin() {
+    const styles = useEstilos(estilosEscritorio, estilosMovil);
     const { id } = useLocalSearchParams(); 
     const router = useRouter();
     const [datos, setDatos] = useState<any>(null);

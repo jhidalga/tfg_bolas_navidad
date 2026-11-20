@@ -2,7 +2,9 @@ import { View, Text, Pressable, Image } from 'react-native';
 import { useRouter } from "expo-router";
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import { styles } from '../styles/navbar/navbar.styles';
+import { styles as estilosEscritorio } from '../styles/navbar/navbar.styles';
+import { styles as estilosMovil } from '../styles/navbar/navbar.styles.movil';
+import { useEstilos } from '../lib/responsive';
 import { FontAwesome, FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -17,6 +19,7 @@ let cachedEsAdmin: boolean | null = null;
  * * @returns Componente View que contiene el logotipo y los iconos de navegación.
  */
 export default function Navbar() {
+    const styles = useEstilos(estilosEscritorio, estilosMovil);
     const router = useRouter();
     const [esAdmin, setEsAdmin] = useState(cachedEsAdmin || false);
     const insets = useSafeAreaInsets();

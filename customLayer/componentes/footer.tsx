@@ -1,5 +1,7 @@
 import { View, Text } from 'react-native';
-import { styles } from '../styles/footer/footer.styles';
+import { styles as estilosEscritorio } from '../styles/footer/footer.styles';
+import { styles as estilosMovil } from '../styles/footer/footer.styles.movil';
+import { useEstilos } from '../lib/responsive';
 
 /**
  * Componente visual estático que representa el pie de página (Footer) de la aplicación.
@@ -8,6 +10,7 @@ import { styles } from '../styles/footer/footer.styles';
  * * @returns Componente View que contiene la estructura de texto del pie de página.
  */
 export default function Footer() {
+    const styles = useEstilos(estilosEscritorio, estilosMovil);
     return (
         <View style={styles.contenedorFooter}>
             <View style={styles.columna}>

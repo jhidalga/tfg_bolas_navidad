@@ -4,7 +4,9 @@ import { Picker } from '@react-native-picker/picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
 import Toast from 'react-native-toast-message';
-import { styles } from '../styles/detalles/detalles.styles';
+import { styles as estilosEscritorio } from '../styles/detalles/detalles.styles';
+import { styles as estilosMovil } from '../styles/detalles/detalles.styles.movil';
+import { useEstilos } from '../lib/responsive';
 import Navbar from '@/componentes/navbar';
 import { supabase } from '../lib/supabase';
 
@@ -17,6 +19,7 @@ import { supabase } from '../lib/supabase';
  * * @returns Componente principal que renderiza la vista de detalles del producto.
  */
 export default function DetallesProducto() {
+    const styles = useEstilos(estilosEscritorio, estilosMovil);
     const { id } = useLocalSearchParams();
     const [producto, setProducto] = useState<any>(null);
     const [cargando, setCargando] = useState(true);
@@ -189,7 +192,7 @@ export default function DetallesProducto() {
             <ScrollView showsVerticalScrollIndicator={false}>
                 <View style={[
                     styles.contenedor, 
-                    { paddingBottom: insets.bottom + 40 },
+                    { paddingBottom: insets.bottom + 110 },
                     esHorizontal && styles.contenedorHorizontal
                 ]}>
                     <View style={[styles.bloqueImagen, esHorizontal && styles.bloqueImagenHorizontal]}>

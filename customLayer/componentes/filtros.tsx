@@ -1,6 +1,8 @@
 import React from 'react';
 import { View, Text, TextInput, Pressable } from 'react-native';
-import { styles } from '../styles/filtros/filtros.styles';
+import { styles as estilosEscritorio } from '../styles/filtros/filtros.styles';
+import { styles as estilosMovil } from '../styles/filtros/filtros.styles.movil';
+import { useEstilos } from '../lib/responsive';
 
 /**
  * Propiedades para el componente Filtros.
@@ -37,6 +39,7 @@ export default function Filtros({
     nombre, setNombre, personalizable, setPersonalizable, 
     precioMin, setPrecioMin, precioMax, setPrecioMax, minMax 
 }: FiltrosProps) {
+    const styles = useEstilos(estilosEscritorio, estilosMovil);
     return (
         <View style={styles.contenedorFiltros}>
             <Text style={styles.tituloFiltro}>Filtros</Text>

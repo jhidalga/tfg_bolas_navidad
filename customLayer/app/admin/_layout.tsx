@@ -2,7 +2,9 @@ import { View, Text, Pressable, ActivityIndicator, TouchableOpacity } from 'reac
 import { Slot, useRouter, useSegments } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
-import { styles } from '../../styles/adminLayout/adminLayout.styles';
+import { styles as estilosEscritorio } from '../../styles/adminLayout/adminLayout.styles';
+import { styles as estilosMovil } from '../../styles/adminLayout/adminLayout.styles.movil';
+import { useEstilos } from '../../lib/responsive';
 import Toast from 'react-native-toast-message';
 import FontAwesome5 from '@expo/vector-icons/build/FontAwesome5';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
  * * @returns Componente envolvente (Wrapper) que protege y estructura el panel de control.
  */
 export default function AdminLayout() {
+    const styles = useEstilos(estilosEscritorio, estilosMovil);
     const router = useRouter();
     const segments = useSegments() as string[];
     const [verificando, setVerificando] = useState(true);

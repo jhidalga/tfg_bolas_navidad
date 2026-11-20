@@ -3,7 +3,9 @@ import { View, Text, ScrollView, ActivityIndicator, StyleSheet, Pressable } from
 import { useRouter } from 'expo-router';
 import Navbar from '../../componentes/navbar'; 
 import { supabase } from '../../lib/supabase';
-import { styles } from '../../styles/pedidos/pedidos.styles';
+import { styles as estilosEscritorio } from '../../styles/pedidos/pedidos.styles';
+import { styles as estilosMovil } from '../../styles/pedidos/pedidos.styles.movil';
+import { useEstilos } from '../../lib/responsive';
 
 /**
  * Pantalla que lista el historial de pedidos realizados por el usuario activo.
@@ -13,6 +15,7 @@ import { styles } from '../../styles/pedidos/pedidos.styles';
  * * @returns Componente principal que renderiza la vista de "Mis Pedidos".
  */
 export default function MisPedidos() {
+    const styles = useEstilos(estilosEscritorio, estilosMovil);
     const router = useRouter();
     const [pedidos, setPedidos] = useState<any[]>([]);
     const [cargando, setCargando] = useState(true);

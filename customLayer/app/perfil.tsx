@@ -3,7 +3,9 @@ import { View, Text, TextInput, ScrollView, ActivityIndicator, Pressable } from 
 import Navbar from '../componentes/navbar';
 import { supabase } from '../lib/supabase';
 import Toast from 'react-native-toast-message';
-import { styles } from '../styles/perfil/perfil.styles.web';
+import { styles as estilosEscritorio } from '../styles/perfil/perfil.styles.web';
+import { styles as estilosMovil } from '../styles/perfil/perfil.styles.movil';
+import { useEstilos } from '../lib/responsive';
 
 /**
  * Pantalla de visualización y edición del Perfil de Usuario.
@@ -12,6 +14,7 @@ import { styles } from '../styles/perfil/perfil.styles.web';
  * * @returns Componente principal que renderiza la vista del perfil.
  */
 export default function MiPerfil() {
+    const styles = useEstilos(estilosEscritorio, estilosMovil);
     const [cargando, setCargando] = useState(true);
     const [editando, setEditando] = useState(false);
     const [guardando, setGuardando] = useState(false);

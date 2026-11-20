@@ -4,7 +4,9 @@ import { useState } from 'react';
 import { supabase } from '../../../lib/supabase';
 import * as ImagePicker from 'expo-image-picker';
 import { decode } from 'base64-arraybuffer';
-import { styles } from '../../../styles/adminNuevoProducto/adminNuevoProducto.styles';
+import { styles as estilosEscritorio } from '../../../styles/adminNuevoProducto/adminNuevoProducto.styles';
+import { styles as estilosMovil } from '../../../styles/adminNuevoProducto/adminNuevoProducto.styles.movil';
+import { useEstilos } from '../../../lib/responsive';
 import Toast from 'react-native-toast-message';
 
 /**
@@ -15,6 +17,7 @@ import Toast from 'react-native-toast-message';
  * * @returns Componente que renderiza el formulario de creación de productos.
  */
 export default function NuevoProductoAdmin() {
+    const styles = useEstilos(estilosEscritorio, estilosMovil);
     const router = useRouter();
     const [subiendo, setSubiendo] = useState(false);
     

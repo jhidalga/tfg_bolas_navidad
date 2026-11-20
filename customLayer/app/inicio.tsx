@@ -4,7 +4,9 @@ import Footer from '../componentes/footer';
 import Navbar from '@/componentes/navbar';
 import Grid from '@/componentes/gridProductos';
 import Filtros from '@/componentes/filtros';
-import { styles } from '../styles/inicio/Inicio.styles';
+import { styles as estilosEscritorio } from '../styles/inicio/Inicio.styles';
+import { styles as estilosMovil } from '../styles/inicio/Inicio.styles.movil';
+import { useEstilos } from '../lib/responsive';
 import { Ionicons } from '@expo/vector-icons';
 import { esAdminGlobal, supabase } from '../lib/supabase';
 import { Platform } from 'react-native';
@@ -21,6 +23,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
  * * * @returns Componente que renderiza el layout principal con Navbar, Grid de productos, Filtros y Footer.
  */
 export default function Inicio() {
+    const styles = useEstilos(estilosEscritorio, estilosMovil);
     const insets = useSafeAreaInsets();
 
     const [productos, setProductos] = useState<any[]>([]);
