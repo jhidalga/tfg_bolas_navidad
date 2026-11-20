@@ -20,9 +20,9 @@ export default function Index() {
     <View style={styles.contenedorPantalla}>
       <View style={styles.contenedorCentral}>
         <View style={styles.heroSection}>
-          <Image source={require('../assets/images/icon.png')} style={{ width: 120, height: 120, marginBottom: 5 }} resizeMode="contain" />
-          <Text style={styles.titulo}>Custom Layers</Text>
-          <Text style={styles.descripcion}>Tus impresiones 3D aquí y ahora</Text>
+          <Image source={require('../assets/images/logo_ies.png')} style={{ width: 260, height: 94, marginBottom: 12 }} resizeMode="contain" />
+          <Text style={styles.titulo}>Adornos navideños</Text>
+          <Text style={styles.descripcion}>Dpto. Informática | 2º DAM</Text>
 
           <View style={styles.botones}>
             <Pressable style={styles.botonLogin} onPress={() => router.push('/login')}>

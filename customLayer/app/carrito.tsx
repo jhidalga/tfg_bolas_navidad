@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { Ionicons } from '@expo/vector-icons';
 import { View, Text, FlatList, Image, TouchableOpacity, ActivityIndicator, Platform, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from 'expo-router';
@@ -241,8 +242,9 @@ export default function PantallaCarrito() {
                                     <TouchableOpacity 
                                         style={styles.botonEliminar} 
                                         onPress={() => eliminarProducto(item.id)}
+                                        accessibilityLabel="Quitar del carrito"
                                     >
-                                        <Text style={styles.textoEliminar}>Eliminar</Text>
+                                        <Ionicons name="trash-outline" size={20} color="#dc2626" />
                                     </TouchableOpacity>
                                 </View>
                             </View>

@@ -9,6 +9,10 @@ export default function RootLayout() {
   const segments = useSegments();
 
   useEffect(() => {
+    if (typeof document !== 'undefined') document.title = 'Adornos navideños | IES Laguna de Tollón';
+  }, []);
+
+  useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       const paginaActiva = segments[0] as string | undefined;
       const enPaginaPublica = !paginaActiva || paginaActiva === 'login' || paginaActiva === 'registro' || paginaActiva === 'recuperar';

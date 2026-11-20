@@ -87,8 +87,14 @@ export const styles = StyleSheet.create({
         color: '#1a1a1a',
     },
     botonEliminar: {
-        paddingVertical: 5,
-        paddingHorizontal: 10,
+        width: 40,
+        height: 40,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#fca5a5',
+        backgroundColor: '#fef2f2',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     textoEliminar: {
         color: '#ef4444',
