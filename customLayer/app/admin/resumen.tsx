@@ -9,16 +9,27 @@ import Toast from 'react-native-toast-message';
 
 const API_URL = `${process.env.EXPO_PUBLIC_API_URL || ''}/api`;
 
-type Fila = { id: string; nombre: string; email: string; curso: string; num_pedidos: number; bolas: number; total: number };
+type CeldaModelo = { cantidad: number; estados: Record<string, number> };
+type Fila = { id: string; nombre: string; email: string; curso: string; num_pedidos: number; bolas: number; total: number; modelos?: Record<string, CeldaModelo> };
+
+const ANCHO_MODELO = 105;
+
+/** Estado de las bolas de un modelo: uno solo si coinciden, o el recuento si hay varios. */
+const textoEstados = (c?: CeldaModelo) => {
+    if (!c) return '';
+    const lista = Object.entries(c.estados);
+    return lista.length === 1 ? lista[0][0] : lista.map(([est, n]) => `${n} ${est}`).join(', ');
+};
+const colorEstado = (est: string) => est === 'Entregado' ? '#15803d' : est === 'Completado' ? '#1d4ed8' : est === 'Cancelado' ? '#b91c1c' : '#b45309';
 type Columna = 'curso' | 'nombre' | 'email' | 'num_pedidos' | 'bolas' | 'total';
 
 const COLUMNAS: { clave: Columna; titulo: string; ancho: number; numero?: boolean }[] = [
-    { clave: 'curso', titulo: 'Curso', ancho: 110 },
-    { clave: 'nombre', titulo: 'Nombre', ancho: 190 },
-    { clave: 'email', titulo: 'Correo', ancho: 230 },
+    { clave: 'curso', titulo: 'Curso', ancho: 100 },
+    { clave: 'nombre', titulo: 'Nombre', ancho: 160 },
+    { clave: 'email', titulo: 'Correo', ancho: 210 },
     { clave: 'num_pedidos', titulo: 'Tickets', ancho: 80, numero: true },
     { clave: 'bolas', titulo: 'Bolas', ancho: 80, numero: true },
-    { clave: 'total', titulo: 'Total gastado', ancho: 130, numero: true },
+    { clave: 'total', titulo: 'Total gastado', ancho: 120, numero: true },
 ];
 
 
@@ -31,6 +42,7 @@ export default function ResumenAdmin() {
     const movil = useEsMovilWeb();
     const [cargando, setCargando] = useState(true);
     const [filas, setFilas] = useState<Fila[]>([]);
+    const [modelos, setModelos] = useState<string[]>([]);
     const [busqueda, setBusqueda] = useState('');
     const [curso, setCurso] = useState('Todos');
     const [orden, setOrden] = useState<{ col: Columna; asc: boolean }>({ col: 'nombre', asc: true });
@@ -42,7 +54,7 @@ export default function ResumenAdmin() {
             try {
                 const res = await fetch(`${API_URL}/admin/resumen`, { headers: { Authorization: `Bearer ${session.access_token}` } });
                 const datos = await res.json().catch(() => ({}));
-                if (res.ok) setFilas(datos.filas || []);
+                if (res.ok) { setFilas(datos.filas || []); setModelos(datos.modelos || []); }
                 else Toast.show({ type: 'error', text1: traducirError(datos.detail, 'No se pudo cargar el resumen') });
             } catch {
                 Toast.show({ type: 'error', text1: 'Error de conexión' });
@@ -70,15 +82,16 @@ export default function ResumenAdmin() {
         tickets: visibles.reduce((s, f) => s + f.num_pedidos, 0),
         bolas: visibles.reduce((s, f) => s + f.bolas, 0),
         total: visibles.reduce((s, f) => s + f.total, 0),
-    }), [visibles]);
+        porModelo: Object.fromEntries(modelos.map(m => [m, visibles.reduce((s, f) => s + (f.modelos?.[m]?.cantidad || 0), 0)])) as Record<string, number>,
+    }), [visibles, modelos]);
 
     const ordenarPor = (col: Columna) => setOrden(o => ({ col, asc: o.col === col ? !o.asc : true }));
 
     const descargar = () => {
         const esc = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
-        const lineas = [['Curso', 'Nombre', 'Correo', 'Tickets', 'Bolas', 'Total gastado'].map(esc).join(';')];
-        visibles.forEach(f => lineas.push([f.curso, f.nombre, f.email, f.num_pedidos, f.bolas, f.total.toFixed(2).replace('.', ',')].map(esc).join(';')));
-        lineas.push(['TOTAL', `${totales.personas} ${totales.personas === 1 ? 'persona' : 'personas'}`, '', totales.tickets, totales.bolas, totales.total.toFixed(2).replace('.', ',')].map(esc).join(';'));
+        const lineas = [['Curso', 'Nombre', 'Correo', 'Tickets', 'Bolas', 'Total gastado', ...modelos].map(esc).join(';')];
+        visibles.forEach(f => lineas.push([f.curso, f.nombre, f.email, f.num_pedidos, f.bolas, f.total.toFixed(2).replace('.', ','), ...modelos.map(m => f.modelos?.[m] ? `${f.modelos[m].cantidad} (${textoEstados(f.modelos[m])})` : '')].map(esc).join(';')));
+        lineas.push(['TOTAL', `${totales.personas} ${totales.personas === 1 ? 'persona' : 'personas'}`, '', totales.tickets, totales.bolas, totales.total.toFixed(2).replace('.', ','), ...modelos.map(m => totales.porModelo[m] || 0)].map(esc).join(';'));
         const csv = '﻿' + lineas.join('\n');
         if (Platform.OS === 'web') {
             const enlace = document.createElement('a');
@@ -92,7 +105,7 @@ export default function ResumenAdmin() {
         }
     };
 
-    const anchoTabla = COLUMNAS.reduce((s, c) => s + c.ancho, 0);
+    const anchoTabla = COLUMNAS.reduce((s, c) => s + c.ancho, 0) + modelos.length * ANCHO_MODELO;
 
     return (
         <View style={{ flex: 1, backgroundColor: '#f8fafc', padding: movil ? 14 : 28 }}>
@@ -125,6 +138,9 @@ export default function ResumenAdmin() {
                                     </Text>
                                 </Pressable>
                             ))}
+                            {modelos.map(m => (
+                                <View key={m} style={[e.celda, { width: ANCHO_MODELO }]}><Text style={e.cabeceraTexto}>{m}</Text></View>
+                            ))}
                         </View>
                         <ScrollView style={{ maxHeight: movil ? 420 : 520 }}>
                             {visibles.length === 0 && <Text style={{ padding: 20, textAlign: 'center', color: '#94a3b8' }}>No hay pedidos con estos filtros.</Text>}
@@ -136,6 +152,17 @@ export default function ResumenAdmin() {
                                     <View style={[e.celda, { width: COLUMNAS[3].ancho, alignItems: 'flex-end' }]}><Text style={e.texto}>{f.num_pedidos}</Text></View>
                                     <View style={[e.celda, { width: COLUMNAS[4].ancho, alignItems: 'flex-end' }]}><Text style={e.texto}>{f.bolas}</Text></View>
                                     <View style={[e.celda, { width: COLUMNAS[5].ancho, alignItems: 'flex-end' }]}><Text style={e.texto}>{euros(f.total)}</Text></View>
+                                    {modelos.map(m => {
+                                        const c = f.modelos?.[m];
+                                        return (
+                                            <View key={m} style={[e.celda, { width: ANCHO_MODELO }]}>
+                                                {c ? (<>
+                                                    <Text style={[e.texto, { fontWeight: '700' }]}>{c.cantidad}</Text>
+                                                    <Text style={{ fontSize: 12, fontWeight: '600', color: colorEstado(Object.keys(c.estados)[0]) }}>{textoEstados(c)}</Text>
+                                                </>) : <Text style={{ color: '#cbd5e1' }}>-</Text>}
+                                            </View>
+                                        );
+                                    })}
                                 </View>
                             ))}
                         </ScrollView>
@@ -146,6 +173,9 @@ export default function ResumenAdmin() {
                             <View style={[e.celda, { width: COLUMNAS[3].ancho, alignItems: 'flex-end' }]}><Text style={e.pieTexto}>{totales.tickets}</Text></View>
                             <View style={[e.celda, { width: COLUMNAS[4].ancho, alignItems: 'flex-end' }]}><Text style={e.pieTexto}>{totales.bolas}</Text></View>
                             <View style={[e.celda, { width: COLUMNAS[5].ancho, alignItems: 'flex-end' }]}><Text style={e.pieTexto}>{euros(totales.total)}</Text></View>
+                            {modelos.map(m => (
+                                <View key={m} style={[e.celda, { width: ANCHO_MODELO }]}><Text style={e.pieTexto}>{totales.porModelo[m] || 0}</Text></View>
+                            ))}
                         </View>
                     </View>
                 </ScrollView>

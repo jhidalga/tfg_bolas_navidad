@@ -31,6 +31,20 @@ function inyectarCSS() {
     const st = document.createElement('style'); st.id = 'ad-css'; st.textContent = CSS; document.head.appendChild(st);
 }
 
+// Ramas de abeto (borde de arriba) y bolas colgando (borde de abajo) para el letrero de oferta
+const RAMAS = aUri(`<svg xmlns="http://www.w3.org/2000/svg" width="48" height="16" viewBox="0 0 48 16"><path d="M0 0h48v3c-3 5-6 8-9 13-2-5-5-8-8-10-3 3-5 6-7 10-2-4-5-8-8-10-3 2-6 5-8 10-3-4-5-8-8-13z" fill="#2f7a46"/><path d="M0 0h48v2c-4 3-7 6-10 9-2-3-5-5-7-6-3 2-5 5-7 8-2-3-4-6-7-8-3 1-6 4-8 7-3-3-6-6-9-9z" fill="#3f9a5c"/></svg>`);
+const BOLAS = aUri(`<svg xmlns="http://www.w3.org/2000/svg" width="90" height="22" viewBox="0 0 90 22"><g stroke="#e6c27a" stroke-width="1"><path d="M15 0v6M50 0v10M78 0v5"/></g><circle cx="15" cy="10" r="4.5" fill="#c0392b"/><circle cx="50" cy="15" r="5" fill="#e6c27a"/><circle cx="78" cy="9" r="4" fill="#c0392b"/><circle cx="13.5" cy="8.5" r="1.2" fill="#fff" opacity=".6"/><circle cx="48.5" cy="13.3" r="1.3" fill="#fff" opacity=".6"/></svg>`);
+
+/** Fondo de abeto para un letrero: verde oscuro con ramas de abeto arriba (las luces van debajo). Va detras del texto. */
+export function FondoAbeto() {
+    const capa = (uri: string, extra: any) => ({ position: 'absolute', left: 0, right: 0, backgroundImage: `url("${uri}")`, backgroundRepeat: 'repeat-x', ...extra } as any);
+    return (
+        <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, overflow: 'hidden' }}>
+            <View style={capa(RAMAS, { top: 0, height: 27, backgroundSize: '72px 27px' })} />
+        </View>
+    );
+}
+
 const fondo = (uri: string) => ({
     width: '100%', height: '100%', backgroundImage: `url("${uri}")`, backgroundRepeat: 'no-repeat',
     backgroundSize: 'contain', backgroundPosition: 'center bottom',

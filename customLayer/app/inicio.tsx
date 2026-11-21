@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { View, ScrollView, ActivityIndicator, Text, Pressable, Modal, TouchableOpacity, TextInput } from 'react-native';
 import Footer from '../componentes/footer';
-import { GuirnaldaLuces } from '../componentes/adornos';
+import { GuirnaldaLuces, FondoAbeto } from '../componentes/adornos';
 import Navbar from '@/componentes/navbar';
 import Grid from '@/componentes/gridProductos';
 import Filtros from '@/componentes/filtros';
@@ -183,7 +183,8 @@ export default function Inicio() {
             <Navbar />
 
             {(esAdmin || mensajeAdmin.trim() !== '') && (
-                <View style={{ backgroundColor: 'rgba(230,194,122,0.12)', padding: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(230,194,122,0.35)', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', zIndex: 100 }}>
+                <View style={{ backgroundColor: '#1d4a2e', paddingTop: 36, paddingBottom: 16, paddingHorizontal: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(230,194,122,0.5)', position: 'relative', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', zIndex: 100 }}>
+                    <FondoAbeto />
                     {editandoMensaje ? (
                         <View style={{ flexDirection: 'row', width: '100%', maxWidth: 800, gap: 10 }}>
                             <TextInput

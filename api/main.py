@@ -10,10 +10,10 @@ from dotenv import load_dotenv
 from pydantic import BaseModel
 import jwt
 try:
-    from .bolas3d import zip_pedido, zip_lineas, generar_3mf, nombre_fichero
+    from .bolas3d import zip_pedido, zip_lineas, generar_3mf, nombre_fichero, figura_para
     from .bolas3d.preview import preview_png
 except ImportError:
-    from bolas3d import zip_pedido, zip_lineas, generar_3mf, nombre_fichero
+    from bolas3d import zip_pedido, zip_lineas, generar_3mf, nombre_fichero, figura_para
     from bolas3d.preview import preview_png
 
 load_dotenv()
@@ -1001,21 +1001,46 @@ def actualizar_mensaje_admin(datos: MensajeAdminUpdate, authorization: Optional[
 # puede permitir ese correo. Hace falta la tabla incidencias_registro
 # (ver documentacion/incidencias_registro.sql).
 # ---------------------------------------------------------------
+_NOMBRE_FIGURA = {"Gingerbread.3mf": "Galleta de jengibre", "ChristmasTree.3mf": "Árbol", "Bear.3mf": "Oso",
+                  "Star.3mf": "Estrella", "Reindeer.3mf": "Reno"}
+_ORDEN_MODELOS = ["Galleta de jengibre", "Reno", "Oso", "Estrella", "Árbol"]
+
+
+def _modelo_resumen(modelo):
+    """Nombre del modelo del detalle -> una de las columnas del resumen."""
+    return _NOMBRE_FIGURA.get(figura_para(modelo or ""), "Otros")
+
+
 def _agregar_resumen(usuarios):
-    """Una fila por persona con pedidos: curso, nombre, correo, pedidos, bolas y total gastado.
-    Cada usuario trae sus pedidos con el total y las lineas con la cantidad."""
+    """Una fila por persona con pedidos: curso, nombre, correo, pedidos, bolas, total gastado
+    y, por cada modelo, cuantas bolas pidio y en que estado esta cada una.
+    Cada usuario trae sus pedidos con el total, el estado y las lineas con modelo y cantidad."""
     filas = []
+    usados = set()
     for u in usuarios:
         pedidos = u.get("pedidos") or []
         if not pedidos:
             continue
         bolas = sum(int(d.get("cantidad") or 1) for p in pedidos for d in (p.get("detalles_pedido") or []))
         total = round(sum(float(p.get("total") or 0) for p in pedidos), 2)
+        modelos = {}
+        for p in pedidos:
+            for d in (p.get("detalles_pedido") or []):
+                m = _modelo_resumen(d.get("modelo"))
+                usados.add(m)
+                cant = int(d.get("cantidad") or 1)
+                celda = modelos.setdefault(m, {"cantidad": 0, "estados": {}})
+                celda["cantidad"] += cant
+                est = p.get("estado") or "Pendiente"
+                celda["estados"][est] = celda["estados"].get(est, 0) + cant
         filas.append({"id": u.get("id"), "nombre": u.get("nombre") or "", "email": u.get("email") or "",
-                      "curso": u.get("curso") or "", "num_pedidos": len(pedidos), "bolas": bolas, "total": total})
+                      "curso": u.get("curso") or "", "num_pedidos": len(pedidos), "bolas": bolas, "total": total,
+                      "modelos": modelos})
     filas.sort(key=lambda f: f["nombre"].lower())
+    columnas = [m for m in _ORDEN_MODELOS if m in usados] + (["Otros"] if "Otros" in usados else [])
     return {
         "filas": filas,
+        "modelos": columnas,
         "totales": {"personas": len(filas), "pedidos": sum(f["num_pedidos"] for f in filas),
                     "bolas": sum(f["bolas"] for f in filas), "total": round(sum(f["total"] for f in filas), 2)},
     }
@@ -1039,7 +1064,7 @@ def resumen_admin(authorization: Optional[str] = Header(None)):
     """Tabla resumen para el admin: que persona ha pedido cuantas bolas y cuanto ha gastado."""
     try:
         cliente = _exigir_admin(authorization)
-        usuarios = cliente.table("usuarios").select("id, nombre, email, curso, pedidos(id, total, detalles_pedido(cantidad))").execute().data
+        usuarios = cliente.table("usuarios").select("id, nombre, email, curso, pedidos(id, total, estado, detalles_pedido(cantidad, modelo))").execute().data
         return _agregar_resumen(usuarios or [])
     except HTTPException:
         raise
