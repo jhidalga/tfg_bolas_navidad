@@ -19,6 +19,10 @@ import { supabase } from '../lib/supabase';
  * y añadiendo un texto de personalización antes de agregarlo al carrito.
  * * @returns Componente principal que renderiza la vista de detalles del producto.
  */
+// Si el modelo se llama "Base" o "Único", la figura se saca del nombre del producto
+const claveFigura = (modelo?: string, producto?: string) =>
+    !modelo || /^(base|unico|único)$/i.test(modelo.trim()) ? (producto || modelo) : modelo;
+
 export default function DetallesProducto() {
     const styles = useEstilos(estilosEscritorio, estilosMovil);
     const { id } = useLocalSearchParams();
@@ -91,7 +95,7 @@ export default function DetallesProducto() {
     };
 
     const modelo = modelosSel[activo] || modeloBase;
-    const nombreModelo = producto?.modelos?.find((m: any) => m.id === modelo)?.nombre;
+    const nombreModelo = claveFigura(producto?.modelos?.find((m: any) => m.id === modelo)?.nombre, producto?.nombre);
 
     // Vista previa en vivo: espera 500 ms desde la ultima tecla y pide la imagen a la API
     useEffect(() => {
@@ -170,7 +174,7 @@ export default function DetallesProducto() {
                 const itemCarrito = {
                     producto_id: producto.id,
                     modelo_id: modeloBola?.id || modeloBase,
-                    modelo: modeloBola?.nombre || 'Unico',
+                    modelo: claveFigura(modeloBola?.nombre, producto.nombre) || 'Unico',
                     color: color || 'Unico',
                     personalizacion: (personalizaciones[i] || '').trim() || 'Sin texto',
                     cantidad: 1
