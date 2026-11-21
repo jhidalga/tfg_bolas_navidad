@@ -6,6 +6,8 @@ import { supabase } from '../../lib/supabase';
 import { styles as estilosEscritorio } from '../../styles/pedidos/pedidos.styles';
 import { styles as estilosMovil } from '../../styles/pedidos/pedidos.styles.movil';
 import { useEstilos } from '../../lib/responsive';
+import { euros, fechaCorta, plural } from '../../lib/formato';
+import { Ionicons } from '@expo/vector-icons';
 
 /**
  * Pantalla que lista el historial de pedidos realizados por el usuario activo.
@@ -112,14 +114,20 @@ export default function MisPedidos() {
                                         
                                         <View style={styles.datosCliente}>
                                             <Text style={styles.txtDato}>
-                                                Fecha: {new Date(pedido.created_at).toLocaleDateString()}
+                                                Fecha: {fechaCorta(pedido.created_at)}
                                             </Text>
                                             <Text style={styles.txtDato}>
-                                                Productos: {cantidadProductos}
+                                                {plural(cantidadProductos, 'producto', 'productos')}
                                             </Text>
                                         </View>
                                         
-                                        <Text style={styles.precioTotal}>{pedido.total} €</Text>
+                                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <Text style={styles.precioTotal}>{euros(pedido.total)}</Text>
+                                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+                                                <Text style={{ color: '#6b7280', fontSize: 13 }}>Ver detalle</Text>
+                                                <Ionicons name="chevron-forward" size={16} color="#6b7280" />
+                                            </View>
+                                        </View>
                                     </Pressable>
                                 </View>
                             );

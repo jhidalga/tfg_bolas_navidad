@@ -1,4 +1,5 @@
 import { View, Text, StyleProp, TextStyle } from 'react-native';
+import { euros } from '../lib/formato';
 
 /** La web esta en oferta: antes todo costaba el doble. Se enseña el precio de antes tachado. */
 export const FACTOR_ANTES = 2;
@@ -22,9 +23,9 @@ export default function PrecioOferta({ valor, estilo, prefijo, etiqueta = true, 
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 6 }}>
             {prefijo ? <Text style={estilo}>{prefijo}</Text> : null}
             <Text style={{ color: colorAntes, fontSize: 14, fontWeight: '500', textDecorationLine: 'line-through' }}>
-                {antes.toFixed(2)} €
+                {euros(antes)}
             </Text>
-            <Text style={estilo}>{actual.toFixed(2)} €</Text>
+            <Text style={estilo}>{euros(actual)}</Text>
             {etiqueta && actual > 0 && (
                 <View style={{ backgroundColor: '#dc2626', borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2 }}>
                     <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>OFERTA</Text>

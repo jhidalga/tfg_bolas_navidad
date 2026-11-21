@@ -267,7 +267,7 @@ export default function DetalleProductoAdmin() {
                         </View>
 
                         <View style={styles.switchBox}>
-                            <Text style={styles.labelSwitch}>Visibilidad</Text>
+                            <View style={{ flex: 1 }}><Text style={styles.labelSwitch}>Visibilidad</Text><Text style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>Oculto: no aparece en el catálogo</Text></View>
                             <Pressable
                                 style={[styles.btnToggleSwitch, !form.oculto ? styles.btnOn : styles.btnOffWarning]}
                                 onPress={() => setForm({ ...form, oculto: !form.oculto })}
@@ -279,7 +279,7 @@ export default function DetalleProductoAdmin() {
                         </View>
 
                         <View style={styles.switchBox}>
-                            <Text style={styles.labelSwitch}>Estado</Text>
+                            <View style={{ flex: 1 }}><Text style={styles.labelSwitch}>Estado</Text><Text style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>Deshabilitado: se ve pero no se puede pedir</Text></View>
                             <Pressable
                                 style={[styles.btnToggleSwitch, !form.deshabilitado ? styles.btnOn : styles.btnOffDanger]}
                                 onPress={() => setForm({ ...form, deshabilitado: !form.deshabilitado })}

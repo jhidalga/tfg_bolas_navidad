@@ -7,6 +7,8 @@ import { styles as estilosEscritorio } from '../../../styles/adminUsuarios/admin
 import { styles as estilosMovil } from '../../../styles/adminUsuarios/adminUsuarios.styles.movil';
 import { useEstilos } from '../../../lib/responsive';
 import Toast from 'react-native-toast-message';
+import { plural } from '../../../lib/formato';
+import { useConfirmar } from '../../../componentes/confirmar';
 
 const API_URL = `${process.env.EXPO_PUBLIC_API_URL || ''}/api`;
 
@@ -20,6 +22,7 @@ const API_URL = `${process.env.EXPO_PUBLIC_API_URL || ''}/api`;
 export default function GestorUsuariosAdmin() {
     const styles = useEstilos(estilosEscritorio, estilosMovil);
     const router = useRouter();
+    const { confirmar, dialogo } = useConfirmar();
     const [cargando, setCargando] = useState(true);
     const [usuarios, setUsuarios] = useState<any[]>([]);
     const [busqueda, setBusqueda] = useState('');
@@ -70,7 +73,13 @@ export default function GestorUsuariosAdmin() {
      * * @param id - Identificador único del usuario a modificar.
      * @param estadoActual - El valor booleano actual del privilegio de administrador.
      */
-    const toggleAdmin = async (id: string, estadoActual: boolean) => {
+    const toggleAdmin = async (id: string, estadoActual: boolean, nombre: string = 'esta persona') => {
+        const ok = await confirmar(
+            estadoActual ? `¿Quitar los permisos de administrador a ${nombre}?` : `¿Dar permisos de administrador a ${nombre}?`,
+            estadoActual ? 'Quitar permisos' : 'Hacer administrador',
+            estadoActual
+        );
+        if (!ok) return;
         const { data: { session } } = await supabase.auth.getSession();
         const nuevoEstado = !estadoActual;
         try {
@@ -84,7 +93,9 @@ export default function GestorUsuariosAdmin() {
             });
             if (res.ok) {
                 setUsuarios(prev => prev.map(u => u.id === id ? { ...u, administrador: nuevoEstado } : u));
-                triggerToast("Rol actualizado", "#10b981");
+                triggerToast(nuevoEstado ? "Ahora es administrador" : "Ya no es administrador", "#10b981");
+            } else {
+                triggerToast("No se pudo cambiar el rol", "#ef4444");
             }
         } catch (error) {
             triggerToast("Error de conexión", "#ef4444");
@@ -112,6 +123,7 @@ export default function GestorUsuariosAdmin() {
 
     return (
         <View style={styles.container}>
+            {dialogo}
             <ScrollView contentContainerStyle={styles.scrollContent}>
                 <View style={styles.header}>
                     <Pressable onPress={() => router.back()} style={styles.btnVolver}>
@@ -157,17 +169,17 @@ export default function GestorUsuariosAdmin() {
                                 
                                 <View style={styles.colPedidos}>
                                     <View style={styles.badgeGris}>
-                                        <Text style={styles.txtBadgeGris}>{u.num_pedidos || 0} Pedidos</Text>
+                                        <Text style={styles.txtBadgeGris}>{plural(u.num_pedidos || 0, 'pedido', 'pedidos')}</Text>
                                     </View>
                                 </View>
                                 
                                 <View style={styles.colRol}>
                                     <Pressable 
                                         style={[styles.btnRol, u.administrador ? styles.btnAdmin : styles.btnUser]} 
-                                        onPress={() => toggleAdmin(u.id, u.administrador)}
+                                        onPress={() => toggleAdmin(u.id, u.administrador, u.nombre)}
                                     >
                                         <Text style={u.administrador ? styles.txtBtnAdmin : styles.txtBtnUser}>
-                                            {u.administrador ? 'ADMIN' : 'USER'}
+                                            {u.administrador ? 'Quitar admin' : 'Hacer admin'}
                                         </Text>
                                     </Pressable>
                                 </View>

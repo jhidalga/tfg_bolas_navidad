@@ -6,6 +6,7 @@ import { supabase } from '../../../lib/supabase';
 import { styles as estilosEscritorio } from '../../../styles/adminProductos/adminProductos.styles';
 import { styles as estilosMovil } from '../../../styles/adminProductos/adminProductos.styles.movil';
 import { useEstilos } from '../../../lib/responsive';
+import { euros, plural } from '../../../lib/formato';
 
 /**
  * Pantalla principal de administración del Catálogo de Productos.
@@ -127,10 +128,10 @@ export default function AdminProductos() {
                                 <View style={styles.colDetalles}>
                                     <View style={styles.colInfo}>
                                         <Text style={styles.txtNombre}>{prod.nombre}</Text>
-                                        <Text style={styles.txtSub}>{prod.modelos?.length || 0} modelos</Text>
+                                        <Text style={styles.txtSub}>{plural(prod.modelos?.length || 0, 'modelo', 'modelos')}</Text>
                                     </View>
                                     
-                                    <Text style={styles.colPrecio}>{prod.precio} €</Text>
+                                    <Text style={styles.colPrecio}>{euros(prod.precio)}</Text>
                                     
                                     <View style={styles.contenedorBadges}>
                                         <View style={styles.colVisibilidad}>

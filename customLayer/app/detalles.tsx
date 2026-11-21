@@ -247,7 +247,7 @@ export default function DetallesProducto() {
                     <View style={{ flex: 1, minHeight: 0, paddingLeft: esHorizontal ? 30 : 0 }}>
                         <View style={{ paddingHorizontal: esHorizontal ? 0 : 20, paddingTop: 10 }}>
                         <View style={styles.cabeceraInfo}>
-                            <Text style={[styles.nombreProducto, esMovilWeb && { fontSize: 19 }]} numberOfLines={2}>{producto.nombre}</Text>
+                            <Text style={[styles.nombreProducto, esMovilWeb && { fontSize: 19 }]}>{producto.nombre}</Text>
                             <View style={styles.contenedorPrecio}>
                                 <PrecioOferta valor={precioTotal} estilo={styles.precioValor} colorAntes="#dbeafe" />
                             </View>

@@ -120,7 +120,7 @@ export default function AdminLayout() {
                 </View>
                 
                 <Pressable style={styles.btnVolver} onPress={() => { setMenuVisible(false); router.replace('/inicio' as any); }}>
-                    <Text style={styles.textoVolver}>  Tienda</Text>
+                    <Text style={styles.textoVolver}>  Ir a la tienda</Text>
                 </Pressable>
             </View>
             

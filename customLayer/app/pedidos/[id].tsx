@@ -6,6 +6,7 @@ import { supabase } from '../../lib/supabase';
 import { styles as estilosEscritorio } from '../../styles/adminDetallePedido/adminDetallePedido.styles';
 import { styles as estilosMovil } from '../../styles/adminDetallePedido/adminDetallePedido.styles.movil';
 import { useEstilos } from '../../lib/responsive';
+import { euros } from '../../lib/formato';
 
 /**
  * Pantalla de detalles de un pedido específico.
@@ -51,7 +52,14 @@ export default function DetallesPedidoAdmin() {
     }, [id]);
 
     if (cargando) return <Text style={styles.mensajeEstado}>Cargando pedido...</Text>;
-    if (!datos) return <Text style={styles.mensajeEstado}>Error al cargar el pedido (o no existe)</Text>;
+    if (!datos) return (
+        <View>
+            <Text style={styles.mensajeEstado}>No se ha podido cargar el pedido. Puede que no exista.</Text>
+            <Pressable onPress={() => router.replace('/pedidos')} style={styles.btnVolver}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="arrow-back" size={18} color="#475569" /><Text style={styles.txtVolver}>Ir a mis pedidos</Text></View>
+            </Pressable>
+        </View>
+    );
 
     return (
         <ScrollView style={styles.contenedor}>
@@ -60,7 +68,7 @@ export default function DetallesPedidoAdmin() {
             </Pressable>
 
             <Text style={styles.titulo}>Detalles del Pedido #{datos.pedido.id.slice(0,8).toUpperCase()}</Text>
-            <Text style={styles.totalInfo}>Importe Total: {datos.pedido.total}€</Text>
+            <Text style={styles.totalInfo}>Importe Total: {euros(datos.pedido.total)}</Text>
 
             <Text style={styles.subtitulo}>Productos:</Text>
             
@@ -81,7 +89,7 @@ export default function DetallesPedidoAdmin() {
                             <Text style={styles.txtNormalSecundario}>Modelo: <Text style={styles.txtBold}>{prod.modelo}</Text></Text>
                             <Text style={styles.txtNormalSecundario}>Color: <Text style={styles.txtBold}>{prod.color}</Text></Text>
                             <Text style={styles.txtNormalSecundario}>Cantidad: <Text style={styles.txtBold}>{prod.cantidad || 1}</Text></Text>
-                            <Text style={styles.txtNormalSecundario}>Precio unitario: <Text style={styles.txtBold}>{prod.precio_unitario}€</Text></Text>
+                            <Text style={styles.txtNormalSecundario}>Precio unitario: <Text style={styles.txtBold}>{euros(prod.precio_unitario)}</Text></Text>
                             
                             {prod.personalizacion && prod.personalizacion !== 'Sin texto' ? (
                                 <View style={styles.badgePersonalizado}>

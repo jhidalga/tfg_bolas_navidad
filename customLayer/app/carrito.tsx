@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useConfirmar } from '../componentes/confirmar';
 import { View, Text, FlatList, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import Toast from 'react-native-toast-message';
 import Navbar from '@/componentes/navbar';
 import { styles as estilosEscritorio } from '../styles/carrito/carrito.styles';
@@ -12,6 +12,7 @@ import { styles as estilosMovil } from '../styles/carrito/carrito.styles.movil';
 import { useEstilos } from '../lib/responsive';
 import { supabase } from '../lib/supabase';
 import { avisarCarrito } from '../lib/contadorCarrito';
+import { euros, plural } from '../lib/formato';
 
 /**
  * Estructura de datos que representa un producto añadido al carrito.
@@ -96,6 +97,7 @@ export default function PantallaCarrito() {
      * * @param id - Identificador único del registro en el carrito a eliminar.
      */
     const { confirmar, dialogo } = useConfirmar();
+    const router = useRouter();
 
     const eliminarProducto = async (id: string) => {
         if (!(await confirmar('¿Quitar esta bola del carrito?', 'Quitar'))) return;
@@ -150,6 +152,13 @@ export default function PantallaCarrito() {
      * Si el pedido se crea correctamente, vacía el carrito local y muestra el ID del pedido.
      */
     const crearPedido = async () => {
+        const n = carrito.reduce((t, i) => t + (i.cantidad || 1), 0);
+        const ok = await confirmar(
+            `Vas a pedir ${plural(n, 'bola', 'bolas')} por ${euros(totalCarrito)}. El pago es en efectivo al recoger o por adelantado al profesorado. ¿Confirmas el pedido?`,
+            'Hacer pedido',
+            false
+        );
+        if (!ok) return;
         try {
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) {
@@ -176,6 +185,7 @@ export default function PantallaCarrito() {
                         text2: `ID del pedido: ${data.pedido_id}`
                     });
                     setCarrito([]);
+                    router.push('/pedidos');
                 } else {
                     Toast.show({
                         type: 'error',
@@ -205,7 +215,12 @@ export default function PantallaCarrito() {
                         <Text style={{ marginTop: 10, color: '#666' }}>Cargando carrito...</Text>
                     </View>
                 ) : carrito.length === 0 ? (
-                    <Text style={styles.textoVacio}>Tu carrito está vacío.</Text>
+                    <View style={{ alignItems: 'center', gap: 16, marginTop: 50 }}>
+                        <Text style={[styles.textoVacio, { marginTop: 0 }]}>Tu carrito está vacío.</Text>
+                        <TouchableOpacity onPress={() => router.push('/inicio')} style={{ backgroundColor: '#4338ca', paddingVertical: 12, paddingHorizontal: 22, borderRadius: 10 }}>
+                            <Text style={{ color: '#fff', fontWeight: '600' }}>Ver las bolas</Text>
+                        </TouchableOpacity>
+                    </View>
                 ) : (
                     <FlatList
                         data={carrito}

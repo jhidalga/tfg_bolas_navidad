@@ -96,6 +96,7 @@ export default function Login() {
                         onChangeText={setContrasena}
                         placeholder='Introduce tu contraseña'
                         secureTextEntry
+                        onSubmitEditing={() => comprobarCredenciales()}
                     />
 
                     <Pressable style={styles.botonLogin} onPress={() => comprobarCredenciales()}>
@@ -105,6 +106,10 @@ export default function Login() {
                     <Text style={styles.avisoRecuperacion}>
                         Si has olvidado tu contraseña, contacta con el administrador.
                     </Text>
+
+                    <Pressable style={styles.botonVolver} onPress={() => router.push('/registro')}>
+                        <Text style={styles.textoBotonVolver}>¿No tienes cuenta? Regístrate</Text>
+                    </Pressable>
 
                     <Pressable style={styles.botonVolver} onPress={() => router.push('/')}>
                         <Text style={styles.textoBotonVolver}>Volver</Text>

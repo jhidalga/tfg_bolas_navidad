@@ -9,13 +9,13 @@ import { Modal, View, Text, Pressable } from 'react-native';
  *      y poner {dialogo} dentro del JSX de la pantalla.
  */
 export function useConfirmar() {
-    const [estado, setEstado] = useState<{ mensaje: string; boton: string } | null>(null);
+    const [estado, setEstado] = useState<{ mensaje: string; boton: string; peligro: boolean } | null>(null);
     const resolver = useRef<((ok: boolean) => void) | null>(null);
 
-    const confirmar = (mensaje: string, boton: string = 'Eliminar'): Promise<boolean> =>
+    const confirmar = (mensaje: string, boton: string = 'Eliminar', peligro: boolean = true): Promise<boolean> =>
         new Promise((resolve) => {
             resolver.current = resolve;
-            setEstado({ mensaje, boton });
+            setEstado({ mensaje, boton, peligro });
         });
 
     const cerrar = (ok: boolean) => {
@@ -33,7 +33,7 @@ export function useConfirmar() {
                         <Pressable onPress={() => cerrar(false)} style={{ paddingVertical: 10, paddingHorizontal: 16, borderRadius: 8, backgroundColor: '#f3f4f6' }}>
                             <Text style={{ color: '#374151', fontWeight: '600' }}>Cancelar</Text>
                         </Pressable>
-                        <Pressable onPress={() => cerrar(true)} style={{ paddingVertical: 10, paddingHorizontal: 16, borderRadius: 8, backgroundColor: '#dc2626' }}>
+                        <Pressable onPress={() => cerrar(true)} style={{ paddingVertical: 10, paddingHorizontal: 16, borderRadius: 8, backgroundColor: estado?.peligro === false ? '#4338ca' : '#dc2626' }}>
                             <Text style={{ color: '#fff', fontWeight: '600' }}>{estado?.boton}</Text>
                         </Pressable>
                     </View>

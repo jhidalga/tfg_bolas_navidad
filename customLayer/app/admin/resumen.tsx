@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { traducirError } from '../../lib/errores';
 import { useEsMovilWeb } from '../../lib/responsive';
+import { euros } from '../../lib/formato';
 import Toast from 'react-native-toast-message';
 
 const API_URL = `${process.env.EXPO_PUBLIC_API_URL || ''}/api`;
@@ -20,7 +21,6 @@ const COLUMNAS: { clave: Columna; titulo: string; ancho: number; numero?: boolea
     { clave: 'total', titulo: 'Total gastado', ancho: 130, numero: true },
 ];
 
-const euros = (n: number) => `${n.toFixed(2).replace('.', ',')} €`;
 
 /**
  * Resumen en forma de hoja de calculo: una fila por persona con curso, nombre, correo,

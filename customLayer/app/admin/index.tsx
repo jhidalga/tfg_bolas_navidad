@@ -11,6 +11,7 @@ import { Entypo, FontAwesome } from '@expo/vector-icons';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import Toast from 'react-native-toast-message';
+import { euros, fechaCorta } from '../../lib/formato';
 
 /**
  * Pantalla principal del panel de administración para la gestión de pedidos.
@@ -346,11 +347,11 @@ export default function ListaPedidosAdmin() {
                                                 </View>
                                             </View>
                                             <View style={styles.datosCliente}>
-                                                <Text style={styles.txtDato}><FontAwesome name="calendar" size={16} color="black" /> {new Date(pedido.created_at).toLocaleDateString()}</Text>
+                                                <Text style={styles.txtDato}><FontAwesome name="calendar" size={16} color="black" /> {fechaCorta(pedido.created_at)}</Text>
                                                 <Text style={styles.txtDato}><FontAwesome5 name="user" size={14} color="black" /> {pedido.usuarios?.nombre || "Desconocido"}</Text>
                                                 <Text style={styles.txtDato}><FontAwesome5 name="book" size={14} color="black" /> {pedido.usuarios?.curso || "Desconocido"}</Text>
                                             </View>
-                                            <Text style={styles.precioTotal}>{pedido.total} €</Text>
+                                            <Text style={styles.precioTotal}>{euros(pedido.total)}</Text>
                                         </Pressable>
                                         <View style={styles.tarjetaAcciones}>
                                             {['Pendiente', 'Completado', 'Entregado', 'Cancelado'].map(est => (

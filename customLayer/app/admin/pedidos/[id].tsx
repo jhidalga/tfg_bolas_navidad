@@ -8,6 +8,7 @@ import { supabase } from '../../../lib/supabase';
 import { styles as estilosEscritorio } from '../../../styles/adminDetallePedido/adminDetallePedido.styles';
 import { styles as estilosMovil } from '../../../styles/adminDetallePedido/adminDetallePedido.styles.movil';
 import { useEstilos } from '../../../lib/responsive';
+import { euros } from '../../../lib/formato';
 
 /**
  * Pantalla de administración para ver los detalles de un pedido específico.
@@ -94,7 +95,7 @@ export default function DetallesPedidoAdmin() {
             </Pressable>
 
             <Text style={styles.titulo}>Detalles del Pedido #{datos.pedido.id.slice(0,8).toUpperCase()}</Text>
-            <Text style={styles.totalInfo}>Importe Total: {datos.pedido.total}€</Text>
+            <Text style={styles.totalInfo}>Importe Total: {euros(datos.pedido.total)}</Text>
 
             <Pressable
                 style={{ backgroundColor: '#111827', paddingVertical: 12, paddingHorizontal: 16, borderRadius: 10, alignSelf: 'flex-start', marginVertical: 10 }}
@@ -122,7 +123,7 @@ export default function DetallesPedidoAdmin() {
                             <Text style={styles.txtNormalSecundario}>Modelo: <Text style={styles.txtBold}>{prod.modelo}</Text></Text>
                             <Text style={styles.txtNormalSecundario}>Color: <Text style={styles.txtBold}>{prod.color}</Text></Text>
                             <Text style={styles.txtNormalSecundario}>Cantidad: <Text style={styles.txtBold}>{prod.cantidad || 1}</Text></Text>
-                            <Text style={styles.txtNormalSecundario}>Precio unitario: <Text style={styles.txtBold}>{prod.precio_unitario}€</Text></Text>
+                            <Text style={styles.txtNormalSecundario}>Precio unitario: <Text style={styles.txtBold}>{euros(prod.precio_unitario)}</Text></Text>
                             
                             {prod.personalizacion && prod.personalizacion !== 'Sin texto' ? (
                                 <View style={styles.badgePersonalizado}>
