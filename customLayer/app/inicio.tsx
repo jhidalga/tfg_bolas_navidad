@@ -5,6 +5,7 @@ import { GuirnaldaLuces, FondoLetrero } from '../componentes/adornos';
 import Navbar from '@/componentes/navbar';
 import Grid from '@/componentes/gridProductos';
 import Filtros from '@/componentes/filtros';
+import Tutorial from '../componentes/tutorial';
 import { styles as estilosEscritorio } from '../styles/inicio/Inicio.styles';
 import { styles as estilosMovil } from '../styles/inicio/Inicio.styles.movil';
 import { useEstilos } from '../lib/responsive';
@@ -219,6 +220,7 @@ export default function Inicio() {
             <GuirnaldaLuces />
 
             <ScrollView contentContainerStyle={styles.contenidoScroll} showsVerticalScrollIndicator={false}>
+                <Tutorial />
                 <View style={styles.layoutPrincipal}>
                     <View style={styles.sidebarDesktop}>
                         {!cargando && renderFiltros()}

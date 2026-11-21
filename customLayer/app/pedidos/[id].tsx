@@ -10,6 +10,8 @@ import { useEstilos } from '../../lib/responsive';
 import { euros } from '../../lib/formato';
 import Navbar from '@/componentes/navbar';
 import { tc } from '../../lib/tema';
+import Toast from 'react-native-toast-message';
+import { useConfirmar } from '../../componentes/confirmar';
 
 /**
  * Pantalla de detalles de un pedido específico.
@@ -36,6 +38,8 @@ export default function DetallesPedidoAdmin() {
     const router = useRouter();
     const [datos, setDatos] = useState<any>(null);
     const [cargando, setCargando] = useState(true);
+    const [anulando, setAnulando] = useState(false);
+    const { confirmar, dialogo } = useConfirmar();
 
     useEffect(() => {
         /**
@@ -69,6 +73,68 @@ export default function DetallesPedidoAdmin() {
         cargarDetalle();
     }, [id]);
 
+    /** Anula el pedido si sigue Pendiente. La API vuelve a comprobarlo. */
+    const anular = async () => {
+        if (!(await confirmar('¿Seguro que quieres anular este pedido? No se puede deshacer.', 'Anular pedido'))) return;
+        await anularSinPreguntar();
+    };
+
+    const anularSinPreguntar = async () => {
+        setAnulando(true);
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) { router.replace('/login'); return; }
+            const respuesta = await fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/pedidos/${id}/anular`, {
+                method: 'PATCH',
+                headers: { 'Authorization': `Bearer ${session.access_token}` }
+            });
+            if (respuesta.ok) {
+                setDatos((d: any) => ({ ...d, pedido: { ...d.pedido, estado: 'Cancelado' } }));
+                Toast.show({ type: 'success', text1: 'Pedido anulado' });
+            } else {
+                const e = await respuesta.json().catch(() => ({}));
+                Toast.show({ type: 'error', text1: 'No se pudo anular', text2: e.detail || 'Inténtalo de nuevo.' });
+            }
+        } catch {
+            Toast.show({ type: 'error', text1: 'Error de conexión' });
+        } finally {
+            setAnulando(false);
+        }
+    };
+
+    /** Quita una bola. Si es la última, se anula el pedido entero. */
+    const quitar = async (prod: any) => {
+        const varias = Number(prod.cantidad || 1) > 1;
+        const ultima = !varias && (datos.productos || []).length <= 1;
+        const mensaje = ultima
+            ? 'Es la última bola del pedido. Si la quitas, el pedido se anula. ¿Seguro?'
+            : varias ? `¿Seguro que quieres quitar 1 unidad de ${prod.modelo}${prod.personalizacion && prod.personalizacion !== 'Sin texto' ? ' "' + prod.personalizacion + '"' : ''}?`
+            : `¿Seguro que quieres quitar ${prod.modelo}${prod.personalizacion && prod.personalizacion !== 'Sin texto' ? ' "' + prod.personalizacion + '"' : ''} del pedido?`;
+        if (!(await confirmar(mensaje, ultima ? 'Anular pedido' : 'Quitar'))) return;
+        if (ultima) { await anularSinPreguntar(); return; }
+        setAnulando(true);
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) { router.replace('/login'); return; }
+            const respuesta = await fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/pedidos/${id}/detalles/${prod.id}/quitar`, {
+                method: 'PATCH',
+                headers: { 'Authorization': `Bearer ${session.access_token}` }
+            });
+            if (respuesta.ok) {
+                const r = await respuesta.json();
+                setDatos((d: any) => ({ ...d, pedido: { ...d.pedido, estado: r.estado || d.pedido.estado, total: r.total ?? d.pedido.total }, productos: varias ? d.productos.map((x: any) => x.id === prod.id ? { ...x, cantidad: Number(x.cantidad || 1) - 1 } : x) : d.productos.filter((x: any) => x.id !== prod.id) }));
+                Toast.show({ type: 'success', text1: varias ? 'Unidad quitada' : 'Bola quitada' });
+            } else {
+                const e = await respuesta.json().catch(() => ({}));
+                Toast.show({ type: 'error', text1: 'No se pudo quitar', text2: e.detail || 'Inténtalo de nuevo.' });
+            }
+        } catch {
+            Toast.show({ type: 'error', text1: 'Error de conexión' });
+        } finally {
+            setAnulando(false);
+        }
+    };
+
     if (cargando) return <View style={{ flex: 1 }}><Navbar /><Text style={[styles.mensajeEstado, t.msg]}>Cargando pedido...</Text></View>;
     if (!datos) return (
         <View style={{ flex: 1 }}>
@@ -90,6 +156,25 @@ export default function DetallesPedidoAdmin() {
 
             <Text style={[styles.titulo, t.titulo]}>Pedido de {etiquetaPedido(datos.usuario || datos.pedido.usuarios, datos.pedido.id, datos.numero)}</Text>
             <Text style={[styles.totalInfo, t.total]}>Importe Total: {euros(datos.pedido.total)}</Text>
+
+            <View style={{ backgroundColor: tc('#fbf1de'), borderRadius: 12, padding: 14, marginHorizontal: 16, marginBottom: 14 }}>
+                <Text style={{ fontWeight: 'bold', color: tc('#3b1a12'), fontSize: 16 }}>Estado: {datos.pedido.estado}</Text>
+                {datos.pedido.estado === 'Pendiente' ? (
+                    <>
+                        <Text style={{ color: tc('#6b4a3a'), marginTop: 6 }}>Puedes anular el pedido mientras esté Pendiente. Cuando se complete ya no se podrá.</Text>
+                        <Pressable onPress={() => !anulando && anular()} style={{ backgroundColor: tc('#a52a2a'), paddingVertical: 12, borderRadius: 10, alignItems: 'center', marginTop: 12, opacity: anulando ? 0.6 : 1 }}>
+                            <Text style={{ color: '#ffffff', fontWeight: 'bold' }}>{anulando ? 'Anulando...' : 'Anular pedido'}</Text>
+                        </Pressable>
+                    </>
+                ) : (
+                    <Text style={{ color: tc('#6b4a3a'), marginTop: 6 }}>
+                        {datos.pedido.estado === 'Completado' ? 'Tu pedido ya está completado e impreso, no se puede anular.'
+                            : datos.pedido.estado === 'Entregado' ? 'Tu pedido ya está entregado, no se puede anular.'
+                            : datos.pedido.estado === 'Cancelado' ? 'Este pedido está anulado.'
+                            : 'Este pedido ya no se puede anular.'}
+                    </Text>
+                )}
+            </View>
 
             <Text style={[styles.subtitulo, t.sub]}>Productos:</Text>
             
@@ -119,11 +204,17 @@ export default function DetallesPedidoAdmin() {
                             ) : (
                                 <Text style={styles.txtNormal}>Sin personalizar</Text>
                             )}
+                            {datos.pedido.estado === 'Pendiente' && (
+                                <Pressable onPress={() => !anulando && quitar(prod)} style={{ alignSelf: 'flex-start', marginTop: 10, borderWidth: 1, borderColor: tc('#a52a2a'), borderRadius: 8, paddingVertical: 6, paddingHorizontal: 12, opacity: anulando ? 0.6 : 1 }}>
+                                    <Text style={{ color: tc('#a52a2a'), fontWeight: 'bold', fontSize: 13 }}>{Number(prod.cantidad || 1) > 1 ? 'Quitar 1 unidad' : 'Quitar del pedido'}</Text>
+                                </Pressable>
+                            )}
                         </View>
                     </View>
                 );
             })}
         </ScrollView>
+        {dialogo}
         </View>
     );
 }

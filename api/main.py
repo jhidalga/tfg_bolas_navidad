@@ -27,6 +27,12 @@ app = FastAPI()
 # Nunca se activa en Railway aunque la variable estuviera puesta
 MODO_PRUEBA = os.getenv("MODO_PRUEBA") == "1" and not os.getenv("RAILWAY_ENVIRONMENT") and not os.getenv("RAILWAY_PROJECT_ID")
 
+_MENSAJE_NO_ANULAR = {
+    "Completado": "Este pedido ya está completado e impreso, no se puede anular.",
+    "Entregado": "Este pedido ya está entregado, no se puede anular.",
+    "Cancelado": "Este pedido ya está anulado.",
+}
+
 MAX_ESPACIOS_NOMBRE = 2  # 3 palabras
 
 def _error_nombre_bola(nombre: str, personalizable: bool):
@@ -408,6 +414,34 @@ if MODO_PRUEBA:
         lista = _pedidos(str(request.base_url))
         lista[:] = [p for p in lista if p["id"] != pedido_id]
         return {"mensaje": "Pedido eliminado correctamente", "data": []}
+
+    @app.patch("/api/pedidos/{pedido_id}/anular")
+    def anular_prueba(pedido_id: str, request: Request):
+        for p in _pedidos(str(request.base_url)):
+            if p["id"] == pedido_id:
+                if p["estado"] != "Pendiente":
+                    raise HTTPException(status_code=409, detail=_MENSAJE_NO_ANULAR.get(p["estado"], "Este pedido ya no se puede anular."))
+                p["estado"] = "Cancelado"
+                return {"mensaje": "Pedido anulado", "estado": "Cancelado"}
+        raise HTTPException(status_code=404, detail="Pedido no encontrado")
+
+    @app.patch("/api/pedidos/{pedido_id}/detalles/{detalle_id}/quitar")
+    def quitar_prueba(pedido_id: str, detalle_id: str, request: Request):
+        for p in _pedidos(str(request.base_url)):
+            if p["id"] == pedido_id:
+                if p["estado"] != "Pendiente":
+                    raise HTTPException(status_code=409, detail="Este pedido ya no se puede cambiar.")
+                for d in p["detalles_pedido"]:
+                    if d["id"] == detalle_id and d["cantidad"] > 1:
+                        d["cantidad"] -= 1
+                        break
+                else:
+                    p["detalles_pedido"] = [d for d in p["detalles_pedido"] if d["id"] != detalle_id]
+                p["total"] = float(sum(d["precio_unitario"] * d["cantidad"] for d in p["detalles_pedido"]))
+                if not p["detalles_pedido"]:
+                    p["estado"] = "Cancelado"
+                return {"mensaje": "Bola quitada", "estado": p["estado"], "total": p["total"]}
+        raise HTTPException(status_code=404, detail="Pedido no encontrado")
 
     @app.get("/api/pedidos/usuario")
     def mis_pedidos_prueba(request: Request):
@@ -1053,6 +1087,58 @@ def actualizar_rol_usuario(usuario_id: str, payload: dict, authorization: Option
         logging.exception("Error interno")
         raise HTTPException(status_code=500, detail="Ha ocurrido un error en el servidor. Inténtalo de nuevo.")
     
+@app.patch("/api/pedidos/{pedido_id}/anular")
+def anular_mi_pedido(pedido_id: str, authorization: Optional[str] = Header(None)):
+    """El alumno anula su propio pedido, solo si sigue Pendiente."""
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Falta el token de sesión")
+    token = authorization.replace("Bearer ", "")
+    try:
+        cliente = create_client(SUPABASE_URL, SUPABASE_KEY, options=ClientOptions(headers={"Authorization": f"Bearer {token}"}))
+        user_id = cliente.auth.get_user(token).user.id
+        res = cliente.table("pedidos").select("estado, user_id").eq("id", pedido_id).execute()
+        if not res.data or res.data[0].get("user_id") != user_id:
+            raise HTTPException(status_code=404, detail="Pedido no encontrado")
+        estado = res.data[0].get("estado")
+        if estado != "Pendiente":
+            raise HTTPException(status_code=409, detail=_MENSAJE_NO_ANULAR.get(estado, "Este pedido ya no se puede anular."))
+        hecho = cliente.rpc("anular_pedido", {"p_id": pedido_id}).execute()
+        if not hecho.data:
+            raise HTTPException(status_code=409, detail="Este pedido ya no se puede anular.")
+        return {"mensaje": "Pedido anulado", "estado": "Cancelado"}
+    except HTTPException:
+        raise
+    except Exception:
+        logging.exception("Error al anular el pedido")
+        raise HTTPException(status_code=500, detail="No se pudo anular el pedido. Inténtalo de nuevo.")
+
+
+@app.patch("/api/pedidos/{pedido_id}/detalles/{detalle_id}/quitar")
+def quitar_bola_de_mi_pedido(pedido_id: str, detalle_id: str, authorization: Optional[str] = Header(None)):
+    """El alumno quita una unidad de una linea de su pedido, solo si sigue Pendiente. Si era la ultima, se anula el pedido."""
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Falta el token de sesión")
+    token = authorization.replace("Bearer ", "")
+    try:
+        cliente = create_client(SUPABASE_URL, SUPABASE_KEY, options=ClientOptions(headers={"Authorization": f"Bearer {token}"}))
+        user_id = cliente.auth.get_user(token).user.id
+        res = cliente.table("pedidos").select("estado, user_id").eq("id", pedido_id).execute()
+        if not res.data or res.data[0].get("user_id") != user_id:
+            raise HTTPException(status_code=404, detail="Pedido no encontrado")
+        estado = res.data[0].get("estado")
+        if estado != "Pendiente":
+            raise HTTPException(status_code=409, detail=_MENSAJE_NO_ANULAR.get(estado, "Este pedido ya no se puede cambiar.").replace("anular", "cambiar"))
+        hecho = cliente.rpc("quitar_bola_pedido", {"p_pedido": pedido_id, "p_detalle": detalle_id}).execute()
+        if hecho.data not in ("ok", "cancelado"):
+            raise HTTPException(status_code=409, detail="No se pudo quitar esa bola.")
+        nuevo = cliente.table("pedidos").select("estado, total").eq("id", pedido_id).execute().data or [{}]
+        return {"mensaje": "Bola quitada", "estado": nuevo[0].get("estado"), "total": nuevo[0].get("total")}
+    except HTTPException:
+        raise
+    except Exception:
+        logging.exception("Error al quitar la bola")
+        raise HTTPException(status_code=500, detail="No se pudo quitar la bola. Inténtalo de nuevo.")
+
 @app.get("/api/pedidos/usuario")
 def obtener_mis_pedidos(authorization: Optional[str] = Header(None)):
     if not authorization:

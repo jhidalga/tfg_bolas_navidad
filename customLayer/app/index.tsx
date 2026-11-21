@@ -5,6 +5,7 @@ import { useEstilos } from '../lib/responsive';
 import { useRouter } from "expo-router";
 import { temaActual } from "../lib/tema";
 import Footer from "../componentes/footer";
+import Tutorial from "../componentes/tutorial";
 import { AdornosColgantes, GuirnaldaLuces } from "../componentes/adornos";
 
 /**
@@ -37,6 +38,7 @@ export default function Index() {
               <Text style={styles.textoBotonRegistro}>Registro</Text>
             </Pressable>
           </View>
+          <Tutorial />
         </View>
 
       </View>
