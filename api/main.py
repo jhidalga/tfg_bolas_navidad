@@ -1224,9 +1224,11 @@ def crear_incidencia_registro(datos: IncidenciaRegistro):
         existe = cliente.rpc("incidencia_pendiente", {"p_correo": campos["correo"]}).execute()
         if existe.data:
             return {"mensaje": "Ya tenias una incidencia abierta con ese correo"}
-        cliente.table("incidencias_registro").insert(campos).execute()
+        # Sin devolver la fila: quien no tiene cuenta puede crearla pero no leerla
+        cliente.table("incidencias_registro").insert(campos, returning="minimal").execute()
         return {"mensaje": "Incidencia enviada"}
     except Exception:
+        logging.exception("Error al crear la incidencia")
         raise HTTPException(status_code=500, detail="No se pudo enviar la incidencia")
 
 
