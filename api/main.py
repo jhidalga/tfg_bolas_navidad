@@ -437,10 +437,6 @@ def read_root():
 def health():
     return {"status": "ok"}
 
-@app.get("/")
-def read_root():
-    return {"message": "¡Bienvenido a la API de Custom Layers!"}
-
 @app.get("/api/productos")
 def obtener_productos(incluir_ocultos: Optional[bool] = False):
     try:
@@ -1085,3 +1081,8 @@ if os.path.isdir(WEB_DIR):
         if archivo.startswith(WEB_DIR + os.sep) and os.path.isfile(archivo):
             return FileResponse(archivo)
         return FileResponse(os.path.join(WEB_DIR, "index.html"))
+else:
+    # Sin web exportada (desarrollo local solo con la API) la raiz da el saludo de la API.
+    @app.get("/", include_in_schema=False)
+    def raiz_api():
+        return {"message": "¡Bienvenido a la API de Custom Layers!"}
