@@ -1,4 +1,5 @@
 import React, { useRef } from 'react';
+import PrecioOferta from '../componentes/precioOferta';
 import { View, Text, Image, Pressable, Animated } from 'react-native';
 import { styles as estilosEscritorio } from '../styles/card/card.styles';
 import { styles as estilosMovil } from '../styles/card/card.styles.movil';
@@ -92,7 +93,7 @@ export default function CardProducto({
                 
                 <View style={styles.info}>
                     <Text style={styles.titulo} numberOfLines={1}>{titulo}</Text>
-                    <Text style={styles.precio}>{precio} €</Text>
+                    <PrecioOferta valor={precio} estilo={styles.precio} />
                     
                     {personalizable && (
                         <Text style={styles.textoPersonalizable}> Personalizable</Text>

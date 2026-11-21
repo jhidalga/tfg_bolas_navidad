@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import PrecioOferta from '../componentes/precioOferta';
 import { View, Text, Image, TouchableOpacity, ScrollView, Dimensions, TextInput, ActivityIndicator } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -252,7 +253,7 @@ export default function DetallesProducto() {
                         <View style={styles.cabeceraInfo}>
                             <Text style={styles.nombreProducto}>{producto.nombre}</Text>
                             <View style={styles.contenedorPrecio}>
-                                <Text style={styles.precioValor}>{precioTotal} €</Text>
+                                <PrecioOferta valor={precioTotal} estilo={styles.precioValor} colorAntes="#dbeafe" />
                             </View>
                         </View>
                         

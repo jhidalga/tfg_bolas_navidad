@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import PrecioOferta from '../componentes/precioOferta';
 import { Ionicons } from '@expo/vector-icons';
 import { useConfirmar } from '../componentes/confirmar';
 import { View, Text, FlatList, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
@@ -230,7 +231,7 @@ export default function PantallaCarrito() {
                                     )}
                                 </View>
                                 <View style={styles.accionesContenedor}>
-                                    <Text style={styles.precioProducto}>{(calcularPrecioItem(item) * item.cantidad).toFixed(2)} €</Text>
+                                    <PrecioOferta valor={calcularPrecioItem(item) * item.cantidad} estilo={styles.precioProducto} etiqueta={false} />
                                     
                                     <TouchableOpacity 
                                         style={styles.botonEliminar} 
@@ -244,7 +245,7 @@ export default function PantallaCarrito() {
                         )}
                         ListFooterComponent={() => (
                             <View style={styles.footerResumen}>
-                                <Text style={styles.textoTotal}>Total: {totalCarrito.toFixed(2)} €</Text>
+                                <View style={{ marginBottom: 15 }}><PrecioOferta valor={totalCarrito} prefijo="Total:" estilo={[styles.textoTotal, { marginBottom: 0 }]} /></View>
                                 <TouchableOpacity style={styles.botonPagar} onPress={crearPedido}>
                                     <Text style={styles.textoBotonPagar}>Realizar pedido</Text>
                                 </TouchableOpacity>
