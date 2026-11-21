@@ -10,6 +10,7 @@ import { styles as estilosMovil } from '../styles/detalles/detalles.styles.movil
 import { useEstilos, useEsMovilWeb } from '../lib/responsive';
 import Navbar from '@/componentes/navbar';
 import { supabase } from '../lib/supabase';
+import { avisarCarrito } from '../lib/contadorCarrito';
 
 /**
  * Pantalla de detalles de un producto específico.
@@ -210,6 +211,7 @@ export default function DetallesProducto() {
                 text2: 'No se pudo conectar con el servidor.'
             });
         } finally {
+            avisarCarrito();
             setAgregando(false);
         }
     };

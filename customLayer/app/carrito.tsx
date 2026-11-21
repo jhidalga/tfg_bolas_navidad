@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import PrecioOferta from '../componentes/precioOferta';
 import { Ionicons } from '@expo/vector-icons';
 import { useConfirmar } from '../componentes/confirmar';
@@ -11,6 +11,7 @@ import { styles as estilosEscritorio } from '../styles/carrito/carrito.styles';
 import { styles as estilosMovil } from '../styles/carrito/carrito.styles.movil';
 import { useEstilos } from '../lib/responsive';
 import { supabase } from '../lib/supabase';
+import { avisarCarrito } from '../lib/contadorCarrito';
 
 /**
  * Estructura de datos que representa un producto añadido al carrito.
@@ -51,6 +52,7 @@ export default function PantallaCarrito() {
     const styles = useEstilos(estilosEscritorio, estilosMovil);
     const insets = useSafeAreaInsets();
     const [carrito, setCarrito] = useState<ItemCarrito[]>([]);
+    useEffect(() => { avisarCarrito(); }, [carrito]);
     const [cargando, setCargando] = useState(true);
     const apiUrl = `${process.env.EXPO_PUBLIC_API_URL || ''}/api`;
 

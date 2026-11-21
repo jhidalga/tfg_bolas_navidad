@@ -9,6 +9,7 @@ import { FontAwesome, FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { alCambiarCarrito } from '../lib/contadorCarrito';
 
 let cachedEsAdmin: boolean | null = null;
 
@@ -23,6 +24,27 @@ export default function Navbar() {
     const router = useRouter();
     const [esAdmin, setEsAdmin] = useState(cachedEsAdmin || false);
     const insets = useSafeAreaInsets();
+    const [enCarrito, setEnCarrito] = useState(0);
+
+    async function contarCarrito() {
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session?.access_token) { setEnCarrito(0); return; }
+            const r = await fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/carrito`, {
+                headers: { 'Authorization': `Bearer ${session.access_token}` }
+            });
+            if (!r.ok) return;
+            const filas = await r.json();
+            setEnCarrito(Array.isArray(filas) ? filas.reduce((t: number, f: any) => t + (Number(f.cantidad) || 1), 0) : 0);
+        } catch (e) {
+            // sin conexión: se deja el número anterior
+        }
+    }
+
+    useEffect(() => {
+        contarCarrito();
+        return alCambiarCarrito(contarCarrito);
+    }, []);
 
     useEffect(() => {
         if (cachedEsAdmin === null) {
@@ -115,7 +137,14 @@ export default function Navbar() {
                 </Pressable>
                 
                 <Pressable style={styles.boton} onPress={() => router.push('../carrito')}>
-                    <Ionicons name="cart" size={24} color="#475569" />
+                    <View>
+                        <Ionicons name="cart" size={24} color="#475569" />
+                        {enCarrito > 0 && (
+                            <View style={{ position: 'absolute', top: -6, right: -9, minWidth: 17, height: 17, borderRadius: 9, paddingHorizontal: 4, backgroundColor: '#dc2626', alignItems: 'center', justifyContent: 'center' }}>
+                                <Text style={{ color: '#fff', fontSize: 10, fontWeight: '700' }}>{enCarrito > 99 ? '99+' : enCarrito}</Text>
+                            </View>
+                        )}
+                    </View>
                 </Pressable>
                 
                 <Pressable style={styles.boton} onPress={() => router.push('../pedidos')}>
