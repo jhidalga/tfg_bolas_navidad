@@ -1,4 +1,5 @@
 import os
+import logging
 import re
 from typing import List, Optional
 from fastapi import FastAPI, HTTPException, Header, Response
@@ -450,7 +451,8 @@ def obtener_productos(incluir_ocultos: Optional[bool] = False):
         respuesta = query.execute()
         return respuesta.data
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al obtener productos: {str(e)}")
+        logging.exception("Error interno")
+        raise HTTPException(status_code=500, detail="Error al obtener productos")
     
 @app.get("/api/productos/{producto_id}")
 def obtener_producto(producto_id: str):
@@ -493,7 +495,8 @@ def actualizar_perfil(datos: UsuarioUpdate, authorization: Optional[str] = Heade
             return {"mensaje": "Perfil actualizado correctamente", "data": respuesta.data[0]}
         return {"mensaje": "No se enviaron datos para actualizar"}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al actualizar el perfil: {str(e)}")
+        logging.exception("Error interno")
+        raise HTTPException(status_code=500, detail="Error al actualizar el perfil")
 
 @app.get("/api/carrito")
 def obtener_carrito(authorization: Optional[str] = Header(None)):
@@ -511,7 +514,8 @@ def obtener_carrito(authorization: Optional[str] = Header(None)):
             
         return res.data
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logging.exception("Error interno")
+        raise HTTPException(status_code=500, detail="Ha ocurrido un error en el servidor. Inténtalo de nuevo.")
 
 @app.post("/api/carrito")
 def agregar_al_carrito(item: ItemCarrito, authorization: Optional[str] = Header(None)):
@@ -533,7 +537,8 @@ def agregar_al_carrito(item: ItemCarrito, authorization: Optional[str] = Header(
     except Exception as e:
         if isinstance(e, HTTPException):
             raise e
-        raise HTTPException(status_code=500, detail=f"Error al añadir al carrito: {str(e)}")
+        logging.exception("Error interno")
+        raise HTTPException(status_code=500, detail="Error al añadir al carrito")
 
 @app.delete("/api/carrito/{item_id}")
 def eliminar_del_carrito(item_id: str, authorization: Optional[str] = Header(None)):
@@ -547,7 +552,8 @@ def eliminar_del_carrito(item_id: str, authorization: Optional[str] = Header(Non
         cliente_seguro.table("carrito").delete().eq("id", item_id).eq("user_id", user_id).execute()
         return {"mensaje": "Producto eliminado del carrito"}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logging.exception("Error interno")
+        raise HTTPException(status_code=500, detail="Ha ocurrido un error en el servidor. Inténtalo de nuevo.")
 
 @app.post("/api/pedidos/checkout")
 def realizar_pedido(checkout: CheckoutPedido, authorization: Optional[str] = Header(None)):
@@ -587,7 +593,8 @@ def realizar_pedido(checkout: CheckoutPedido, authorization: Optional[str] = Hea
         cliente_seguro.table("carrito").delete().eq("user_id", user_id).execute()
         return {"mensaje": "Pedido procesado correctamente", "pedido_id": pedido_id}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al procesar el pedido: {str(e)}")
+        logging.exception("Error interno")
+        raise HTTPException(status_code=500, detail="Error al procesar el pedido")
 
 @app.get("/api/admin/pedidos")
 def obtener_todos_los_pedidos(authorization: Optional[str] = Header(None)):
@@ -600,7 +607,8 @@ def obtener_todos_los_pedidos(authorization: Optional[str] = Header(None)):
             .execute()
         return respuesta.data
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logging.exception("Error interno")
+        raise HTTPException(status_code=500, detail="Ha ocurrido un error en el servidor. Inténtalo de nuevo.")
 
 @app.get("/api/admin/pedidos/{pedido_id}")
 def obtener_detalle_pedido_admin(pedido_id: str, authorization: Optional[str] = Header(None)):
@@ -619,7 +627,8 @@ def obtener_detalle_pedido_admin(pedido_id: str, authorization: Optional[str] = 
             
         return {"pedido": pedido_res.data[0], "productos": detalles_res.data}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logging.exception("Error interno")
+        raise HTTPException(status_code=500, detail="Ha ocurrido un error en el servidor. Inténtalo de nuevo.")
 
 @app.patch("/api/admin/pedidos/{pedido_id}/estado")
 def cambiar_estado_pedido(pedido_id: str, nuevo_estado: EstadoPedido, authorization: Optional[str] = Header(None)):
@@ -629,7 +638,8 @@ def cambiar_estado_pedido(pedido_id: str, nuevo_estado: EstadoPedido, authorizat
         respuesta = cliente_seguro.table("pedidos").update({"estado": nuevo_estado.estado}).eq("id", pedido_id).execute()
         return {"mensaje": "Estado actualizado", "data": respuesta.data}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logging.exception("Error interno")
+        raise HTTPException(status_code=500, detail="Ha ocurrido un error en el servidor. Inténtalo de nuevo.")
 
 _HTML_PRUEBA = r"""<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Prueba de bolas</title>
@@ -707,7 +717,8 @@ def vista_previa_bola(modelo: str, nombre: str):
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logging.exception("Error interno")
+        raise HTTPException(status_code=500, detail="Ha ocurrido un error en el servidor. Inténtalo de nuevo.")
     return Response(content=datos, media_type="image/png", headers={"Cache-Control": "public, max-age=86400"})
 
 @app.get("/api/admin/pedidos/{pedido_id}/3mf")
@@ -727,7 +738,8 @@ def descargar_3mf_pedido(pedido_id: str, detalle: Optional[str] = None, authoriz
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logging.exception("Error interno")
+        raise HTTPException(status_code=500, detail="Ha ocurrido un error en el servidor. Inténtalo de nuevo.")
 
 def _pedidos_para_cola(authorization: Optional[str], estado: str):
     if not authorization:
@@ -750,7 +762,8 @@ def cola_impresion(estado: str = "Pendiente", authorization: Optional[str] = Hea
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logging.exception("Error interno")
+        raise HTTPException(status_code=500, detail="Ha ocurrido un error en el servidor. Inténtalo de nuevo.")
 
 
 @app.get("/api/admin/impresion/3mf")
@@ -763,7 +776,8 @@ def cola_impresion_3mf(color: Optional[str] = None, cliente: Optional[str] = Non
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logging.exception("Error interno")
+        raise HTTPException(status_code=500, detail="Ha ocurrido un error en el servidor. Inténtalo de nuevo.")
 
 
 @app.delete("/api/admin/pedidos/{pedido_id}")
@@ -775,7 +789,8 @@ def eliminar_pedido_admin(pedido_id: str, authorization: Optional[str] = Header(
         respuesta = cliente_seguro.table("pedidos").delete().eq("id", pedido_id).execute()
         return {"mensaje": "Pedido eliminado correctamente", "data": respuesta.data}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logging.exception("Error interno")
+        raise HTTPException(status_code=500, detail="Ha ocurrido un error en el servidor. Inténtalo de nuevo.")
 
 @app.post("/api/admin/productos")
 def crear_producto_admin(datos: ProductoAdminCrear, authorization: Optional[str] = Header(None)):
@@ -785,7 +800,8 @@ def crear_producto_admin(datos: ProductoAdminCrear, authorization: Optional[str]
         res = cliente_seguro.table("productos").insert(datos.dict()).execute()
         return res.data[0]
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logging.exception("Error interno")
+        raise HTTPException(status_code=500, detail="Ha ocurrido un error en el servidor. Inténtalo de nuevo.")
 
 @app.patch("/api/admin/productos/{producto_id}")
 def actualizar_producto_admin(producto_id: str, datos: ProductoAdminUpdate, authorization: Optional[str] = Header(None)):
@@ -796,7 +812,8 @@ def actualizar_producto_admin(producto_id: str, datos: ProductoAdminUpdate, auth
         res = cliente_seguro.table("productos").update(update_data).eq("id", producto_id).execute()
         return res.data
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logging.exception("Error interno")
+        raise HTTPException(status_code=500, detail="Ha ocurrido un error en el servidor. Inténtalo de nuevo.")
 
 @app.delete("/api/admin/productos/{producto_id}")
 def eliminar_producto_admin(producto_id: str, authorization: Optional[str] = Header(None)):
@@ -822,7 +839,8 @@ def eliminar_producto_admin(producto_id: str, authorization: Optional[str] = Hea
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logging.exception("Error interno")
+        raise HTTPException(status_code=500, detail="Ha ocurrido un error en el servidor. Inténtalo de nuevo.")
 
 @app.post("/api/admin/productos/{producto_id}/modelos")
 def crear_modelo(producto_id: str, datos: ModeloAdminData, authorization: Optional[str] = Header(None)):
@@ -834,7 +852,8 @@ def crear_modelo(producto_id: str, datos: ModeloAdminData, authorization: Option
         res = cliente_seguro.table("modelos").insert(nuevo_modelo).execute()
         return res.data
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logging.exception("Error interno")
+        raise HTTPException(status_code=500, detail="Ha ocurrido un error en el servidor. Inténtalo de nuevo.")
 
 @app.patch("/api/admin/modelos/{modelo_id}")
 def actualizar_modelo(modelo_id: str, datos: ModeloAdminData, authorization: Optional[str] = Header(None)):
@@ -844,7 +863,8 @@ def actualizar_modelo(modelo_id: str, datos: ModeloAdminData, authorization: Opt
         res = cliente_seguro.table("modelos").update(datos.dict()).eq("id", modelo_id).execute()
         return res.data
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logging.exception("Error interno")
+        raise HTTPException(status_code=500, detail="Ha ocurrido un error en el servidor. Inténtalo de nuevo.")
 
 @app.delete("/api/admin/modelos/{modelo_id}")
 def eliminar_modelo(modelo_id: str, authorization: Optional[str] = Header(None)):
@@ -861,7 +881,8 @@ def eliminar_modelo(modelo_id: str, authorization: Optional[str] = Header(None))
                 status_code=400, 
                 detail="No se puede borrar: Este modelo está en el carrito o pedido de algún cliente."
             )
-        raise HTTPException(status_code=500, detail=str(e))
+        logging.exception("Error interno")
+        raise HTTPException(status_code=500, detail="Ha ocurrido un error en el servidor. Inténtalo de nuevo.")
 
 @app.get("/api/admin/usuarios")
 def obtener_usuarios_admin(authorization: Optional[str] = Header(None)):
@@ -889,7 +910,8 @@ def obtener_usuarios_admin(authorization: Optional[str] = Header(None)):
         return usuarios_procesados
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logging.exception("Error interno")
+        raise HTTPException(status_code=500, detail="Ha ocurrido un error en el servidor. Inténtalo de nuevo.")
 
 @app.patch("/api/admin/usuarios/{usuario_id}")
 def actualizar_rol_usuario(usuario_id: str, payload: dict, authorization: Optional[str] = Header(None)):
@@ -917,7 +939,8 @@ def actualizar_rol_usuario(usuario_id: str, payload: dict, authorization: Option
     except Exception as e:
         if isinstance(e, HTTPException):
             raise e
-        raise HTTPException(status_code=500, detail=str(e))
+        logging.exception("Error interno")
+        raise HTTPException(status_code=500, detail="Ha ocurrido un error en el servidor. Inténtalo de nuevo.")
     
 @app.get("/api/pedidos/usuario")
 def obtener_mis_pedidos(authorization: Optional[str] = Header(None)):
@@ -940,7 +963,8 @@ def obtener_mis_pedidos(authorization: Optional[str] = Header(None)):
             
         return respuesta.data
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error al obtener tus pedidos: {str(e)}")
+        logging.exception("Error interno")
+        raise HTTPException(status_code=500, detail="Error al obtener tus pedidos")
 
 class MensajeAdminUpdate(BaseModel):
     mensaje: str
@@ -951,7 +975,8 @@ def obtener_mensaje_admin():
         res = supabase.table("mensajes_admin").select("*").eq("id", 1).single().execute()
         return res.data
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logging.exception("Error interno")
+        raise HTTPException(status_code=500, detail="Ha ocurrido un error en el servidor. Inténtalo de nuevo.")
 
 @app.patch("/api/admin/mensajes")
 def actualizar_mensaje_admin(datos: MensajeAdminUpdate, authorization: Optional[str] = Header(None)):
@@ -963,7 +988,8 @@ def actualizar_mensaje_admin(datos: MensajeAdminUpdate, authorization: Optional[
         res = cliente_seguro.table("mensajes_admin").update({"mensaje": datos.mensaje}).eq("id", 1).execute()
         return res.data[0]
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logging.exception("Error interno")
+        raise HTTPException(status_code=500, detail="Ha ocurrido un error en el servidor. Inténtalo de nuevo.")
 
 # ---------------------------------------------------------------
 # Incidencias de registro: quien no puede registrarse avisa y un admin

@@ -1,4 +1,5 @@
 import { View, Text, ScrollView, Pressable, Image, Platform } from 'react-native';
+import { traducirError } from '../../../lib/errores';
 import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -70,7 +71,7 @@ export default function DetallesPedidoAdmin() {
             });
             if (!res.ok) {
                 const e = await res.json().catch(() => ({}));
-                Toast.show({ type: 'error', text1: 'No se pudo generar el 3MF', text2: e.detail || '' });
+                Toast.show({ type: 'error', text1: 'No se pudo generar el 3MF', text2: traducirError(e.detail, '') });
                 return;
             }
             const blob = await res.blob();

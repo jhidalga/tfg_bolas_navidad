@@ -1,4 +1,5 @@
 import { View, Text, TextInput, ScrollView, Pressable, ActivityIndicator, Modal } from 'react-native';
+import { traducirError } from '../lib/errores';
 import { styles as estilosEscritorio } from '../styles/registro/registro.styles';
 import { styles as estilosMovil } from '../styles/registro/registro.styles.movil';
 import { useEstilos } from '../lib/responsive';
@@ -79,7 +80,7 @@ export default function Registro() {
                 setIncidenciaAbierta(false);
             } else {
                 const e = await res.json().catch(() => ({}));
-                Toast.show({ type: 'error', text1: 'No se pudo enviar', text2: e.detail || '' });
+                Toast.show({ type: 'error', text1: 'No se pudo enviar', text2: traducirError(e.detail, '') });
             }
         } catch (e) {
             Toast.show({ type: 'error', text1: 'Error de conexión' });
@@ -140,7 +141,7 @@ export default function Registro() {
         setCargando(false);
 
         if (error) {
-            Toast.show({ type: 'error', text1: 'Error', text2: error.message });
+            Toast.show({ type: 'error', text1: 'Error', text2: traducirError(error.message) });
             return;
         }
 

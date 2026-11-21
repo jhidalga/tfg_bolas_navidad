@@ -1,4 +1,5 @@
 import { View, Text, TextInput, Pressable, ScrollView, Image, ActivityIndicator } from 'react-native';
+import { traducirError } from '../../../lib/errores';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase';
@@ -113,7 +114,7 @@ export default function DetalleProductoAdmin() {
             } else {
                 const fallo = resultados.find(r => !r.ok);
                 const datos = fallo ? await fallo.json().catch(() => ({})) : {};
-                triggerToast(datos.detail || "No se pudieron eliminar algunos modelos", "error");
+                triggerToast(traducirError(datos.detail, "No se pudieron eliminar algunos modelos"), "error");
             }
             setSeleccionados([]);
             cargarProducto();
@@ -201,7 +202,7 @@ export default function DetalleProductoAdmin() {
                 triggerToast(datos.mensaje || 'Producto eliminado', datos.ocultado ? 'info' : 'success');
                 router.replace('/admin/productos');
             } else {
-                triggerToast(datos.detail || 'No se pudo eliminar el producto', 'error');
+                triggerToast(traducirError(datos.detail, 'No se pudo eliminar el producto'), 'error');
             }
         } catch (e) {
             triggerToast('Error de conexión', 'error');

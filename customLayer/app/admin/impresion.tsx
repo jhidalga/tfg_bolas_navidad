@@ -1,4 +1,5 @@
 import { View, Text, ScrollView, Pressable, ActivityIndicator, Platform } from 'react-native';
+import { traducirError } from '../../lib/errores';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
@@ -49,7 +50,7 @@ export default function ColaImpresion() {
             });
             if (!res.ok) {
                 const e = await res.json().catch(() => ({}));
-                Toast.show({ type: 'error', text1: 'No se pudo generar el zip', text2: e.detail || '' });
+                Toast.show({ type: 'error', text1: 'No se pudo generar el zip', text2: traducirError(e.detail, '') });
                 return;
             }
             const blob = await res.blob();

@@ -1,4 +1,5 @@
 import { View, Text, TextInput, ScrollView, Pressable } from 'react-native';
+import { traducirError } from '../lib/errores';
 import { styles as estilosEscritorio } from '../styles/login/login.styles';
 import { styles as estilosMovil } from '../styles/login/login.styles.movil';
 import { useEstilos } from '../lib/responsive';
@@ -52,7 +53,7 @@ export default function Login() {
 
         if (error) {
             setCargando(false);
-            Toast.show({ type: 'error', text1: 'Error', text2: error.message });
+            Toast.show({ type: 'error', text1: 'Error', text2: traducirError(error.message) });
         } else if (data?.session) {
             try {
                 const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/usuarios/perfil`, {
