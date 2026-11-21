@@ -1,12 +1,14 @@
 import { Stack, useRouter, useSegments } from "expo-router";
 import Toast from 'react-native-toast-message';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import Bienvenida, { debeMostrarBienvenida } from '../componentes/bienvenida';
 import { supabase } from '../lib/supabase';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 export default function RootLayout() {
   const router = useRouter();
   const segments = useSegments();
+  const [bienvenida, setBienvenida] = useState(() => debeMostrarBienvenida());
 
   useEffect(() => {
     if (typeof document !== 'undefined') {
@@ -38,6 +40,7 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <Stack screenOptions={{ headerShown: false }} />
+      {bienvenida && <Bienvenida onTerminar={() => setBienvenida(false)} />}
       <Toast position='top' topOffset={40} />
     </SafeAreaProvider>
   );
