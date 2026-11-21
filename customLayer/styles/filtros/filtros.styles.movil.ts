@@ -54,6 +54,8 @@ export const styles = StyleSheet.create({
     },
     inputRange: {
         flex: 1,
+        minWidth: 0,
+        width: 0,
         backgroundColor: "#f8fafc",
         borderWidth: 1,
         borderColor: "#e2e8f0",
