@@ -9,6 +9,7 @@ import { useState } from 'react';
 import Footer from '../componentes/footer';
 import { supabase } from '../lib/supabase';
 import Toast from 'react-native-toast-message';
+import { toastConfig } from '../componentes/avisos';
 import { Picker } from '@react-native-picker/picker';
 import { tc } from '../lib/tema';
 
@@ -323,6 +324,7 @@ export default function Registro() {
                         </Pressable>
                     </ScrollView>
                 </View>
+                <Toast position='top' topOffset={40} config={toastConfig} />
             </Modal>
             <Footer />
         </ScrollView>
