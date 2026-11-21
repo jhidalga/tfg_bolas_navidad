@@ -25,15 +25,15 @@ app = FastAPI()
 # Nunca se activa en Railway aunque la variable estuviera puesta
 MODO_PRUEBA = os.getenv("MODO_PRUEBA") == "1" and not os.getenv("RAILWAY_ENVIRONMENT") and not os.getenv("RAILWAY_PROJECT_ID")
 
-MAX_ESPACIOS_NOMBRE = 3
+MAX_ESPACIOS_NOMBRE = 2  # 3 palabras
 
 def _error_nombre_bola(nombre: str, personalizable: bool):
-    """Texto del error si el nombre de la bola no vale, o None. Como maximo 3 espacios y no puede ir vacio."""
+    """Texto del error si el nombre de la bola no vale, o None. Como maximo 3 palabras y no puede ir vacio."""
     n = re.sub(r"\s+", " ", (nombre or "").strip())
     if personalizable and (not n or n == "Sin texto"):
         return "Escribe el nombre de la bola"
     if n.count(" ") > MAX_ESPACIOS_NOMBRE:
-        return f"El nombre puede tener como maximo {MAX_ESPACIOS_NOMBRE} espacios"
+        return f"El nombre puede tener como maximo 3 palabras"
     return None
 
 
