@@ -133,12 +133,12 @@ export default function Navbar() {
             </View>
             <View style={styles.enlaces}>
                 <Pressable style={styles.boton} onPress={() => router.push('../inicio')}>
-                    <Ionicons name="home" size={24} color="#475569" />
+                    <Ionicons name="home" size={24} color="#f1cf8a" />
                 </Pressable>
                 
                 <Pressable style={styles.boton} onPress={() => router.push('../carrito')}>
                     <View>
-                        <Ionicons name="cart" size={24} color="#475569" />
+                        <Ionicons name="cart" size={24} color="#f1cf8a" />
                         {enCarrito > 0 && (
                             <View style={{ position: 'absolute', top: -6, right: -9, minWidth: 17, height: 17, borderRadius: 9, paddingHorizontal: 4, backgroundColor: '#dc2626', alignItems: 'center', justifyContent: 'center' }}>
                                 <Text style={{ color: '#fff', fontSize: 10, fontWeight: '700' }}>{enCarrito > 99 ? '99+' : enCarrito}</Text>
@@ -148,11 +148,11 @@ export default function Navbar() {
                 </Pressable>
                 
                 <Pressable style={styles.boton} onPress={() => router.push('../pedidos')}>
-                    <FontAwesome5 name="box-open" size={22} color="#475569" />
+                    <FontAwesome5 name="box-open" size={22} color="#f1cf8a" />
                 </Pressable>
 
                 <Pressable style={styles.boton} onPress={() => router.push('../perfil')}>
-                    <FontAwesome name="user-circle" size={24} color="#475569" />
+                    <FontAwesome name="user-circle" size={24} color="#f1cf8a" />
                 </Pressable>
 
                 {esAdmin && (
@@ -162,7 +162,7 @@ export default function Navbar() {
                 )}
 
                 <Pressable style={styles.botonSalir} onPress={cerrarSesion}>
-                    <Ionicons name="log-out-outline" size={26} color="#dc2626" />
+                    <Ionicons name="log-out-outline" size={26} color="#ff8f85" />
                 </Pressable>
             </View>
         </View>

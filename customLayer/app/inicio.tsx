@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { View, ScrollView, ActivityIndicator, Text, Pressable, Modal, TouchableOpacity, TextInput } from 'react-native';
 import Footer from '../componentes/footer';
+import { GuirnaldaLuces } from '../componentes/adornos';
 import Navbar from '@/componentes/navbar';
 import Grid from '@/componentes/gridProductos';
 import Filtros from '@/componentes/filtros';
@@ -186,7 +187,7 @@ export default function Inicio() {
                     {editandoMensaje ? (
                         <View style={{ flexDirection: 'row', width: '100%', maxWidth: 800, gap: 10 }}>
                             <TextInput
-                                style={{ flex: 1, backgroundColor: 'white', borderWidth: 1, borderColor: '#d97706', padding: 10, borderRadius: 8 }}
+                                style={{ flex: 1, backgroundColor: '#fbf1de', borderWidth: 1, borderColor: '#d97706', padding: 10, borderRadius: 8 }}
                                 value={inputMensaje}
                                 onChangeText={setInputMensaje}
                                 placeholder="Escribe el anuncio aquí..."
@@ -214,6 +215,7 @@ export default function Inicio() {
             )}
 
             <ScrollView contentContainerStyle={styles.contenidoScroll} showsVerticalScrollIndicator={false}>
+                <GuirnaldaLuces />
                 <View style={styles.layoutPrincipal}>
                     <View style={styles.sidebarDesktop}>
                         {!cargando && renderFiltros()}
@@ -221,11 +223,11 @@ export default function Inicio() {
 
                     <View style={{ flex: 1 }}>
                         {cargando ? (
-                            <ActivityIndicator size="large" color="#3b82f6" />
+                            <ActivityIndicator size="large" color="#e6c27a" />
                         ) : (
                             <>
                                 {productosPaginados.length === 0 ? (
-                                    <Text style={{ textAlign: 'center', marginTop: 50, fontSize: 16, color: '#64748b' }}>
+                                    <Text style={{ textAlign: 'center', marginTop: 50, fontSize: 16, color: '#e3cfa5' }}>
                                         No se encontraron productos.
                                     </Text>
                                 ) : (
@@ -235,19 +237,19 @@ export default function Inicio() {
                                 {totalPaginas > 1 && (
                                     <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingVertical: 20, gap: 15 }}>
                                         <Pressable
-                                            style={[{ paddingVertical: 8, paddingHorizontal: 16, borderRadius: 8 }, paginaActual === 1 ? { backgroundColor: '#cbd5e1' } : { backgroundColor: '#3b82f6' }]}
+                                            style={[{ paddingVertical: 8, paddingHorizontal: 16, borderRadius: 8 }, paginaActual === 1 ? { backgroundColor: '#cbd5e1' } : { backgroundColor: '#a52a2a' }]}
                                             disabled={paginaActual === 1}
                                             onPress={() => setPaginaActual(p => p - 1)}
                                         >
                                             <Text style={{ color: 'white', fontWeight: 'bold' }}>Anterior</Text>
                                         </Pressable>
 
-                                        <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#475569' }}>
+                                        <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#a52a2a' }}>
                                             Página {paginaActual} de {totalPaginas}
                                         </Text>
 
                                         <Pressable
-                                            style={[{ paddingVertical: 8, paddingHorizontal: 16, borderRadius: 8 }, paginaActual === totalPaginas ? { backgroundColor: '#cbd5e1' } : { backgroundColor: '#3b82f6' }]}
+                                            style={[{ paddingVertical: 8, paddingHorizontal: 16, borderRadius: 8 }, paginaActual === totalPaginas ? { backgroundColor: '#cbd5e1' } : { backgroundColor: '#a52a2a' }]}
                                             disabled={paginaActual === totalPaginas}
                                             onPress={() => setPaginaActual(p => p + 1)}
                                         >

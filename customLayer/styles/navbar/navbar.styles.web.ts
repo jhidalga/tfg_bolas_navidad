@@ -7,15 +7,15 @@ export const styles = StyleSheet.create({
         alignItems: 'center',
         paddingHorizontal: 40,
         paddingVertical: 15,
-        backgroundColor: '#ffffff',
+        backgroundColor: '#4a0f12',
         borderBottomWidth: 1,
-        borderBottomColor: '#eaeaea',
+        borderBottomColor: '#e3cfa5',
         width: '100%',
     },
     logo: {
         fontSize: 20,
         fontWeight: 'bold',
-        color: '#1a1a1a',
+        color: '#f1cf8a',
     },
     enlaces: {
         flexDirection: 'row',
@@ -28,11 +28,11 @@ export const styles = StyleSheet.create({
     },
     textoBoton: {
         fontSize: 14,
-        color: '#1a1a1a',
+        color: '#3b1a12',
         fontWeight: '500',
     },
     botonAdmin: {
-        backgroundColor: '#4731d9',
+        backgroundColor: '#a52a2a',
         paddingVertical: 8,
         paddingHorizontal: 16,
         borderRadius: 6,

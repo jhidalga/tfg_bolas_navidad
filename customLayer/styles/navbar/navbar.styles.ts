@@ -7,11 +7,11 @@ export const styles = StyleSheet.create({
         paddingHorizontal: 10,
         paddingTop: 12,
         paddingBottom: Platform.OS === 'ios' ? 25 : 15, 
-        backgroundColor: '#ffffff',
+        backgroundColor: '#4a0f12',
         width: '100%',
         
         borderTopWidth: 1,
-        borderTopColor: '#f1f5f9',
+        borderTopColor: '#e6c27a',
         elevation: 15, 
         shadowColor: "#000",
         shadowOffset: { width: 0, height: -4 }, 
@@ -37,7 +37,7 @@ export const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     botonAdmin: {
-        backgroundColor: '#4338ca',
+        backgroundColor: '#a52a2a',
         padding: 12,
         borderRadius: 12,
         alignItems: 'center',

@@ -3,17 +3,17 @@ import { StyleSheet } from 'react-native';
 export const styles = StyleSheet.create({
     scrollFondo: {
         flexGrow: 1,
-        backgroundColor: '#ffffff',
+        backgroundColor: 'transparent',
     },
     contenedorCentral: {
         flex: 1,
-        backgroundColor: '#f4f5f7',
+        backgroundColor: 'transparent',
         justifyContent: 'center',
         alignItems: 'center',
         paddingVertical: 80,
     },
     tarjetaLogin: {
-        backgroundColor: '#ffffff',
+        backgroundColor: '#fbf1de',
         width: 360,
         padding: 40,
         borderRadius: 12,
@@ -25,30 +25,30 @@ export const styles = StyleSheet.create({
     },
     titulo: {
         fontSize: 28,
-        color: '#1a1a1a',
+        color: '#3b1a12',
         marginBottom: 35,
         textAlign: 'center',
         fontWeight: '400',
     },
     etiqueta: {
         fontSize: 11,
-        color: '#1a1a1a',
+        color: '#3b1a12',
         marginBottom: 8,
         fontWeight: '600',
     },
     input: {
         borderWidth: 1,
-        borderColor: '#eaeaea',
+        borderColor: '#e3cfa5',
         borderRadius: 6,
         paddingHorizontal: 15,
         paddingVertical: 12,
         marginBottom: 20,
         fontSize: 12,
-        color: '#1a1a1a',
-        backgroundColor: '#ffffff',
+        color: '#3b1a12',
+        backgroundColor: '#fbf1de',
     },
     botonLogin: {
-        backgroundColor: '#4731d9',
+        backgroundColor: '#a52a2a',
         paddingVertical: 12,
         paddingHorizontal: 30,
         borderRadius: 6,
@@ -71,7 +71,7 @@ export const styles = StyleSheet.create({
         alignSelf: 'center',
     },
     textoBotonVolver: {
-        color: '#888888',
+        color: '#7a5a48',
         fontSize: 12,
         textDecorationLine: 'underline',
     }

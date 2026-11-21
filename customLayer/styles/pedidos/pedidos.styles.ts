@@ -1,7 +1,7 @@
 import { StyleSheet } from "react-native";
 
 export const styles = StyleSheet.create({
-    contenedorPantalla: { flex: 1, backgroundColor: "#f8f9fa" },
+    contenedorPantalla: { flex: 1, backgroundColor: "transparent" },
     cabeceraPrincipal: {
         flexDirection: "row",
         justifyContent: "space-between",
@@ -12,7 +12,7 @@ export const styles = StyleSheet.create({
         width: "100%",
         alignSelf: "center",
     },
-    tituloHeader: { fontSize: 28, fontWeight: "800", color: "#1e293b" },
+    tituloHeader: { fontSize: 28, fontWeight: "800", color: "#fff7ea" },
 
     contenedorAccionesHeader: {
         flexDirection: "row",
@@ -42,7 +42,7 @@ export const styles = StyleSheet.create({
         borderRadius: 8,
         cursor: "pointer" as any,
     },
-    txtBtnCancelarModo: { color: "#475569", fontWeight: "bold", fontSize: 14 },
+    txtBtnCancelarModo: { color: "#a52a2a", fontWeight: "bold", fontSize: 14 },
     btnConfirmarBorrar: {
         backgroundColor: "#dc2626",
         paddingVertical: 10,
@@ -67,23 +67,23 @@ export const styles = StyleSheet.create({
         minHeight: 45,
         borderRadius: 10,
         borderWidth: 1,
-        borderColor: "#e2e8f0",
-        backgroundColor: "white",
+        borderColor: "#e3cfa5",
+        backgroundColor: "#fbf1de",
         cursor: "pointer" as any,
     },
-    textoDropdown: { fontSize: 14, color: "#475569" },
+    textoDropdown: { fontSize: 14, color: "#a52a2a" },
     badgeDropdown: {
         paddingVertical: 4,
         paddingHorizontal: 8,
         borderRadius: 6,
-        backgroundColor: "#f1f5f9",
+        backgroundColor: "#efdfc3",
     },
-    textoBadgeDropdown: { fontSize: 12, color: "#1e293b", fontWeight: "bold" },
+    textoBadgeDropdown: { fontSize: 12, color: "#3b1a12", fontWeight: "bold" },
     dropdownContainer: {
         borderWidth: 1,
-        borderColor: "#e2e8f0",
+        borderColor: "#e3cfa5",
         borderRadius: 10,
-        backgroundColor: "white",
+        backgroundColor: "#fbf1de",
     },
 
     scrollContent: {
@@ -96,21 +96,21 @@ export const styles = StyleSheet.create({
     estadoVacio: {
         padding: 50,
         alignItems: "center",
-        backgroundColor: "white",
+        backgroundColor: "#fbf1de",
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: "#e2e8f0",
+        borderColor: "#e3cfa5",
     },
-    txtEstadoVacio: { fontSize: 16, color: "#64748b" },
+    txtEstadoVacio: { fontSize: 16, color: "#a52a2a" },
 
     gridTarjetas: { flexDirection: "row", flexWrap: "wrap", gap: 20 },
     tarjeta: {
         minWidth: 300,
         flex: 1,
-        backgroundColor: "white",
+        backgroundColor: "#fbf1de",
         borderRadius: 16,
         borderWidth: 1,
-        borderColor: "#e2e8f0",
+        borderColor: "#e3cfa5",
         overflow: "hidden",
         boxShadow: "0 4px 6px -1px rgba(0,0,0,0.05)",
     },
@@ -119,7 +119,7 @@ export const styles = StyleSheet.create({
         padding: 20,
         cursor: "pointer" as any,
         transition: "background-color 0.2s",
-        "&:hover": { backgroundColor: "#f8fafc" },
+        "&:hover": { backgroundColor: "#f3e6cc" },
     } as any,
     
     tarjetaSeleccionada: {
@@ -131,11 +131,11 @@ export const styles = StyleSheet.create({
         width: 22,
         height: 22,
         borderWidth: 2,
-        borderColor: "#cbd5e1",
+        borderColor: "#e3cfa5",
         borderRadius: 6,
         justifyContent: "center",
         alignItems: "center",
-        backgroundColor: "white",
+        backgroundColor: "#fbf1de",
     },
     checkInner: {
         backgroundColor: "#ef4444",
@@ -148,7 +148,7 @@ export const styles = StyleSheet.create({
         alignItems: "center",
         marginBottom: 15,
     },
-    idPedido: { fontSize: 18, fontWeight: "900", color: "#0f172a" },
+    idPedido: { fontSize: 18, fontWeight: "900", color: "#3b1a12" },
 
     badgeEstado: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
     txtBadgeEstado: {
@@ -158,38 +158,38 @@ export const styles = StyleSheet.create({
     },
     bgRojo: { backgroundColor: "#fee2e2" },
     txtRojo: { color: "#dc2626" },
-    bgAzul: { backgroundColor: "#e0e7ff" },
-    txtAzul: { color: "#4338ca" },
+    bgAzul: { backgroundColor: "#f6dcd6" },
+    txtAzul: { color: "#a52a2a" },
     bgVerde: { backgroundColor: "#dcfce7" },
     txtVerde: { color: "#166534" },
     bgAmbar: { backgroundColor: "#fef3c7" },
     txtAmbar: { color: "#d97706" },
 
     datosCliente: { marginBottom: 15, gap: 5 },
-    txtDato: { fontSize: 14, color: "#475569", fontWeight: "500" },
-    precioTotal: { fontSize: 22, fontWeight: "800", color: "#3b82f6" },
+    txtDato: { fontSize: 14, color: "#a52a2a", fontWeight: "500" },
+    precioTotal: { fontSize: 22, fontWeight: "800", color: "#a52a2a" },
 
     tarjetaAcciones: {
         flexDirection: "row",
         flexWrap: "wrap",
         gap: 8,
         padding: 15,
-        backgroundColor: "#f8fafc",
+        backgroundColor: "#f3e6cc",
         borderTopWidth: 1,
-        borderTopColor: "#e2e8f0",
+        borderTopColor: "#e3cfa5",
     },
     btnCambiarEstado: {
         flex: 1,
         minWidth: "45%",
         paddingVertical: 8,
         borderRadius: 6,
-        backgroundColor: "white",
+        backgroundColor: "#fbf1de",
         borderWidth: 1,
-        borderColor: "#cbd5e1",
+        borderColor: "#e3cfa5",
         alignItems: "center",
         cursor: "pointer" as any,
     },
-    btnEstadoActual: { backgroundColor: "#f1f5f9", borderColor: "#94a3b8" },
-    txtCambiarEstado: { fontSize: 12, color: "#64748b", fontWeight: "600" },
-    txtEstadoActual: { color: "#0f172a", fontWeight: "800" },
+    btnEstadoActual: { backgroundColor: "#efdfc3", borderColor: "#a52a2a" },
+    txtCambiarEstado: { fontSize: 12, color: "#a52a2a", fontWeight: "600" },
+    txtEstadoActual: { color: "#3b1a12", fontWeight: "800" },
 });

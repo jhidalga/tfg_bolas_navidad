@@ -3,7 +3,7 @@ import { StyleSheet } from 'react-native';
 export const styles = StyleSheet.create({
     contenedorPantalla: {
         flex: 1,
-        backgroundColor: '#ffffff',
+        backgroundColor: 'transparent',
         height: '100vh' as any,
     },
     contenedorCentral: {
@@ -21,12 +21,12 @@ export const styles = StyleSheet.create({
     titulo: {
         fontSize: 56,
         fontWeight: '800',
-        color: '#111827',
+        color: '#fff7ea',
         marginBottom: 10,
     },
     descripcion: {
         fontSize: 24,
-        color: '#4B5563',
+        color: '#e3cfa5',
     },
     botones: {
         flexDirection: 'row',
@@ -34,12 +34,12 @@ export const styles = StyleSheet.create({
         gap: 15,
     },
     botonLogin: {
-        backgroundColor: '#E5E7EB',
+        backgroundColor: '#fbf1de',
         paddingVertical: 10,
         paddingHorizontal: 24,
         borderRadius: 8,
         borderWidth: 1,
-        borderColor: '#D1D5DB',
+        borderColor: '#e3cfa5',
         cursor: 'pointer' as any,
     },
     textoBotonLogin: {
@@ -48,7 +48,7 @@ export const styles = StyleSheet.create({
         fontWeight: '500',
     },
     botonRegistro: {
-        backgroundColor: '#4338CA',
+        backgroundColor: '#a52a2a',
         paddingVertical: 10,
         paddingHorizontal: 24,
         borderRadius: 8,
@@ -69,6 +69,6 @@ export const styles = StyleSheet.create({
         width: 300,
         height: 150,
         borderRadius: 12,
-        backgroundColor: '#f0f0f0',
+        backgroundColor: '#efdfc3',
     },
 });

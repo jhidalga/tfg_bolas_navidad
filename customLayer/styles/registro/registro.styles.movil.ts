@@ -3,16 +3,16 @@ import { StyleSheet } from 'react-native';
 export const styles = StyleSheet.create({
     scrollFondo: {
         flexGrow: 1,
-        backgroundColor: '#ffffff',
+        backgroundColor: 'transparent',
     },
     contenedorCentral: {
-        backgroundColor: '#f8f9fa',
+        backgroundColor: 'transparent',
         paddingHorizontal: 20,
         paddingTop: 40,
         paddingBottom: 60,
     },
     tarjetaLogin: {
-        backgroundColor: '#ffffff',
+        backgroundColor: '#fbf1de',
         width: '100%',
         maxWidth: 520,
         alignSelf: 'center',
@@ -27,7 +27,7 @@ export const styles = StyleSheet.create({
     },
     titulo: {
         fontSize: 32,
-        color: '#1a1a1a',
+        color: '#3b1a12',
         marginBottom: 35,
         fontWeight: '500',
         textAlign: 'center',
@@ -40,14 +40,14 @@ export const styles = StyleSheet.create({
     },
     input: {
         borderWidth: 1,
-        borderColor: '#eaeaea',
+        borderColor: '#e3cfa5',
         borderRadius: 8,
         paddingHorizontal: 16,
         paddingVertical: 14,
         marginBottom: 20,
         fontSize: 14,
-        color: '#1a1a1a',
-        backgroundColor: '#ffffff',
+        color: '#3b1a12',
+        backgroundColor: '#fbf1de',
     },
     contenedorBotonesProfesor: {
         flexDirection: 'row',
@@ -57,21 +57,21 @@ export const styles = StyleSheet.create({
     },
     botonSeleccionado: {
         flex: 1,
-        backgroundColor: '#4338ca',
+        backgroundColor: '#a52a2a',
         paddingVertical: 12,
         borderRadius: 8,
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: '#4338ca',
+        borderColor: '#a52a2a',
     },
     botonNoSeleccionado: {
         flex: 1,
-        backgroundColor: '#ffffff',
+        backgroundColor: '#fbf1de',
         paddingVertical: 12,
         borderRadius: 8,
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: '#eaeaea',
+        borderColor: '#e3cfa5',
     },
     textoBoton: {
         color: '#ffffff',
@@ -84,7 +84,7 @@ export const styles = StyleSheet.create({
         fontWeight: '500',
     },
     botonLogin: {
-        backgroundColor: '#4338ca',
+        backgroundColor: '#a52a2a',
         paddingVertical: 14,
         borderRadius: 8,
         marginTop: 15,
@@ -95,7 +95,7 @@ export const styles = StyleSheet.create({
         alignSelf: 'center',
     },
     textoBotonVolver: {
-        color: '#888888',
+        color: '#7a5a48',
         fontSize: 14,
         textDecorationLine: 'underline',
     }

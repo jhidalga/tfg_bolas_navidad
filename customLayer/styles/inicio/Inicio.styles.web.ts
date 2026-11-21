@@ -1,7 +1,7 @@
 import { StyleSheet } from "react-native";
 
 export const styles = StyleSheet.create({
-    contenedorPrincipal: { flex: 1, backgroundColor: "#f8f9fa" },
+    contenedorPrincipal: { flex: 1, backgroundColor: "transparent" },
     contenidoScroll: { flexGrow: 1 },
     contenedorGrid: {
         width: "100%",

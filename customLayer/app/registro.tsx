@@ -218,7 +218,7 @@ export default function Registro() {
                         secureTextEntry={!verContrasena}
                     />
                     <Pressable onPress={() => setVerContrasena(!verContrasena)} style={{ marginTop: -12, marginBottom: 16 }}>
-                        <Text style={{ color: '#4731d9', fontWeight: '600', fontSize: 13 }}>
+                        <Text style={{ color: '#a52a2a', fontWeight: '600', fontSize: 13 }}>
                             {verContrasena ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                         </Text>
                     </Pressable>
@@ -299,7 +299,7 @@ export default function Registro() {
                 <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 }}>
                     <ScrollView style={{ maxHeight: '92%', width: '100%', maxWidth: 460, alignSelf: 'center', backgroundColor: '#fff', borderRadius: 14 }} contentContainerStyle={{ padding: 20 }}>
                         <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#111827', marginBottom: 6 }}>No puedo registrarme</Text>
-                        <Text style={{ color: '#64748b', marginBottom: 14 }}>
+                        <Text style={{ color: '#a52a2a', marginBottom: 14 }}>
                             Rellena tus datos y un administrador revisará tu correo. Cuando lo permita, podrás registrarte.
                         </Text>
 

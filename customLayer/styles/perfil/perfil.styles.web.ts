@@ -3,7 +3,7 @@ import { StyleSheet } from "react-native";
 export const styles = StyleSheet.create({
     contenedorPantalla: { 
         flex: 1, 
-        backgroundColor: "#f8f9fa" 
+        backgroundColor: 'transparent' 
     },
     scrollCentral: { 
         flexGrow: 1, 
@@ -12,13 +12,13 @@ export const styles = StyleSheet.create({
         padding: 20 
     },
     tarjetaPerfil: {
-        backgroundColor: "white",
+        backgroundColor: "#fbf1de",
         width: "100%",
         maxWidth: 450,
         padding: 30,
         borderRadius: 16,
         borderWidth: 1,
-        borderColor: "#e2e8f0",
+        borderColor: "#e3cfa5",
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.05,
@@ -28,7 +28,7 @@ export const styles = StyleSheet.create({
     titulo: {
         fontSize: 26,
         fontWeight: "800",
-        color: "#1e293b",
+        color: "#3b1a12",
         marginBottom: 25,
         textAlign: "center",
     },
@@ -38,39 +38,39 @@ export const styles = StyleSheet.create({
     label: {
         fontSize: 13,
         fontWeight: "700",
-        color: "#64748b",
+        color: "#a52a2a",
         marginBottom: 8,
         textTransform: "uppercase",
     },
     valorBloqueado: {
         fontSize: 16,
-        color: "#64748b",
-        backgroundColor: "#f1f5f9",
+        color: "#a52a2a",
+        backgroundColor: "#efdfc3",
         paddingVertical: 12,
         paddingHorizontal: 15,
         borderRadius: 8,
         borderWidth: 1,
-        borderColor: "#e2e8f0",
+        borderColor: "#e3cfa5",
     },
     valorNormal: {
         fontSize: 16,
-        color: "#1e293b",
-        backgroundColor: "white",
+        color: "#3b1a12",
+        backgroundColor: "#fbf1de",
         paddingVertical: 12,
         paddingHorizontal: 15,
         borderRadius: 8,
         borderWidth: 1,
-        borderColor: "#e2e8f0",
+        borderColor: "#e3cfa5",
     },
     inputEditable: {
         fontSize: 16,
-        color: "#1e293b",
-        backgroundColor: "#ffffff",
+        color: "#3b1a12",
+        backgroundColor: "#fbf1de",
         paddingVertical: 12,
         paddingHorizontal: 15,
         borderRadius: 8,
         borderWidth: 2,
-        borderColor: "#3b82f6",
+        borderColor: "#a52a2a",
     },
     contenedorCentral: {
         flex: 1,
@@ -82,7 +82,7 @@ export const styles = StyleSheet.create({
         gap: 10,
     },
     btnModificar: {
-        backgroundColor: "#3b82f6",
+        backgroundColor: "#a52a2a",
         paddingVertical: 14,
         borderRadius: 8,
         alignItems: "center",
@@ -94,7 +94,7 @@ export const styles = StyleSheet.create({
         alignItems: "center",
     },
     btnCancelar: {
-        backgroundColor: "white",
+        backgroundColor: "#fbf1de",
         paddingVertical: 14,
         borderRadius: 8,
         alignItems: "center",

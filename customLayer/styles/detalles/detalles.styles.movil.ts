@@ -5,7 +5,7 @@ const { width } = Dimensions.get('window');
 export const styles = StyleSheet.create({
     contenedor: {
         flex: 1,
-        backgroundColor: '#f8f9fa',
+        backgroundColor: 'transparent',
     },
     contenedorHorizontal: {
         flexDirection: 'row',
@@ -16,7 +16,7 @@ export const styles = StyleSheet.create({
     bloqueImagen: {
         width: '100%',
         aspectRatio: 1,
-        backgroundColor: '#fff',
+        backgroundColor: '#ffffff',
     },
     bloqueImagenHorizontal: {
         width: '50%',
@@ -50,12 +50,12 @@ export const styles = StyleSheet.create({
     nombreProducto: {
         fontSize: 24,
         fontWeight: '700',
-        color: '#1a1d23',
+        color: '#3b1a12',
         flex: 1,
         marginRight: 10,
     },
     contenedorPrecio: {
-        backgroundColor: '#e7f0fd',
+        backgroundColor: '#a52a2a',
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderRadius: 8,
@@ -63,7 +63,7 @@ export const styles = StyleSheet.create({
     precioValor: {
         fontSize: 20,
         fontWeight: '800',
-        color: '#3b82f6',
+        color: '#ffffff',
     },
     descripcion: {
         fontSize: 16,
@@ -73,7 +73,7 @@ export const styles = StyleSheet.create({
     },
     divisor: {
         height: 1,
-        backgroundColor: '#e9ecef',
+        backgroundColor: '#efdfc3',
         marginVertical: 20,
     },
     seccionOpciones: {
@@ -91,30 +91,33 @@ export const styles = StyleSheet.create({
         letterSpacing: 0.5,
     },
     pickerCard: {
-        backgroundColor: '#fff',
+        backgroundColor: '#fbf1de',
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: '#dee2e6',
+        borderColor: '#e3cfa5',
         overflow: 'hidden',
     },
     picker: {
         height: 50,
         width: '100%',
+        backgroundColor: 'transparent',
+        borderWidth: 0,
+        color: '#3b1a12',
     },
     inputPersonalizado: {
-        backgroundColor: '#fff',
+        backgroundColor: '#fbf1de',
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: '#dee2e6',
+        borderColor: '#e3cfa5',
         padding: 15,
         fontSize: 16,
-        color: '#1a1d23',
+        color: '#3b1a12',
     },
     contenedorAcciones: {
         marginTop: 30,
     },
     botonCompra: {
-        backgroundColor: '#1a1d23',
+        backgroundColor: '#a52a2a',
         paddingVertical: 16,
         borderRadius: 12,
         alignItems: 'center',
@@ -151,7 +154,7 @@ export const styles = StyleSheet.create({
     },
     labelCategoria: {
         fontSize: 12,
-        color: '#3b82f6',
+        color: '#a52a2a',
         fontWeight: '600',
         marginBottom: 4,
         textTransform: 'uppercase',

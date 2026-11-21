@@ -7,6 +7,7 @@ import { styles as estilosEscritorio } from '../../styles/adminDetallePedido/adm
 import { styles as estilosMovil } from '../../styles/adminDetallePedido/adminDetallePedido.styles.movil';
 import { useEstilos } from '../../lib/responsive';
 import { euros } from '../../lib/formato';
+import Navbar from '@/componentes/navbar';
 
 /**
  * Pantalla de detalles de un pedido específico.
@@ -15,6 +16,18 @@ import { euros } from '../../lib/formato';
  * producto comprado (modelo, color, cantidad, precio unitario y personalización).
  * * @returns Componente principal que renderiza la vista de detalles del pedido.
  */
+// Colores de Navidad solo para esta pantalla de cliente (los estilos se comparten con el admin)
+const t = {
+    contenedor: { backgroundColor: 'transparent' },
+    btn: { backgroundColor: '#fbf1de' },
+    txtVolver: { color: '#3b1a12' },
+    titulo: { color: '#fff7ea' },
+    total: { color: '#f1cf8a' },
+    sub: { color: '#fff7ea' },
+    msg: { color: '#e3cfa5' },
+    tarjeta: { backgroundColor: '#fbf1de' },
+};
+
 export default function DetallesPedidoAdmin() {
     const styles = useEstilos(estilosEscritorio, estilosMovil);
     const { id } = useLocalSearchParams(); 
@@ -51,33 +64,36 @@ export default function DetallesPedidoAdmin() {
         cargarDetalle();
     }, [id]);
 
-    if (cargando) return <Text style={styles.mensajeEstado}>Cargando pedido...</Text>;
+    if (cargando) return <View style={{ flex: 1 }}><Navbar /><Text style={[styles.mensajeEstado, t.msg]}>Cargando pedido...</Text></View>;
     if (!datos) return (
-        <View>
-            <Text style={styles.mensajeEstado}>No se ha podido cargar el pedido. Puede que no exista.</Text>
-            <Pressable onPress={() => router.replace('/pedidos')} style={styles.btnVolver}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="arrow-back" size={18} color="#475569" /><Text style={styles.txtVolver}>Ir a mis pedidos</Text></View>
+        <View style={{ flex: 1 }}>
+            <Navbar />
+            <Text style={[styles.mensajeEstado, t.msg]}>No se ha podido cargar el pedido. Puede que no exista.</Text>
+            <Pressable onPress={() => router.replace('/pedidos')} style={[styles.btnVolver, t.btn]}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="arrow-back" size={18} color="#3b1a12" /><Text style={[styles.txtVolver, t.txtVolver]}>Ir a mis pedidos</Text></View>
             </Pressable>
         </View>
     );
 
     return (
-        <ScrollView style={styles.contenedor}>
-            <Pressable onPress={() => router.back()} style={styles.btnVolver}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="arrow-back" size={18} color="#475569" /><Text style={styles.txtVolver}>Volver</Text></View>
+        <View style={{ flex: 1 }}>
+        <Navbar />
+        <ScrollView style={[styles.contenedor, t.contenedor]} contentContainerStyle={{ width: '100%', maxWidth: 900, alignSelf: 'center' }}>
+            <Pressable onPress={() => router.back()} style={[styles.btnVolver, t.btn]}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="arrow-back" size={18} color="#3b1a12" /><Text style={[styles.txtVolver, t.txtVolver]}>Volver</Text></View>
             </Pressable>
 
-            <Text style={styles.titulo}>Detalles del Pedido #{datos.pedido.id.slice(0,8).toUpperCase()}</Text>
-            <Text style={styles.totalInfo}>Importe Total: {euros(datos.pedido.total)}</Text>
+            <Text style={[styles.titulo, t.titulo]}>Detalles del Pedido #{datos.pedido.id.slice(0,8).toUpperCase()}</Text>
+            <Text style={[styles.totalInfo, t.total]}>Importe Total: {euros(datos.pedido.total)}</Text>
 
-            <Text style={styles.subtitulo}>Productos:</Text>
+            <Text style={[styles.subtitulo, t.sub]}>Productos:</Text>
             
             {datos.productos && datos.productos.map((prod: any, index: number) => {
                 const modeloAsociado = prod.productos?.modelos?.find((m: any) => m.nombre === prod.modelo);
                 const imagenUri = modeloAsociado?.imagen;
 
                 return (
-                    <View key={index} style={styles.tarjetaProducto}>
+                    <View key={index} style={[styles.tarjetaProducto, t.tarjeta]}>
                         {imagenUri ? (
                             <Image source={{ uri: imagenUri }} style={styles.imagenProducto} />
                         ) : (
@@ -103,5 +119,6 @@ export default function DetallesPedidoAdmin() {
                 );
             })}
         </ScrollView>
+        </View>
     );
 }

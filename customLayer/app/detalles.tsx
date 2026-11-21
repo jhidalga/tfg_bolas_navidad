@@ -116,10 +116,10 @@ export default function DetallesProducto() {
 
     if (cargando) {
         return (
-            <View style={{ flex: 1, backgroundColor: '#f8f9fa' }}>
+            <View style={{ flex: 1, backgroundColor: 'transparent' }}>
                 <Navbar />
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                    <ActivityIndicator size="large" color="#3b82f6" />
+                    <ActivityIndicator size="large" color="#e6c27a" />
                 </View>
             </View>
         );
@@ -217,7 +217,7 @@ export default function DetallesProducto() {
     };
 
     return (
-        <View style={{ flex: 1, backgroundColor: '#f8f9fa' }}>
+        <View style={{ flex: 1, backgroundColor: 'transparent' }}>
             <Navbar />
             <View style={{ flex: 1, width: '100%', maxWidth: esHorizontal ? 1200 : 760, alignSelf: 'center', flexDirection: esHorizontal ? 'row' : 'column', padding: esHorizontal ? 20 : 0 }}>
                     <View style={[
@@ -227,7 +227,7 @@ export default function DetallesProducto() {
                             height: Math.round(Math.min(260, Math.max(170, height * 0.28))),
                             aspectRatio: undefined,
                             borderBottomWidth: 1,
-                            borderBottomColor: '#e5e7eb',
+                            borderBottomColor: '#e3cfa5',
                         } as any),
                         esHorizontal && { alignSelf: 'flex-start', width: '45%', maxHeight: '100%' } as any,
                     ]}>
@@ -244,12 +244,12 @@ export default function DetallesProducto() {
                             </View>
                         )}
                     </View>
-                    <View style={{ flex: 1, minHeight: 0, paddingLeft: esHorizontal ? 30 : 0 }}>
+                    <View style={{ flex: 1, minHeight: 0, backgroundColor: '#fbf1de', borderRadius: esHorizontal ? 20 : 0, marginLeft: esHorizontal ? 24 : 0, padding: esHorizontal ? 20 : 0 }}>
                         <View style={{ paddingHorizontal: esHorizontal ? 0 : 20, paddingTop: 10 }}>
                         <View style={styles.cabeceraInfo}>
                             <Text style={[styles.nombreProducto, esMovilWeb && { fontSize: 19 }]}>{producto.nombre}</Text>
                             <View style={styles.contenedorPrecio}>
-                                <PrecioOferta valor={precioTotal} estilo={styles.precioValor} colorAntes="#dbeafe" />
+                                <PrecioOferta valor={precioTotal} estilo={styles.precioValor} colorAntes="#f1c9c0" />
                             </View>
                         </View>
                             {producto.descripcion ? (
@@ -282,7 +282,7 @@ export default function DetallesProducto() {
                                 </View>
                             )}
                             {Array.from({ length: cantidad }, (_, i) => (
-                                <View key={i} style={[styles.opcionContainer, cantidad > 1 && { padding: 12, borderWidth: 1, borderColor: i === activo ? '#3b82f6' : '#e5e7eb', borderRadius: 10 }]}>
+                                <View key={i} style={[styles.opcionContainer, cantidad > 1 && { padding: 12, borderWidth: 1, borderColor: i === activo ? '#a52a2a' : '#e3cfa5', borderRadius: 10 }]}>
                                     {cantidad > 1 && <Text style={styles.tituloOpcion}>Bola {i + 1}</Text>}
                                     {producto.modelos && producto.modelos.length > 0 && (
                                         <>
@@ -329,9 +329,9 @@ export default function DetallesProducto() {
                         </View>
                         <View style={styles.opcionContainer}>
                             <Text style={styles.tituloOpcion}>Cantidad</Text>
-                            <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderWidth: 1, borderColor: '#dee2e6', borderRadius: 12, width: 120, overflow: 'hidden' }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderWidth: 1, borderColor: '#e3cfa5', borderRadius: 12, width: 120, overflow: 'hidden' }}>
                                 <TouchableOpacity 
-                                    style={{ padding: 15, backgroundColor: '#f8f9fa' }} 
+                                    style={{ padding: 15, backgroundColor: '#efdfc3' }} 
                                     onPress={() => setCantidad(Math.max(1, cantidad - 1))}
                                 >
                                     <Text style={{ fontSize: 18, fontWeight: 'bold' }}>-</Text>
@@ -340,7 +340,7 @@ export default function DetallesProducto() {
                                 <Text style={{ flex: 1, textAlign: 'center', fontSize: 16, fontWeight: 'bold' }}>{cantidad}</Text>
                                 
                                 <TouchableOpacity 
-                                    style={{ padding: 15, backgroundColor: '#f8f9fa' }} 
+                                    style={{ padding: 15, backgroundColor: '#efdfc3' }} 
                                     onPress={() => setCantidad(cantidad + 1)}
                                 >
                                     <Text style={{ fontSize: 18, fontWeight: 'bold' }}>+</Text>
@@ -353,7 +353,7 @@ export default function DetallesProducto() {
                             </Text>
                         </View>
                         </ScrollView>
-                        <View style={{ paddingHorizontal: esHorizontal ? 0 : 20, paddingTop: 10, paddingBottom: esMovilWeb ? insets.bottom + 92 : 10, backgroundColor: '#f8f9fa', borderTopWidth: 1, borderTopColor: '#e5e7eb' }}>
+                        <View style={{ paddingHorizontal: esHorizontal ? 0 : 20, paddingTop: 10, paddingBottom: esMovilWeb ? insets.bottom + 92 : 10, backgroundColor: '#fbf1de', borderTopWidth: 1, borderTopColor: '#e3cfa5' }}>
                         <View style={{ marginTop: 0 }}>
                             <TouchableOpacity 
                                 style={[styles.botonCompra, agregando && { opacity: 0.7 }]} 

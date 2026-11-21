@@ -3,7 +3,7 @@ import { StyleSheet, Platform } from 'react-native';
 export const styles = StyleSheet.create({
     pagina: {
         flex: 1,
-        backgroundColor: '#f9f9f9',
+        backgroundColor: 'transparent',
     },
     contenedorPrincipal: {
         flex: 1,
@@ -15,7 +15,7 @@ export const styles = StyleSheet.create({
     tituloCentral: {
         fontSize: 24,
         fontWeight: "800",
-        color: "#1e293b",
+        color: "#fff7ea",
         marginBottom: 20,
     },
     cargandoContenedor: {
@@ -25,18 +25,18 @@ export const styles = StyleSheet.create({
     },
     textoVacio: {
         fontSize: 16,
-        color: '#666',
+        color: '#e3cfa5',
         textAlign: 'center',
         marginTop: 50,
     },
     tarjetaProducto: {
         flexDirection: 'row',
-        backgroundColor: '#fff',
+        backgroundColor: '#fbf1de',
         padding: 15,
         borderRadius: 12,
         marginBottom: 15,
         borderWidth: 1,
-        borderColor: '#eaeaea',
+        borderColor: '#e3cfa5',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
@@ -47,7 +47,7 @@ export const styles = StyleSheet.create({
         width: 90,
         height: 90,
         borderRadius: 8,
-        backgroundColor: '#f0f0f0',
+        backgroundColor: '#efdfc3',
         resizeMode: 'cover',
     },
     infoContenedor: {
@@ -68,7 +68,7 @@ export const styles = StyleSheet.create({
     },
     textoNegrita: {
         fontWeight: '600',
-        color: '#1a1a1a',
+        color: '#3b1a12',
     },
     textoPersonalizacion: {
         fontSize: 13,
@@ -84,7 +84,7 @@ export const styles = StyleSheet.create({
     precioProducto: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: '#1a1a1a',
+        color: '#3b1a12',
     },
     botonEliminar: {
         width: 40,
@@ -105,17 +105,17 @@ export const styles = StyleSheet.create({
         marginTop: 30,
         paddingTop: 20,
         borderTopWidth: 1,
-        borderColor: '#ddd',
+        borderColor: '#e3cfa5',
         alignItems: 'flex-end',
     },
     textoTotal: {
         fontSize: 24,
         fontWeight: 'bold',
-        color: '#1a1a1a',
+        color: '#fff7ea',
         marginBottom: 15,
     },
     botonPagar: {
-        backgroundColor: '#3f37c9',
+        backgroundColor: '#a52a2a',
         paddingVertical: 15,
         paddingHorizontal: 30,
         borderRadius: 10,

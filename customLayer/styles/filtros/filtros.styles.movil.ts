@@ -3,7 +3,7 @@ import { StyleSheet } from "react-native";
 export const styles = StyleSheet.create({
     contenedorFiltros: {
         width: '100%',
-        backgroundColor: "#ffffff",
+        backgroundColor: "#fbf1de",
         borderRadius: 0,
         padding: 0,
         marginRight: 0,
@@ -16,12 +16,12 @@ export const styles = StyleSheet.create({
         shadowRadius: 10,
         elevation: 0,
         borderWidth: 0,
-        borderColor: "#e2e8f0",
+        borderColor: "#e3cfa5",
     },
     tituloFiltro: {
         fontSize: 18,
         fontWeight: "800",
-        color: "#1e293b",
+        color: "#3b1a12",
         marginBottom: 20,
         display: 'none',
     },
@@ -32,17 +32,17 @@ export const styles = StyleSheet.create({
     label: {
         fontSize: 13,
         fontWeight: "700",
-        color: "#475569",
+        color: "#a52a2a",
         marginBottom: 8,
     },
     input: {
-        backgroundColor: "#f8fafc",
+        backgroundColor: "#f3e6cc",
         borderWidth: 1,
-        borderColor: "#e2e8f0",
+        borderColor: "#e3cfa5",
         borderRadius: 8,
         padding: 10,
         fontSize: 14,
-        color: "#1e293b",
+        color: "#3b1a12",
         width: '100%',
     },
     rowInputs: {
@@ -56,13 +56,13 @@ export const styles = StyleSheet.create({
         flex: 1,
         minWidth: 0,
         width: 0,
-        backgroundColor: "#f8fafc",
+        backgroundColor: "#f3e6cc",
         borderWidth: 1,
-        borderColor: "#e2e8f0",
+        borderColor: "#e3cfa5",
         borderRadius: 8,
         padding: 10,
         fontSize: 14,
-        color: "#1e293b",
+        color: "#3b1a12",
         textAlign: "center",
     },
     checkboxRow: {
@@ -75,14 +75,14 @@ export const styles = StyleSheet.create({
         width: 20,
         height: 20,
         borderWidth: 2,
-        borderColor: "#cbd5e1",
+        borderColor: "#e3cfa5",
         borderRadius: 4,
         justifyContent: "center",
         alignItems: "center",
     },
     checkboxSelected: {
-        backgroundColor: "#3b82f6",
-        borderColor: "#3b82f6",
+        backgroundColor: "#a52a2a",
+        borderColor: "#a52a2a",
     },
     checkInner: {
         color: "white",
@@ -91,7 +91,7 @@ export const styles = StyleSheet.create({
     },
     textoRango: {
         fontSize: 11,
-        color: "#94a3b8",
+        color: "#a52a2a",
         marginTop: 6,
     }
 });

@@ -73,7 +73,7 @@ export default function Filtros({
                         value={precioMin}
                         onChangeText={setPrecioMin}
                     />
-                    <Text style={{ color: '#94a3b8' }}>-</Text>
+                    <Text style={{ color: '#a52a2a' }}>-</Text>
                     <TextInput 
                         style={styles.inputRange}
                         keyboardType="numeric"

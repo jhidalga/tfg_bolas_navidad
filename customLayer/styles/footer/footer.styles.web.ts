@@ -3,7 +3,7 @@ import { StyleSheet } from 'react-native';
 export const styles = StyleSheet.create({
     contenedorFooter: {
         width: '100%',
-        backgroundColor: '#1e293b', 
+        backgroundColor: '#3d0b0f', borderTopWidth: 2, borderTopColor: '#e6c27a', 
         paddingVertical: 40,
         marginTop: 'auto',
         alignItems: 'center',
@@ -22,7 +22,7 @@ export const styles = StyleSheet.create({
         textAlign: 'center',
     },
     textoDescripcion: {
-        color: '#94a3b8',
+        color: '#e3cfa5',
         fontSize: 16,
         lineHeight: 26,
         textAlign: 'center',

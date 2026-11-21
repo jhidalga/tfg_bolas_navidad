@@ -2,10 +2,10 @@ import { StyleSheet } from 'react-native';
 
 export const styles = StyleSheet.create({
     contenedor: {
-        backgroundColor: '#ffffff',
+        backgroundColor: '#fbf1de',
         borderRadius: 8,
         borderWidth: 1,
-        borderColor: '#eaeaea',
+        borderColor: '#e3cfa5',
         width: '100%',
         height: '100%',
         overflow: 'hidden',
@@ -13,7 +13,7 @@ export const styles = StyleSheet.create({
     imagenContenedor: {
         width: '100%',
         aspectRatio: 1,
-        backgroundColor: '#ffffff',
+        backgroundColor: '#fbf1de',
     },
     imagen: {
         width: '100%',
@@ -36,7 +36,7 @@ export const styles = StyleSheet.create({
     precio: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: '#1a1a1a',
+        color: '#3b1a12',
     },
     textoPersonalizable: {
         color: '#16a34a',
@@ -44,11 +44,11 @@ export const styles = StyleSheet.create({
         marginTop: 4,
     },
     textoDetalles: {
-        color: '#999999',
+        color: '#7a5a48',
         fontSize: 12,
         marginTop: 4,
     },
     contenedorDeshabilitado: {
-        backgroundColor: '#f0f0f0',
+        backgroundColor: '#efdfc3',
     }
 });

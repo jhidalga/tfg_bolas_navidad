@@ -3,7 +3,7 @@ import { StyleSheet } from "react-native";
 export const styles = StyleSheet.create({
     contenedorPantalla: { 
         flex: 1, 
-        backgroundColor: "#f8f9fa" 
+        backgroundColor: 'transparent' 
     },
     scrollCentral: { 
         flexGrow: 1, 
@@ -12,7 +12,7 @@ export const styles = StyleSheet.create({
         paddingBottom: 60,
     },
     tarjetaPerfil: {
-        backgroundColor: "#ffffff",
+        backgroundColor: "#fbf1de",
         width: "100%",
         maxWidth: 520,
         alignSelf: "center",
@@ -28,7 +28,7 @@ export const styles = StyleSheet.create({
     titulo: {
         fontSize: 32,
         fontWeight: "500",
-        color: "#1a1a1a",
+        color: "#3b1a12",
         marginBottom: 35,
         textAlign: "center",
     },
@@ -45,32 +45,32 @@ export const styles = StyleSheet.create({
     valorBloqueado: {
         fontSize: 14,
         color: "#666666",
-        backgroundColor: "#f1f5f9",
+        backgroundColor: "#efdfc3",
         paddingHorizontal: 16,
         paddingVertical: 14,
         borderRadius: 8,
         borderWidth: 1,
-        borderColor: "#eaeaea",
+        borderColor: "#e3cfa5",
     },
     valorNormal: {
         fontSize: 14,
-        color: "#1a1a1a",
-        backgroundColor: "#ffffff",
+        color: "#3b1a12",
+        backgroundColor: "#fbf1de",
         paddingHorizontal: 16,
         paddingVertical: 14,
         borderRadius: 8,
         borderWidth: 1,
-        borderColor: "#eaeaea",
+        borderColor: "#e3cfa5",
     },
     inputEditable: {
         fontSize: 14,
-        color: "#1a1a1a",
-        backgroundColor: "#ffffff",
+        color: "#3b1a12",
+        backgroundColor: "#fbf1de",
         paddingHorizontal: 16,
         paddingVertical: 14,
         borderRadius: 8,
         borderWidth: 1,
-        borderColor: "#4338ca",
+        borderColor: "#a52a2a",
     },
     contenedorCentral: {
         flex: 1,
@@ -82,7 +82,7 @@ export const styles = StyleSheet.create({
         gap: 15,
     },
     btnModificar: {
-        backgroundColor: "#4338ca", 
+        backgroundColor: "#a52a2a", 
         paddingVertical: 14,
         borderRadius: 8,
         alignItems: "center",

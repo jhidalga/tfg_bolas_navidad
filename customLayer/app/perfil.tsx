@@ -109,7 +109,7 @@ export default function MiPerfil() {
             
             {cargando ? (
                 <View style={styles.contenedorCentral}>
-                    <ActivityIndicator size="large" color="#3b82f6" />
+                    <ActivityIndicator size="large" color="#e6c27a" />
                 </View>
             ) : (
                 <ScrollView contentContainerStyle={styles.scrollCentral}>

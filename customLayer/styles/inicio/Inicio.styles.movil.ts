@@ -1,7 +1,7 @@
 import { StyleSheet } from "react-native";
 
 export const styles = StyleSheet.create({
-    contenedorPrincipal: { flex: 1, backgroundColor: "#f8f9fa" },
+    contenedorPrincipal: { flex: 1, backgroundColor: "transparent" },
     contenidoScroll: { flexGrow: 1, paddingBottom: 70 },
     contenedorGrid: {
         flex: 1,
@@ -28,7 +28,7 @@ export const styles = StyleSheet.create({
         justifyContent: "flex-end",
     },
     modalContenido: {
-        backgroundColor: "#ffffff",
+        backgroundColor: "#fbf1de",
         borderTopLeftRadius: 24,
         borderTopRightRadius: 24,
         padding: 25,
@@ -45,9 +45,9 @@ export const styles = StyleSheet.create({
         alignItems: "center",
         marginBottom: 10,
     },
-    modalTitulo: { fontSize: 22, fontWeight: "900", color: "#1e293b" },
+    modalTitulo: { fontSize: 22, fontWeight: "900", color: "#3b1a12" },
     btnAplicarFiltros: {
-        backgroundColor: "#3b82f6",
+        backgroundColor: "#a52a2a",
         paddingVertical: 15,
         borderRadius: 12,
         alignItems: "center",
@@ -59,7 +59,7 @@ export const styles = StyleSheet.create({
         position: "absolute",
         bottom: 95,
         right: 20,
-        backgroundColor: "#3b82f6",
+        backgroundColor: "#a52a2a",
         width: 55,
         height: 55,
         borderRadius: 28,

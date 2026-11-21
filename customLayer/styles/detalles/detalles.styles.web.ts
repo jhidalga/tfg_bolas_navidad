@@ -3,7 +3,7 @@ import { StyleSheet } from 'react-native';
 export const styles = StyleSheet.create({
     contenedor: {
         flex: 1,
-        backgroundColor: '#f8f9fa',
+        backgroundColor: 'transparent',
     },
     contenedorHorizontal: {
         flexDirection: 'row',
@@ -16,7 +16,7 @@ export const styles = StyleSheet.create({
     bloqueImagen: {
         width: '100%',
         aspectRatio: 1,
-        backgroundColor: '#fff',
+        backgroundColor: '#ffffff',
     },
     bloqueImagenHorizontal: {
         width: '50%',
@@ -47,11 +47,11 @@ export const styles = StyleSheet.create({
     nombreProducto: {
         fontSize: 32,
         fontWeight: '800',
-        color: '#1a1d23',
+        color: '#3b1a12',
         letterSpacing: -0.5,
     },
     contenedorPrecio: {
-        backgroundColor: '#3b82f6',
+        backgroundColor: '#a52a2a',
         paddingHorizontal: 16,
         paddingVertical: 8,
         borderRadius: 10,
@@ -69,7 +69,7 @@ export const styles = StyleSheet.create({
     },
     divisor: {
         height: 1,
-        backgroundColor: '#e9ecef',
+        backgroundColor: '#efdfc3',
         marginVertical: 30,
     },
     seccionOpciones: {
@@ -81,21 +81,21 @@ export const styles = StyleSheet.create({
     tituloOpcion: {
         fontSize: 13,
         fontWeight: '700',
-        color: '#adb5bd',
+        color: '#7a5a48',
         marginBottom: 10,
         textTransform: 'uppercase',
         letterSpacing: 1,
     },
     pickerCard: {
-        backgroundColor: '#fff',
+        backgroundColor: '#fbf1de',
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: '#e9ecef',
+        borderColor: '#e3cfa5',
         overflow: 'hidden', 
         transition: 'all 0.2s ease',
         cursor: 'pointer',
         '&:hover': {
-            borderColor: '#3b82f6',
+            borderColor: '#a52a2a',
             boxShadow: '0 4px 12px rgba(59,130,246,0.05)',
         }
     } as any,
@@ -110,15 +110,15 @@ export const styles = StyleSheet.create({
         borderRadius: 12,
     } as any,
     inputPersonalizado: {
-        backgroundColor: '#fff',
+        backgroundColor: '#fbf1de',
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: '#e9ecef',
+        borderColor: '#e3cfa5',
         padding: 18,
         fontSize: 16,
         transition: 'border-color 0.2s ease',
         '&:focus': {
-            borderColor: '#3b82f6',
+            borderColor: '#a52a2a',
             outline: 'none',
         }
     } as any,
@@ -126,7 +126,7 @@ export const styles = StyleSheet.create({
         marginTop: 40,
     },
     botonCompra: {
-        backgroundColor: '#1a1d23',
+        backgroundColor: '#a52a2a',
         paddingVertical: 20,
         borderRadius: 15,
         alignItems: 'center',
@@ -143,11 +143,11 @@ export const styles = StyleSheet.create({
     },
     notaPago: {
         marginTop: 25,
-        backgroundColor: '#f8f9fa',
+        backgroundColor: '#f3e6cc',
         padding: 15,
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: '#e9ecef',
+        borderColor: '#e3cfa5',
     },
     textoNota: {
         fontSize: 14,
@@ -162,7 +162,7 @@ export const styles = StyleSheet.create({
     },
     labelCategoria: {
         fontSize: 14,
-        color: '#3b82f6',
+        color: '#a52a2a',
         fontWeight: '700',
         marginBottom: 8,
         textTransform: 'uppercase',

@@ -211,13 +211,13 @@ export default function PantallaCarrito() {
                 <Text style={styles.tituloCentral}>Tu Carrito ({carrito.length})</Text>
                 {cargando ? (
                     <View style={styles.cargandoContenedor}>
-                        <ActivityIndicator size="large" color="#3f37c9" />
+                        <ActivityIndicator size="large" color="#e6c27a" />
                         <Text style={{ marginTop: 10, color: '#666' }}>Cargando carrito...</Text>
                     </View>
                 ) : carrito.length === 0 ? (
                     <View style={{ alignItems: 'center', gap: 16, marginTop: 50 }}>
                         <Text style={[styles.textoVacio, { marginTop: 0 }]}>Tu carrito está vacío.</Text>
-                        <TouchableOpacity onPress={() => router.push('/inicio')} style={{ backgroundColor: '#4338ca', paddingVertical: 12, paddingHorizontal: 22, borderRadius: 10 }}>
+                        <TouchableOpacity onPress={() => router.push('/inicio')} style={{ backgroundColor: '#a52a2a', paddingVertical: 12, paddingHorizontal: 22, borderRadius: 10 }}>
                             <Text style={{ color: '#fff', fontWeight: '600' }}>Ver las bolas</Text>
                         </TouchableOpacity>
                     </View>
