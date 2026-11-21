@@ -1,4 +1,5 @@
 import { View, Text, TextInput, Pressable, ScrollView, Image, ActivityIndicator } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { supabase } from '../../../lib/supabase';
@@ -125,7 +126,7 @@ export default function NuevoProductoAdmin() {
         <View style={styles.pantalla}>
             <ScrollView contentContainerStyle={styles.scroll}>
                 <Pressable style={styles.btnVolverWrapper} onPress={() => router.back()}>
-                    <Text style={styles.btnVolver}>← Volver al catálogo</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="arrow-back" size={18} color="#3b82f6" /><Text style={styles.btnVolver}>Volver al catálogo</Text></View>
                 </Pressable>
 
                 <Text style={styles.tituloHeader}>Crear Nuevo Producto</Text>

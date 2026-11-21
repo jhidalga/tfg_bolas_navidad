@@ -1,4 +1,5 @@
 import { View, Text, Pressable, ScrollView, Image, ActivityIndicator, TextInput } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../../lib/supabase';
@@ -75,7 +76,7 @@ export default function AdminProductos() {
         <View style={styles.contenedor}>
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 <Pressable onPress={() => router.back()} style={styles.btnVolver}>
-                    <Text style={styles.txtVolver}>⬅ Volver</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="arrow-back" size={18} color="#475569" /><Text style={styles.txtVolver}>Volver</Text></View>
                 </Pressable>
                 
                 <View style={styles.cabeceraContenedor}>

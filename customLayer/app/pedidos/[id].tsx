@@ -1,4 +1,5 @@
 import { View, Text, ScrollView, Pressable, Image } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
@@ -55,7 +56,7 @@ export default function DetallesPedidoAdmin() {
     return (
         <ScrollView style={styles.contenedor}>
             <Pressable onPress={() => router.back()} style={styles.btnVolver}>
-                <Text style={styles.txtVolver}>⬅ Volver</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="arrow-back" size={18} color="#475569" /><Text style={styles.txtVolver}>Volver</Text></View>
             </Pressable>
 
             <Text style={styles.titulo}>Detalles del Pedido #{datos.pedido.id.slice(0,8).toUpperCase()}</Text>

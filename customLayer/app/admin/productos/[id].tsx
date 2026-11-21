@@ -1,4 +1,4 @@
-import { View, Text, TextInput, Pressable, ScrollView, Image, ActivityIndicator, Platform, Alert } from 'react-native';
+import { View, Text, TextInput, Pressable, ScrollView, Image, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase';
@@ -8,6 +8,8 @@ import { styles as estilosEscritorio } from '../../../styles/adminDetalleProduct
 import { styles as estilosMovil } from '../../../styles/adminDetalleProducto/adminDetalleProducto.styles.movil';
 import { useEstilos } from '../../../lib/responsive';
 import Toast from 'react-native-toast-message';
+import { Ionicons } from '@expo/vector-icons';
+import { useConfirmar } from '../../../componentes/confirmar';
 
 /**
  * Pantalla de administración para editar un producto existente.
@@ -20,6 +22,7 @@ export default function DetalleProductoAdmin() {
     const styles = useEstilos(estilosEscritorio, estilosMovil);
     const { id } = useLocalSearchParams();
     const router = useRouter();
+    const { confirmar, dialogo } = useConfirmar();
     const [cargando, setCargando] = useState(true);
     const [form, setForm] = useState({ nombre: '', descripcion: '', precio: '', precio_personalizacion: '', deshabilitado: false, oculto: false, personalizable: false });
     const [modelos, setModelos] = useState<any[]>([]);
@@ -95,6 +98,7 @@ export default function DetalleProductoAdmin() {
      * Usa peticiones concurrentes para mejorar el rendimiento de red.
      */
     const borrarModelos = async () => {
+        if (!(await confirmar(`¿Eliminar ${seleccionados.length} modelo(s)?`))) return;
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) return;
         try {
@@ -106,9 +110,13 @@ export default function DetalleProductoAdmin() {
             }));
             if (resultados.every(r => r.ok)) {
                 triggerToast("Modelos eliminados");
-                setSeleccionados([]);
-                cargarProducto();
+            } else {
+                const fallo = resultados.find(r => !r.ok);
+                const datos = fallo ? await fallo.json().catch(() => ({})) : {};
+                triggerToast(datos.detail || "No se pudieron eliminar algunos modelos", "error");
             }
+            setSeleccionados([]);
+            cargarProducto();
         } catch (e) {
             triggerToast("Error de conexión", "error");
         }
@@ -179,20 +187,8 @@ export default function DetalleProductoAdmin() {
      * Pide confirmacion y elimina el producto entero con sus modelos.
      * Si el producto ya esta en pedidos o carritos, la API no lo borra: lo oculta y lo deshabilita.
      */
-    const confirmar = (mensaje: string): Promise<boolean> => {
-        if (Platform.OS === 'web') {
-            return Promise.resolve(window.confirm(mensaje));
-        }
-        return new Promise((resolve) => {
-            Alert.alert('Confirmar', mensaje, [
-                { text: 'Cancelar', style: 'cancel', onPress: () => resolve(false) },
-                { text: 'Eliminar', style: 'destructive', onPress: () => resolve(true) },
-            ]);
-        });
-    };
-
     const eliminarProducto = async () => {
-        const ok = await confirmar(`¿Eliminar "${form.nombre}" y todos sus modelos? No se puede deshacer.`);
+        const ok = await confirmar(`¿Eliminar "${form.nombre}" y todos sus modelos? No se puede deshacer.`, 'Eliminar');
         if (!ok) return;
         const { data: { session } } = await supabase.auth.getSession();
         try {
@@ -216,9 +212,11 @@ export default function DetalleProductoAdmin() {
 
     return (
         <View style={styles.pantalla}>
+            {dialogo}
             <ScrollView contentContainerStyle={styles.scroll}>
-                <Pressable style={styles.btnVolverWrapper} onPress={() => router.back()}>
-                    <Text style={styles.btnVolver}>⬅ Volver al catálogo</Text>
+                <Pressable style={[styles.btnVolverWrapper, { flexDirection: 'row', alignItems: 'center', gap: 6 }]} onPress={() => router.back()}>
+                    <Ionicons name="arrow-back" size={20} color="#3b82f6" />
+                    <Text style={styles.btnVolver}>Volver al catálogo</Text>
                 </Pressable>
 
                 {/* INFORMACION GENERAL */}

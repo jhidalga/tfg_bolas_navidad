@@ -1,4 +1,5 @@
 import { View, Text, ScrollView, Pressable, ActivityIndicator, Platform } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import Toast from 'react-native-toast-message';
@@ -80,7 +81,7 @@ export default function ColaImpresion() {
     return (
         <ScrollView style={{ flex: 1, backgroundColor: '#f8f9fa' }} contentContainerStyle={{ padding: 20, maxWidth: 900, width: '100%', alignSelf: 'center' }}>
             <Pressable onPress={() => router.back()} style={{ marginBottom: 12 }}>
-                <Text style={{ color: '#475569', fontWeight: 'bold' }}>⬅ Volver</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="arrow-back" size={18} color="#475569" /><Text style={{ color: '#475569', fontWeight: 'bold' }}>Volver</Text></View>
             </Pressable>
 
             <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#111827' }}>Cola de impresión</Text>
