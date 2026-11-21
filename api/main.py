@@ -1167,7 +1167,8 @@ def _agregar_resumen(usuarios):
     filas = []
     usados = set()
     for u in usuarios:
-        pedidos = u.get("pedidos") or []
+        # Los pedidos cancelados no cuentan en el resumen
+        pedidos = [p for p in (u.get("pedidos") or []) if (p.get("estado") or "") != "Cancelado"]
         if not pedidos:
             continue
         bolas = sum(int(d.get("cantidad") or 1) for p in pedidos for d in (p.get("detalles_pedido") or []))
