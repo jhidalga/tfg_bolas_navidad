@@ -361,16 +361,16 @@ if MODO_PRUEBA:
                 p = prods[pid]; return {"nombre": p["nombre"], "modelos": p["modelos"]}
             _ESTADO["pedidos"] = [
                 {"id": "11111111-aaaa", "total": 3.0, "estado": "Pendiente", "created_at": "2026-11-17T09:30:00",
-                 "usuarios": {"nombre": "Ana Lopez", "curso": "1DAM"},
+                 "usuarios": {"nombre": "Ana Lopez", "curso": "1DAM", "email": "alopmar@g.educaand.es"},
                  "detalles_pedido": [_detalle_prueba("Galleta de Jengibre", "Ana", producto=prod("p1")),
                                      _detalle_prueba("Oso de navidad", "Luis", producto=prod("p1")),
                                      _detalle_prueba("Reno de Navidad", "María José", producto=prod("p1"))]},
                 {"id": "22222222-bbbb", "total": 1.0, "estado": "Pendiente", "created_at": "2026-11-16T12:10:00",
-                 "usuarios": {"nombre": "Pedro Gil", "curso": "Profesorado"},
+                 "usuarios": {"nombre": "Pedro Gil", "curso": "Informática", "email": "pedro.gil@edu.juntadeandalucia.es"},
                  "detalles_pedido": [_detalle_prueba("Estrella", "Pedro", "Dorado", producto=prod("p2")),
                                      _detalle_prueba("Estrella", "Sara", "Dorado", producto=prod("p2"))]},
                 {"id": "33333333-cccc", "total": 2.0, "estado": "Pendiente", "created_at": "2026-11-15T10:00:00",
-                 "usuarios": {"nombre": "Marta Ruiz", "curso": "2DAM"},
+                 "usuarios": {"nombre": "Marta Ruiz", "curso": "2DAM", "email": "mruiz07@g.educaand.es"},
                  "detalles_pedido": [_detalle_prueba("Arbol de Navidad", "Marta", "Verde", producto=prod("p3")),
                                      _detalle_prueba("Arbol de Navidad", "Jos\u00e9 Luis", "Verde", producto=prod("p3")),
                                      _detalle_prueba("Galleta de Jengibre", "Marta", producto=prod("p1"))]},
@@ -686,7 +686,7 @@ def obtener_todos_los_pedidos(authorization: Optional[str] = Header(None)):
     try:
         cliente_seguro = create_client(SUPABASE_URL, SUPABASE_KEY, options=ClientOptions(headers={"Authorization": f"Bearer {token}"}))
         respuesta = cliente_seguro.table("pedidos")\
-            .select("*, usuarios!user_id(nombre, curso), detalles_pedido(*, productos(nombre))")\
+            .select("*, usuarios!user_id(nombre, curso, email), detalles_pedido(*, productos(nombre))")\
             .order('created_at', desc=True)\
             .execute()
         return respuesta.data
@@ -715,7 +715,7 @@ def obtener_detalle_pedido_admin(pedido_id: str, request: Request, authorization
         numero = total_usuario = None
         try:
             dueno = pedido_res.data[0].get("user_id")
-            u = cliente_seguro.table("usuarios").select("nombre, curso").eq("id", dueno).execute()
+            u = cliente_seguro.table("usuarios").select("nombre, curso, email").eq("id", dueno).execute()
             usuario = u.data[0] if u.data else None
             todos = cliente_seguro.table("pedidos").select("id").eq("user_id", dueno).order("created_at").execute().data or []
             ids = [x["id"] for x in todos]
@@ -1067,7 +1067,7 @@ def obtener_mis_pedidos(authorization: Optional[str] = Header(None)):
             options=ClientOptions(headers={"Authorization": f"Bearer {token}"})
         )
         respuesta = cliente_seguro.table("pedidos")\
-            .select("*, usuarios!user_id(nombre, curso), detalles_pedido(id)")\
+            .select("*, usuarios!user_id(nombre, curso, email), detalles_pedido(id)")\
             .eq("user_id", user_id)\
             .order('created_at', desc=True)\
             .execute()
