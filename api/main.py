@@ -398,6 +398,15 @@ if MODO_PRUEBA:
             raise HTTPException(status_code=400, detail="Indica color o cliente")
         return _respuesta_cola(_cola_impresion([p for p in _pedidos(str(request.base_url)) if p["estado"] == estado]), color, cliente)
 
+    @app.get("/api/admin/resumen")
+    def resumen_prueba(request: Request):
+        por_persona = {}
+        for p in _pedidos(str(request.base_url)):
+            u = p["usuarios"]
+            por_persona.setdefault(u["nombre"], {"id": u["nombre"], "nombre": u["nombre"], "curso": u["curso"],
+                "email": u["nombre"].lower().replace(" ", ".") + "@g.educaand.es", "pedidos": []})["pedidos"].append(p)
+        return _agregar_resumen(list(por_persona.values()))
+
     @app.get("/api/admin/usuarios")
     def usuarios_prueba():
         return [
@@ -992,6 +1001,26 @@ def actualizar_mensaje_admin(datos: MensajeAdminUpdate, authorization: Optional[
 # puede permitir ese correo. Hace falta la tabla incidencias_registro
 # (ver documentacion/incidencias_registro.sql).
 # ---------------------------------------------------------------
+def _agregar_resumen(usuarios):
+    """Una fila por persona con pedidos: curso, nombre, correo, pedidos, bolas y total gastado.
+    Cada usuario trae sus pedidos con el total y las lineas con la cantidad."""
+    filas = []
+    for u in usuarios:
+        pedidos = u.get("pedidos") or []
+        if not pedidos:
+            continue
+        bolas = sum(int(d.get("cantidad") or 1) for p in pedidos for d in (p.get("detalles_pedido") or []))
+        total = round(sum(float(p.get("total") or 0) for p in pedidos), 2)
+        filas.append({"id": u.get("id"), "nombre": u.get("nombre") or "", "email": u.get("email") or "",
+                      "curso": u.get("curso") or "", "num_pedidos": len(pedidos), "bolas": bolas, "total": total})
+    filas.sort(key=lambda f: f["nombre"].lower())
+    return {
+        "filas": filas,
+        "totales": {"personas": len(filas), "pedidos": sum(f["num_pedidos"] for f in filas),
+                    "bolas": sum(f["bolas"] for f in filas), "total": round(sum(f["total"] for f in filas), 2)},
+    }
+
+
 def _exigir_admin(authorization: Optional[str]):
     """Devuelve un cliente con el token del usuario si es administrador."""
     if not authorization:
@@ -1004,6 +1033,19 @@ def _exigir_admin(authorization: Optional[str]):
         raise HTTPException(status_code=403, detail="Solo administradores")
     return cliente
 
+
+@app.get("/api/admin/resumen")
+def resumen_admin(authorization: Optional[str] = Header(None)):
+    """Tabla resumen para el admin: que persona ha pedido cuantas bolas y cuanto ha gastado."""
+    try:
+        cliente = _exigir_admin(authorization)
+        usuarios = cliente.table("usuarios").select("id, nombre, email, curso, pedidos(id, total, detalles_pedido(cantidad))").execute().data
+        return _agregar_resumen(usuarios or [])
+    except HTTPException:
+        raise
+    except Exception:
+        logging.exception("Error interno")
+        raise HTTPException(status_code=500, detail="Ha ocurrido un error en el servidor. Inténtalo de nuevo.")
 
 @app.post("/api/registro/incidencia")
 def crear_incidencia_registro(datos: IncidenciaRegistro):

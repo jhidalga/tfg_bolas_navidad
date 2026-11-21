@@ -26,6 +26,7 @@ export default function AdminLayout() {
     const esRutaPedidos = segments.length === 1 || segments[1] === 'index';
     const esRutaProductos = segments.includes('productos');
     const esRutaUsuarios = segments.includes('usuarios');
+    const esRutaResumen = segments.includes('resumen');
 
     useEffect(() => {
         /**
@@ -109,6 +110,12 @@ export default function AdminLayout() {
                         onPress={() => { setMenuVisible(false); router.push('/admin/usuarios' as any); }}
                     >
                         <Text style={[styles.texto, esRutaUsuarios && styles.textoActivo]}><FontAwesome5 name="users" size={24} color="white" /> Usuarios</Text>
+                    </Pressable>
+                    <Pressable 
+                        style={[styles.opcion, esRutaResumen && styles.activa]} 
+                        onPress={() => { setMenuVisible(false); router.push('/admin/resumen' as any); }}
+                    >
+                        <Text style={[styles.texto, esRutaResumen && styles.textoActivo]}><FontAwesome5 name="table" size={24} color="white" /> Resumen</Text>
                     </Pressable>
                 </View>
                 
