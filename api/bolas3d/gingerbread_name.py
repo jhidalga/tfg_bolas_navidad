@@ -410,7 +410,7 @@ class Figure:
             tf = [float(x) for x in re.search(r'transform="([^"]*)"', s).group(1).split()]
             self.comps.append({"path": re.search(r'p:path="/?([^"]*)"', s).group(1),
                                "mesh": int(re.search(r'objectid="(\d+)"', s).group(1)),
-                               "t": tf[9:12]})
+                               "t": tf[9:12], "rot": tf[0:9]})
         cm = re.search(r'<object id="%d">(.*?)</object>' % self.oid, self.cfg, re.S)
         if not cm:
             raise ValueError("Configuracion del 3mf no reconocida.")
@@ -1339,8 +1339,19 @@ def _smallest_white(fig):
     return min(cands, key=lambda i: _area(fig.bbox(i)))
 
 
+def _sin_giro(mesh, rot):
+    """Algunos modelos (el calcetin) traen el objeto del nombre girado. El plan se calcula con el texto
+    horizontal, asi que se compensa el giro en la malla local para que el nombre salga horizontal."""
+    if all(abs(a - b) < 1e-6 for a, b in zip(rot, (1, 0, 0, 0, 1, 0, 0, 0, 1))):
+        return mesh
+    verts, tris = mesh
+    M = [rot[0:3], rot[3:6], rot[6:9]]       # mundo = local * M  ->  local = mundo * M^T
+    nuevo = [tuple(sum(v[c] * M[r][c] for c in range(3)) for r in range(3)) for v in verts]
+    return nuevo, tris
+
+
 def apply_plan(fig, plan, text, args_name_font_size=None):
-    fig.set_text_mesh(*plan.mesh)
+    fig.set_text_mesh(*_sin_giro(plan.mesh, fig.comps[fig.text_idx]["rot"]))
     fig.set_translation(fig.text_idx, plan.center[0], plan.center[1], plan.tz)
     for idx, (x, y) in plan.moves.items():
         fig.set_translation(idx, x, y)
