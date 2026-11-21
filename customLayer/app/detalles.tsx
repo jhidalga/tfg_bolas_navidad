@@ -217,28 +217,17 @@ export default function DetallesProducto() {
     return (
         <View style={{ flex: 1, backgroundColor: '#f8f9fa' }}>
             <Navbar />
-            <ScrollView showsVerticalScrollIndicator={false}>
-                <View style={[
-                    styles.contenedor, 
-                    { paddingBottom: insets.bottom + 110 },
-                    esHorizontal && styles.contenedorHorizontal
-                ]}>
+            <View style={{ flex: 1, width: '100%', maxWidth: 1200, alignSelf: 'center', flexDirection: esHorizontal ? 'row' : 'column', padding: esHorizontal ? 20 : 0 }}>
                     <View style={[
                         styles.bloqueImagen,
                         esHorizontal && styles.bloqueImagenHorizontal,
-                        esMovilWeb && ({
-                            position: 'sticky',
-                            top: 0,
-                            zIndex: 10,
+                        !esHorizontal && ({
+                            height: Math.round(Math.min(260, Math.max(170, height * 0.28))),
                             aspectRatio: undefined,
-                            height: Math.round(Math.min(260, Math.max(180, height * 0.3))),
                             borderBottomWidth: 1,
                             borderBottomColor: '#e5e7eb',
-                            shadowColor: '#000',
-                            shadowOpacity: 0.08,
-                            shadowRadius: 6,
-                            shadowOffset: { width: 0, height: 3 },
                         } as any),
+                        esHorizontal && { alignSelf: 'flex-start', width: '45%', maxHeight: '100%' } as any,
                     ]}>
                         <Image 
                             source={{ uri: vistaPrevia || imagenAMostrar }} 
@@ -253,18 +242,19 @@ export default function DetallesProducto() {
                             </View>
                         )}
                     </View>
-                    <View style={[styles.bloqueInfo, esHorizontal && styles.bloqueInfoHorizontal]}>
+                    <View style={{ flex: 1, minHeight: 0, paddingLeft: esHorizontal ? 30 : 0 }}>
+                        <View style={{ paddingHorizontal: esHorizontal ? 0 : 20, paddingTop: 10 }}>
                         <View style={styles.cabeceraInfo}>
-                            <Text style={styles.nombreProducto}>{producto.nombre}</Text>
+                            <Text style={[styles.nombreProducto, esMovilWeb && { fontSize: 19 }]} numberOfLines={2}>{producto.nombre}</Text>
                             <View style={styles.contenedorPrecio}>
                                 <PrecioOferta valor={precioTotal} estilo={styles.precioValor} colorAntes="#dbeafe" />
                             </View>
                         </View>
-                        
-                        {producto.descripcion ? (
-                            <Text style={styles.descripcion}>{producto.descripcion}</Text>
-                        ) : null}
-
+                            {producto.descripcion ? (
+                                <Text style={[styles.descripcion, { marginTop: 0 }]} numberOfLines={2}>{producto.descripcion}</Text>
+                            ) : null}
+                        </View>
+                        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: esHorizontal ? 0 : 20, paddingBottom: 20 }} showsVerticalScrollIndicator={false}>
                         <View style={styles.divisor} />
                         <View style={styles.seccionOpciones}>
                             {producto.colores && producto.colores.length === 1 && (
@@ -355,7 +345,14 @@ export default function DetallesProducto() {
                                 </TouchableOpacity>
                             </View>
                         </View>
-                        <View style={styles.contenedorAcciones}>
+                        <View style={styles.notaPago}>
+                            <Text style={styles.textoNota}>
+                                Pago en efectivo al recoger o por adelantado al profesorado.
+                            </Text>
+                        </View>
+                        </ScrollView>
+                        <View style={{ paddingHorizontal: esHorizontal ? 0 : 20, paddingTop: 10, paddingBottom: esMovilWeb ? insets.bottom + 92 : 10, backgroundColor: '#f8f9fa', borderTopWidth: 1, borderTopColor: '#e5e7eb' }}>
+                        <View style={{ marginTop: 0 }}>
                             <TouchableOpacity 
                                 style={[styles.botonCompra, agregando && { opacity: 0.7 }]} 
                                 onPress={agregarAlCarrito}
@@ -366,14 +363,9 @@ export default function DetallesProducto() {
                                 </Text>
                             </TouchableOpacity>
                         </View>
-                        <View style={styles.notaPago}>
-                            <Text style={styles.textoNota}>
-                                Pago en efectivo al recoger o por adelantado al profesorado.
-                            </Text>
                         </View>
                     </View>
-                </View>
-            </ScrollView>
+            </View>
         </View>
     );
 }
