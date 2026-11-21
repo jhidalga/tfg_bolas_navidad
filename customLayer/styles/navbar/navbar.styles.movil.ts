@@ -4,7 +4,7 @@ export const styles = StyleSheet.create({
     contenedor: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 10,
+        paddingHorizontal: 6,
         paddingTop: 12,
         paddingBottom: Platform.OS === 'ios' ? 25 : 15, 
         backgroundColor: '#ffffff',
@@ -32,7 +32,7 @@ export const styles = StyleSheet.create({
     },
     boton: {
         paddingVertical: 10,
-        paddingHorizontal: 15,
+        paddingHorizontal: 6,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -45,7 +45,7 @@ export const styles = StyleSheet.create({
     },
     botonSalir: {
         paddingVertical: 10,
-        paddingHorizontal: 15,
+        paddingHorizontal: 6,
         alignItems: 'center',
         justifyContent: 'center',
     },

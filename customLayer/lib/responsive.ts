@@ -1,7 +1,7 @@
 import { Platform, useWindowDimensions } from 'react-native';
 
 /** A partir de este ancho (px) se usa el diseño de escritorio en la web. */
-export const ANCHO_ESCRITORIO = 900;
+export const ANCHO_ESCRITORIO = 1100;
 
 /**
  * True si es un teléfono usando la web. Mira el tamaño real de la pantalla del aparato,

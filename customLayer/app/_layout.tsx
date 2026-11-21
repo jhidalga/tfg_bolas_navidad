@@ -9,7 +9,13 @@ export default function RootLayout() {
   const segments = useSegments();
 
   useEffect(() => {
-    if (typeof document !== 'undefined') document.title = 'Adornos navideños | IES Laguna de Tollón';
+    if (typeof document !== 'undefined') {
+      document.title = 'Adornos navideños | IES Laguna de Tollón';
+      // El aviso escondido mide más que pantallas muy estrechas y creaba scroll lateral
+      const css = document.createElement('style');
+      css.textContent = 'html,body{overflow-x:hidden}';
+      document.head.appendChild(css);
+    }
   }, []);
 
   useEffect(() => {
