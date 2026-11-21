@@ -14,6 +14,8 @@ export const styles = StyleSheet.create({
     tarjetaLogin: {
         backgroundColor: '#ffffff',
         width: '100%',
+        maxWidth: 520,
+        alignSelf: 'center',
         paddingHorizontal: 25,
         paddingVertical: 35,
         borderRadius: 16,

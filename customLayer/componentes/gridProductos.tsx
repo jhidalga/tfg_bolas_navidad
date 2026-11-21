@@ -1,8 +1,8 @@
-import { View } from 'react-native';
+import { View, useWindowDimensions } from 'react-native';
 import Card from './cardProductos';
 import { styles as estilosEscritorio } from '../styles/grid/grid.styles';
 import { styles as estilosMovil } from '../styles/grid/grid.styles.movil';
-import { useEstilos } from '../lib/responsive';
+import { useEstilos, useEsMovilWeb } from '../lib/responsive';
 import Toast from 'react-native-toast-message';
 import { useRouter } from 'expo-router';
 
@@ -28,13 +28,17 @@ export interface GridProps {
 export default function Grid({ productos }: GridProps) {
     const styles = useEstilos(estilosEscritorio, estilosMovil);
     const router = useRouter();
+    const { width } = useWindowDimensions();
+    const esMovilWeb = useEsMovilWeb();
+    // En pantallas medianas con diseño de movil se reparten en 2 o 3 columnas
+    const columnas = !esMovilWeb || width < 600 ? 1 : width < 900 ? 2 : 3;
 
     return (
         <View style={styles.grid}>
             {productos.map((item) => {
                 const imagenVisual = item.modelos && item.modelos.length > 0 ? item.modelos[0].imagen : null;
                 return (
-                    <View key={item.id} style={styles.cardWrapper}>
+                    <View key={item.id} style={[styles.cardWrapper, columnas > 1 && { width: `${100 / columnas}%`, paddingHorizontal: 8 }]}>
                         <Card 
                             titulo={item.nombre} 
                             imagenUrl={imagenVisual}

@@ -219,7 +219,7 @@ export default function DetallesProducto() {
     return (
         <View style={{ flex: 1, backgroundColor: '#f8f9fa' }}>
             <Navbar />
-            <View style={{ flex: 1, width: '100%', maxWidth: 1200, alignSelf: 'center', flexDirection: esHorizontal ? 'row' : 'column', padding: esHorizontal ? 20 : 0 }}>
+            <View style={{ flex: 1, width: '100%', maxWidth: esHorizontal ? 1200 : 760, alignSelf: 'center', flexDirection: esHorizontal ? 'row' : 'column', padding: esHorizontal ? 20 : 0 }}>
                     <View style={[
                         styles.bloqueImagen,
                         esHorizontal && styles.bloqueImagenHorizontal,

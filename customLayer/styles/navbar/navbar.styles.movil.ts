@@ -5,6 +5,7 @@ export const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: 6,
+        justifyContent: 'center',
         paddingTop: 12,
         paddingBottom: Platform.OS === 'ios' ? 25 : 15, 
         backgroundColor: '#ffffff',
@@ -29,6 +30,7 @@ export const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-around',
         flex: 1,
+        maxWidth: 520,
     },
     boton: {
         paddingVertical: 10,

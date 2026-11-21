@@ -32,6 +32,8 @@ export const styles = StyleSheet.create({
     botones: {
         flexDirection: 'column',
         width: '100%',
+        maxWidth: 420,
+        alignSelf: 'center',
         marginTop: 30,
         gap: 15,
     },
