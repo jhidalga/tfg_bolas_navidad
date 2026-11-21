@@ -12,21 +12,13 @@ const LARGO_HILO = [0.10, 0.22, 0.07, 0.19, 0.13]; // fraccion del alto de panta
 
 let yaMostrada = false;
 
-/** Solo la primera vez por sesion del navegador. */
+/** Sale siempre que alguien entra a la web (en cada carga), una sola vez por carga. */
 export function debeMostrarBienvenida(): boolean {
-    if (yaMostrada) return false;
-    try {
-        if (typeof window !== 'undefined') {
-            if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return false;
-            if (window.sessionStorage.getItem('bienvenida_vista')) return false;
-        }
-    } catch { /* sin sessionStorage */ }
-    return true;
+    return !yaMostrada;
 }
 
 function marcarVista() {
     yaMostrada = true;
-    try { window.sessionStorage.setItem('bienvenida_vista', '1'); } catch { /* nada */ }
 }
 
 // Las animaciones son CSS: las hace la tarjeta grafica y van fluidas aunque la pagina este cargando

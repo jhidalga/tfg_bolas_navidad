@@ -37,12 +37,12 @@ const fondo = (uri: string) => ({
 } as any);
 
 /** Tira de lucecitas que parpadean, de lado a lado de la pantalla. */
-export function GuirnaldaLuces({ alto = 40 }: { alto?: number }) {
+export function GuirnaldaLuces({ alto = 40, fija = false }: { alto?: number; fija?: boolean }) {
     useEffect(() => { inyectarCSS(); }, []);
     const capa = (uri: string, anim: string) => ({
         position: 'absolute', top: 0, left: 0, right: 0, height: alto,
         backgroundImage: `url("${uri}")`, backgroundRepeat: 'repeat-x', backgroundSize: `160px ${alto}px`,
-        animationName: anim, animationDuration: '1.6s', animationIterationCount: 'infinite', animationTimingFunction: 'ease-in-out',
+        ...(fija ? {} : { animationName: anim, animationDuration: '1.6s', animationIterationCount: 'infinite', animationTimingFunction: 'ease-in-out' }),
     } as any);
     return (
         <View pointerEvents="none" style={{ height: alto, width: '100%', overflow: 'hidden' }}>

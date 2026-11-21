@@ -114,7 +114,7 @@ export const styles = StyleSheet.create({
         borderRadius: 12,
         borderWidth: 1,
         borderColor: '#e3cfa5',
-        padding: 18,
+        padding: 14,
         fontSize: 16,
         transition: 'border-color 0.2s ease',
         '&:focus': {

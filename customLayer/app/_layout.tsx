@@ -16,7 +16,7 @@ export default function RootLayout() {
       document.title = 'Adornos navideños | IES Laguna de Tollón';
       // El aviso escondido mide más que pantallas muy estrechas y creaba scroll lateral
       const css = document.createElement('style');
-      css.textContent = 'html,body{overflow-x:hidden;min-height:100%;background:#3d0b0f radial-gradient(ellipse at 50% 0,#7a1d20 0%,#4a0f12 55%,#2e070a 100%) fixed}input:focus,textarea:focus,select:focus{outline:2px solid #a52a2a !important;outline-offset:1px}select{background-color:transparent}';
+      css.textContent = 'html,body{overflow-x:hidden;min-height:100%;background:#3d0b0f radial-gradient(ellipse at 50% 0,#7a1d20 0%,#4a0f12 55%,#2e070a 100%) fixed}input:focus,textarea:focus,select:focus{outline:none !important;border-color:#a52a2a !important;box-shadow:inset 0 0 0 1px #a52a2a}select{background-color:transparent}';
       document.head.appendChild(css);
     }
   }, []);

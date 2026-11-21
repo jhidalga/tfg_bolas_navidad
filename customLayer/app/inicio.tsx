@@ -183,7 +183,7 @@ export default function Inicio() {
             <Navbar />
 
             {(esAdmin || mensajeAdmin.trim() !== '') && (
-                <View style={{ backgroundColor: '#fef3c7', padding: 15, borderBottomWidth: 1, borderBottomColor: '#fde68a', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', zIndex: 100 }}>
+                <View style={{ backgroundColor: 'rgba(230,194,122,0.12)', padding: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(230,194,122,0.35)', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', zIndex: 100 }}>
                     {editandoMensaje ? (
                         <View style={{ flexDirection: 'row', width: '100%', maxWidth: 800, gap: 10 }}>
                             <TextInput
@@ -201,12 +201,12 @@ export default function Inicio() {
                         </View>
                     ) : (
                         <View style={{ flexDirection: 'row', alignItems: 'center', width: '100%', maxWidth: 800, justifyContent: 'center' }}>
-                            <Text style={{ color: '#b45309', fontWeight: 'bold', fontSize: 16, textAlign: 'center', flex: 1 }}>
+                            <Text style={{ color: '#f1cf8a', fontWeight: '600', fontSize: 15, textAlign: 'center', flex: 1 }}>
                                 {mensajeAdmin || "No hay ningún mensaje activo."}
                             </Text>
                             {esAdmin && (
-                                <Pressable onPress={() => setEditandoMensaje(true)} style={{ backgroundColor: '#d97706', paddingHorizontal: 15, paddingVertical: 8, borderRadius: 8, marginLeft: 10 }}>
-                                    <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 12, ...(Platform.OS !== 'web' ? { padding: 5 } : {}) }}>Editar</Text>
+                                <Pressable onPress={() => setEditandoMensaje(true)} style={{ backgroundColor: 'rgba(230,194,122,0.22)', paddingHorizontal: 15, paddingVertical: 8, borderRadius: 8, marginLeft: 10 }}>
+                                    <Text style={{ color: '#f1cf8a', fontWeight: 'bold', fontSize: 12, ...(Platform.OS !== 'web' ? { padding: 5 } : {}) }}>Editar</Text>
                                 </Pressable>
                             )}
                         </View>
@@ -214,8 +214,9 @@ export default function Inicio() {
                 </View>
             )}
 
+            <GuirnaldaLuces />
+
             <ScrollView contentContainerStyle={styles.contenidoScroll} showsVerticalScrollIndicator={false}>
-                <GuirnaldaLuces />
                 <View style={styles.layoutPrincipal}>
                     <View style={styles.sidebarDesktop}>
                         {!cargando && renderFiltros()}

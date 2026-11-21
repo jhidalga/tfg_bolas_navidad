@@ -17,7 +17,7 @@ FUENTE = os.path.join(AQUI, "fonts", "SantaNorthPole.otf")
 # (tono 0-1, saturacion x, brillo x) sobre el marron original. None = marron
 COLORES = {
     "ChristmasTree.3mf": (0.36, 0.9, 0.85),
-    "Star.3mf": (0.115, 1.35, 1.2),
+    "Star.3mf": (0.125, 1.2, 1.45),
     "Stocking.3mf": (0.0, 1.3, 1.1),
 }
 LADO = 900

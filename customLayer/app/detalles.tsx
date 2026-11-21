@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import PrecioOferta from '../componentes/precioOferta';
-import { View, Text, Image, TouchableOpacity, ScrollView, Dimensions, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, Image, Pressable, TouchableOpacity, ScrollView, Dimensions, TextInput, ActivityIndicator } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
 import { styles as estilosEscritorio } from '../styles/detalles/detalles.styles';
 import { styles as estilosMovil } from '../styles/detalles/detalles.styles.movil';
@@ -37,6 +38,16 @@ export default function DetallesProducto() {
     const esMovilWeb = useEsMovilWeb();
     // En el móvil web siempre en vertical y con la vista previa fija arriba
     const esHorizontal = !esMovilWeb && width > height;
+    const router = useRouter();
+    const volver = () => { if (router.canGoBack()) router.back(); else router.replace('/inicio'); };
+    const botonVolver = (
+        <View style={{ width: '100%', maxWidth: esHorizontal ? 1200 : 760, alignSelf: 'center', paddingHorizontal: esHorizontal ? 20 : 14, paddingTop: 12, paddingBottom: esHorizontal ? 0 : 10 }}>
+            <Pressable onPress={volver} accessibilityRole="button" accessibilityLabel="Volver" style={{ flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: 6, paddingVertical: 8, paddingHorizontal: 14, borderRadius: 20, backgroundColor: 'rgba(230,194,122,0.2)', borderWidth: 1, borderColor: 'rgba(230,194,122,0.5)' }}>
+                <Ionicons name="arrow-back" size={18} color="#f1cf8a" />
+                <Text style={{ color: '#f1cf8a', fontWeight: '700', fontSize: 14 }}>Volver</Text>
+            </Pressable>
+        </View>
+    );
     
     // Cada bola puede ser de un modelo distinto: un modelo por bola
     const [modeloBase, setModeloBase] = useState('');
@@ -118,6 +129,7 @@ export default function DetallesProducto() {
         return (
             <View style={{ flex: 1, backgroundColor: 'transparent' }}>
                 <Navbar />
+                {botonVolver}
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                     <ActivityIndicator size="large" color="#e6c27a" />
                 </View>
@@ -219,6 +231,7 @@ export default function DetallesProducto() {
     return (
         <View style={{ flex: 1, backgroundColor: 'transparent' }}>
             <Navbar />
+            {botonVolver}
             <View style={{ flex: 1, width: '100%', maxWidth: esHorizontal ? 1200 : 760, alignSelf: 'center', flexDirection: esHorizontal ? 'row' : 'column', padding: esHorizontal ? 20 : 0 }}>
                     <View style={[
                         styles.bloqueImagen,
