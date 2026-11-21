@@ -1,5 +1,6 @@
 import { Stack, useRouter, useSegments } from "expo-router";
 import { ThemeProvider, DefaultTheme } from '@react-navigation/native';
+import { toastConfig } from '../componentes/avisos';
 import Toast from 'react-native-toast-message';
 import { useEffect, useState } from 'react';
 import Bienvenida, { debeMostrarBienvenida } from '../componentes/bienvenida';
@@ -43,7 +44,7 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: 'transparent' } }} />
       {bienvenida && <Bienvenida onTerminar={() => setBienvenida(false)} />}
-      <Toast position='top' topOffset={40} />
+      <Toast position='top' topOffset={40} config={toastConfig} />
     </SafeAreaProvider>
     </ThemeProvider>
   );
