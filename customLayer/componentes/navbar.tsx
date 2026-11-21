@@ -10,6 +10,7 @@ import { useFocusEffect } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { alCambiarCarrito } from '../lib/contadorCarrito';
+import { tc, temaActual } from '../lib/tema';
 
 let cachedEsAdmin: boolean | null = null;
 
@@ -19,6 +20,17 @@ let cachedEsAdmin: boolean | null = null;
  * en tiempo real y muestra dinámicamente el botón de administración si corresponde.
  * * @returns Componente View que contiene el logotipo y los iconos de navegación.
  */
+/**
+ * Finaliza la sesión del usuario en Supabase, limpia la caché de administrador
+ * y redirige de vuelta a la pantalla de Login. Se usa desde los ajustes de la cuenta.
+ */
+export async function cerrarSesionUsuario(router: { replace: (ruta: any) => void }) {
+    cachedEsAdmin = null;
+    await AsyncStorage.removeItem('esAdminPersistente');
+    await supabase.auth.signOut();
+    router.replace('/login');
+}
+
 export default function Navbar() {
     const styles = useEstilos(estilosEscritorio, estilosMovil);
     const router = useRouter();
@@ -111,17 +123,6 @@ export default function Navbar() {
         }, [])
     );
 
-    /**
-     * Finaliza la sesión del usuario en Supabase, limpia la caché de administrador
-     * y redirige de vuelta a la pantalla de Login.
-     */
-    async function cerrarSesion() {
-        cachedEsAdmin = null;
-        await AsyncStorage.removeItem('esAdminPersistente'); 
-        await supabase.auth.signOut();
-        router.replace('/login');
-    }
-
     return (
         <View style={[
             styles.contenedor, 
@@ -129,18 +130,18 @@ export default function Navbar() {
         ]}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <Image source={require('../assets/images/favicon.png')} style={{ width: 30, height: 30, marginBottom: -5 }} resizeMode="contain" />
-                <Text style={styles.logo}>Adornos navideños</Text>
+                <Text style={styles.logo}>{temaActual.marca}</Text>
             </View>
             <View style={styles.enlaces}>
                 <Pressable style={styles.boton} onPress={() => router.push('../inicio')}>
-                    <Ionicons name="home" size={24} color="#f1cf8a" />
+                    <Ionicons name="home" size={24} color={tc("#f1cf8a")} />
                 </Pressable>
                 
                 <Pressable style={styles.boton} onPress={() => router.push('../carrito')}>
                     <View>
-                        <Ionicons name="cart" size={24} color="#f1cf8a" />
+                        <Ionicons name="cart" size={24} color={tc("#f1cf8a")} />
                         {enCarrito > 0 && (
-                            <View style={{ position: 'absolute', top: -6, right: -9, minWidth: 17, height: 17, borderRadius: 9, paddingHorizontal: 4, backgroundColor: '#dc2626', alignItems: 'center', justifyContent: 'center' }}>
+                            <View style={{ position: 'absolute', top: -6, right: -9, minWidth: 17, height: 17, borderRadius: 9, paddingHorizontal: 4, backgroundColor: tc('#dc2626'), alignItems: 'center', justifyContent: 'center' }}>
                                 <Text style={{ color: '#fff', fontSize: 10, fontWeight: '700' }}>{enCarrito > 99 ? '99+' : enCarrito}</Text>
                             </View>
                         )}
@@ -148,22 +149,18 @@ export default function Navbar() {
                 </Pressable>
                 
                 <Pressable style={styles.boton} onPress={() => router.push('../pedidos')}>
-                    <FontAwesome5 name="box-open" size={22} color="#f1cf8a" />
+                    <FontAwesome5 name="box-open" size={22} color={tc("#f1cf8a")} />
                 </Pressable>
 
                 <Pressable style={styles.boton} onPress={() => router.push('../perfil')}>
-                    <FontAwesome name="user-circle" size={24} color="#f1cf8a" />
+                    <FontAwesome name="user-circle" size={24} color={tc("#f1cf8a")} />
                 </Pressable>
 
                 {esAdmin && (
                     <Pressable style={styles.botonAdmin} onPress={() => router.push('../admin')}>
-                        <FontAwesome name="cogs" size={20} color="#ffffff" />
+                        <FontAwesome name="cogs" size={20} color={tc("#ffffff")} />
                     </Pressable>
                 )}
-
-                <Pressable style={styles.botonSalir} onPress={cerrarSesion}>
-                    <Ionicons name="log-out-outline" size={26} color="#ff8f85" />
-                </Pressable>
             </View>
         </View>
     );

@@ -1,3 +1,4 @@
+import { temaActual } from '../lib/tema';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Image, Pressable, Text, View, useWindowDimensions } from 'react-native';
 
@@ -38,6 +39,10 @@ function inyectarCSS() {
     document.head.appendChild(st);
 }
 
+const SV = temaActual.nombre === 'sanvalentin';
+const corazon = (c: string, brillo: string) => 'data:image/svg+xml;utf8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 92"><path d="M50 90C8 58 0 34 14 16c12-14 32-8 36 8 4-16 24-22 36-8 14 18 6 42-36 74z" fill="${c}"/><path d="M50 80C20 56 12 38 22 24c8-10 22-6 28 6" stroke="${brillo}" stroke-width="5" fill="none" stroke-linecap="round" opacity=".55"/></svg>`);
+const CORAZONES = [corazon('#ff4d6d', '#fff'), corazon('#ff8fab', '#fff'), corazon('#d6336c', '#ffc2d4'), corazon('#ffc2d4', '#fff'), corazon('#c2255c', '#ffc2d4')];
+
 function Copo({ ancho, i }: { ancho: number; i: number }) {
     const d = useMemo(() => ({
         x: Math.random() * ancho,
@@ -48,7 +53,9 @@ function Copo({ ancho, i }: { ancho: number; i: number }) {
     }), [ancho]);
     return (
         <View pointerEvents="none" style={{
-            position: 'absolute', left: d.x, top: 0, width: d.tam, height: d.tam, borderRadius: d.tam, backgroundColor: '#fff', opacity: d.op,
+            position: 'absolute', left: d.x, top: 0, opacity: d.op,
+            ...(SV ? { width: d.tam * 3, height: d.tam * 2.8, backgroundImage: `url("${CORAZONES[i % CORAZONES.length]}")`, backgroundSize: 'contain', backgroundRepeat: 'no-repeat' }
+                   : { width: d.tam, height: d.tam, borderRadius: d.tam, backgroundColor: '#fff' }),
             animationName: i % 2 ? 'bv-nieve-a' : 'bv-nieve-b', animationDuration: `${d.dur}s`, animationDelay: `${d.espera}s`,
             animationIterationCount: 'infinite', animationTimingFunction: 'linear', willChange: 'transform',
         } as any} />
@@ -67,8 +74,10 @@ function Adorno({ fuente, cx, largo, ancho, i }: { fuente: any; cx: number; larg
                 animationName: 'bv-balanceo', animationDuration: `${2.4 + i * 0.25}s`, animationDelay: `${1.0 + i * 0.14}s`, animationFillMode: 'both',
                 animationIterationCount: 'infinite', animationDirection: 'alternate', animationTimingFunction: 'ease-in-out',
             } as any}>
-                <View style={{ width: 2, height: largo, backgroundColor: '#e6c27a' }} />
-                <Image source={fuente} style={{ width: ancho, height: ancho * 1.2 }} resizeMode="contain" />
+                <View style={{ width: 2, height: largo, backgroundColor: SV ? '#ff8fab' : '#e6c27a' }} />
+                {SV
+                    ? <View style={{ width: ancho, height: ancho * 0.95, backgroundImage: `url("${CORAZONES[i % CORAZONES.length]}")`, backgroundSize: 'contain', backgroundRepeat: 'no-repeat', backgroundPosition: 'center' } as any} />
+                    : <Image source={fuente} style={{ width: ancho, height: ancho * 1.2 }} resizeMode="contain" />}
             </View>
         </View>
     );
@@ -100,7 +109,7 @@ export default function Bienvenida({ onTerminar }: { onTerminar: () => void }) {
 
     return (
         <View style={{
-            position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 99999, backgroundColor: '#6b1a1d', overflow: 'hidden',
+            position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 99999, backgroundColor: SV ? '#6b1640' : '#6b1a1d', overflow: 'hidden',
             opacity: saliendo ? 0 : 1, transitionProperty: 'opacity', transitionDuration: '350ms',
         } as any}>
             <Pressable style={{ flex: 1 }} onPress={cerrar} accessibilityLabel="Cerrar la bienvenida">
@@ -112,9 +121,9 @@ export default function Bienvenida({ onTerminar }: { onTerminar: () => void }) {
                     position: 'absolute', left: 0, right: 0, top: height * 0.5, alignItems: 'center', paddingHorizontal: 20,
                     animationName: 'bv-sube', animationDuration: '0.8s', animationDelay: '0.9s', animationFillMode: 'both', animationTimingFunction: 'ease-out',
                 } as any}>
-                    <Text style={{ color: '#e6c27a', letterSpacing: 5, fontSize: movil ? 12 : 14, fontWeight: '700' }}>IES LAGUNA DE TOLLÓN · 2º DAM</Text>
+                    <Text style={{ color: SV ? '#ff8fab' : '#e6c27a', letterSpacing: 5, fontSize: movil ? 12 : 14, fontWeight: '700' }}>IES LAGUNA DE TOLLÓN · 2º DAM</Text>
                     <Text style={{ color: '#fff7ea', fontSize: movil ? 44 : 68, fontWeight: '900', marginTop: 8, textAlign: 'center' }}>¡Bienvenido!</Text>
-                    <Text style={{ color: '#f1cf8a', fontSize: movil ? 22 : 30, fontStyle: 'italic', marginTop: 2, textAlign: 'center' }}>a los adornos navideños con tu nombre</Text>
+                    <Text style={{ color: SV ? '#ffc2d4' : '#f1cf8a', fontSize: movil ? 22 : 30, fontStyle: 'italic', marginTop: 2, textAlign: 'center' }}>{SV ? 'a los adornos de San Valentín con tu nombre' : 'a los adornos navideños con tu nombre'}</Text>
                     <View style={{ backgroundColor: '#fff', borderRadius: 14, paddingVertical: 8, paddingHorizontal: 14, marginTop: 22 }}>
                         <Image source={require('../assets/images/logo_ies.png')} style={{ width: movil ? 150 : 190, height: movil ? 54 : 69 }} resizeMode="contain" />
                     </View>

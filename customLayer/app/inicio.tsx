@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { View, ScrollView, ActivityIndicator, Text, Pressable, Modal, TouchableOpacity, TextInput } from 'react-native';
 import Footer from '../componentes/footer';
-import { GuirnaldaLuces, FondoAbeto } from '../componentes/adornos';
+import { GuirnaldaLuces, FondoLetrero } from '../componentes/adornos';
 import Navbar from '@/componentes/navbar';
 import Grid from '@/componentes/gridProductos';
 import Filtros from '@/componentes/filtros';
@@ -14,6 +14,7 @@ import { Platform } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context'; 
+import { tc, temaActual } from '../lib/tema';
 
 /**
  * Pantalla principal (Catálogo de productos).
@@ -183,17 +184,17 @@ export default function Inicio() {
             <Navbar />
 
             {(esAdmin || mensajeAdmin.trim() !== '') && (
-                <View style={{ backgroundColor: '#1d4a2e', paddingTop: 36, paddingBottom: 16, paddingHorizontal: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(230,194,122,0.5)', position: 'relative', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', zIndex: 100 }}>
-                    <FondoAbeto />
+                <View style={{ backgroundColor: tc('#1d4a2e'), paddingTop: 36, paddingBottom: 16, paddingHorizontal: 12, borderBottomWidth: 1, borderBottomColor: tc('rgba(230,194,122,0.5)'), position: 'relative', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', zIndex: 100 }}>
+                    <FondoLetrero />
                     {editandoMensaje ? (
                         <View style={{ flexDirection: 'row', width: '100%', maxWidth: 800, gap: 10 }}>
                             <TextInput
-                                style={{ flex: 1, backgroundColor: '#fbf1de', borderWidth: 1, borderColor: '#d97706', padding: 10, borderRadius: 8 }}
+                                style={{ flex: 1, backgroundColor: tc('#fbf1de'), borderWidth: 1, borderColor: tc('#d97706'), padding: 10, borderRadius: 8 }}
                                 value={inputMensaje}
                                 onChangeText={setInputMensaje}
                                 placeholder="Escribe el anuncio aquí..."
                             />
-                            <Pressable onPress={guardarMensaje} style={{ backgroundColor: '#d97706', paddingHorizontal: 15, justifyContent: 'center', borderRadius: 8 }}>
+                            <Pressable onPress={guardarMensaje} style={{ backgroundColor: tc('#d97706'), paddingHorizontal: 15, justifyContent: 'center', borderRadius: 8 }}>
                                 <Text style={{ color: 'white', fontWeight: 'bold' }}>Guardar</Text>
                             </Pressable>
                             <Pressable onPress={() => {setEditandoMensaje(false); setInputMensaje(mensajeAdmin);}} style={{ backgroundColor: '#e5e7eb', paddingHorizontal: 15, justifyContent: 'center', borderRadius: 8 }}>
@@ -202,12 +203,12 @@ export default function Inicio() {
                         </View>
                     ) : (
                         <View style={{ flexDirection: 'row', alignItems: 'center', width: '100%', maxWidth: 800, justifyContent: 'center' }}>
-                            <Text style={{ color: '#f1cf8a', fontWeight: '600', fontSize: 15, textAlign: 'center', flex: 1 }}>
+                            <Text style={{ color: tc('#f1cf8a'), fontWeight: '600', fontSize: 15, textAlign: 'center', flex: 1 }}>
                                 {mensajeAdmin || "No hay ningún mensaje activo."}
                             </Text>
                             {esAdmin && (
-                                <Pressable onPress={() => setEditandoMensaje(true)} style={{ backgroundColor: 'rgba(230,194,122,0.22)', paddingHorizontal: 15, paddingVertical: 8, borderRadius: 8, marginLeft: 10 }}>
-                                    <Text style={{ color: '#f1cf8a', fontWeight: 'bold', fontSize: 12, ...(Platform.OS !== 'web' ? { padding: 5 } : {}) }}>Editar</Text>
+                                <Pressable onPress={() => setEditandoMensaje(true)} style={{ backgroundColor: tc('rgba(230,194,122,0.22)'), paddingHorizontal: 15, paddingVertical: 8, borderRadius: 8, marginLeft: 10 }}>
+                                    <Text style={{ color: tc('#f1cf8a'), fontWeight: 'bold', fontSize: 12, ...(Platform.OS !== 'web' ? { padding: 5 } : {}) }}>Editar</Text>
                                 </Pressable>
                             )}
                         </View>
@@ -225,11 +226,11 @@ export default function Inicio() {
 
                     <View style={{ flex: 1 }}>
                         {cargando ? (
-                            <ActivityIndicator size="large" color="#e6c27a" />
+                            <ActivityIndicator size="large" color={tc("#e6c27a")} />
                         ) : (
                             <>
                                 {productosPaginados.length === 0 ? (
-                                    <Text style={{ textAlign: 'center', marginTop: 50, fontSize: 16, color: '#e3cfa5' }}>
+                                    <Text style={{ textAlign: 'center', marginTop: 50, fontSize: 16, color: tc('#e3cfa5') }}>
                                         No se encontraron productos.
                                     </Text>
                                 ) : (
@@ -239,19 +240,19 @@ export default function Inicio() {
                                 {totalPaginas > 1 && (
                                     <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', paddingVertical: 20, gap: 15 }}>
                                         <Pressable
-                                            style={[{ paddingVertical: 8, paddingHorizontal: 16, borderRadius: 8 }, paginaActual === 1 ? { backgroundColor: '#cbd5e1' } : { backgroundColor: '#a52a2a' }]}
+                                            style={[{ paddingVertical: 8, paddingHorizontal: 16, borderRadius: 8 }, paginaActual === 1 ? { backgroundColor: '#cbd5e1' } : { backgroundColor: tc('#a52a2a') }]}
                                             disabled={paginaActual === 1}
                                             onPress={() => setPaginaActual(p => p - 1)}
                                         >
                                             <Text style={{ color: 'white', fontWeight: 'bold' }}>Anterior</Text>
                                         </Pressable>
 
-                                        <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#a52a2a' }}>
+                                        <Text style={{ fontSize: 16, fontWeight: 'bold', color: tc('#a52a2a') }}>
                                             Página {paginaActual} de {totalPaginas}
                                         </Text>
 
                                         <Pressable
-                                            style={[{ paddingVertical: 8, paddingHorizontal: 16, borderRadius: 8 }, paginaActual === totalPaginas ? { backgroundColor: '#cbd5e1' } : { backgroundColor: '#a52a2a' }]}
+                                            style={[{ paddingVertical: 8, paddingHorizontal: 16, borderRadius: 8 }, paginaActual === totalPaginas ? { backgroundColor: '#cbd5e1' } : { backgroundColor: tc('#a52a2a') }]}
                                             disabled={paginaActual === totalPaginas}
                                             onPress={() => setPaginaActual(p => p + 1)}
                                         >
@@ -272,7 +273,7 @@ export default function Inicio() {
                         <View style={styles.modalHeader}>
                             <Text style={styles.modalTitulo}>Filtros</Text>
                             <TouchableOpacity onPress={() => setModalFiltros(false)}>
-                                <Ionicons name="close" size={28} color="#1e293b" />
+                                <Ionicons name="close" size={28} color={tc("#1e293b")} />
                             </TouchableOpacity>
                         </View>
                         <ScrollView showsVerticalScrollIndicator={false}>

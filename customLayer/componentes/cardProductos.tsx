@@ -23,6 +23,8 @@ export interface CardProps {
     cantidadColores?: number;
     /** Si es true, la tarjeta se muestra atenuada y las animaciones se desactivan */
     deshabilitado?: boolean;
+    /** Datos de oferta del producto (en_oferta, precio_anterior) */
+    oferta?: any;
     /** Función que se ejecuta al presionar la tarjeta */
     onPress: () => void;
 }
@@ -38,6 +40,7 @@ export default function CardProducto({
     titulo, 
     imagenUrl, 
     precio, 
+    oferta,
     personalizable, 
     cantidadModelos, 
     cantidadColores, 
@@ -93,7 +96,7 @@ export default function CardProducto({
                 
                 <View style={styles.info}>
                     <Text style={styles.titulo} numberOfLines={1}>{titulo}</Text>
-                    <PrecioOferta valor={precio} estilo={styles.precio} />
+                    <PrecioOferta valor={precio} estilo={styles.precio} producto={{ ...oferta, precio }} />
                     
                     {personalizable && (
                         <Text style={styles.textoPersonalizable}> Personalizable</Text>

@@ -26,7 +26,7 @@ export const styles = StyleSheet.create({
     },
     descripcion: {
         fontSize: 24,
-        color: '#e3cfa5',
+        color: '#f1cf8a',
     },
     botones: {
         flexDirection: 'row',

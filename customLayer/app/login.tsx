@@ -1,15 +1,10 @@
-import { View, Text, TextInput, ScrollView, Pressable } from 'react-native';
-import { traducirError } from '../lib/errores';
+import { View, Text, ScrollView, Pressable } from 'react-native';
 import { styles as estilosEscritorio } from '../styles/login/login.styles';
 import { styles as estilosMovil } from '../styles/login/login.styles.movil';
 import { useEstilos } from '../lib/responsive';
 import { useRouter } from "expo-router";
-import { useState } from 'react';
 import Footer from '../componentes/footer';
-import { supabase } from '../lib/supabase';
-import { setEsAdminGlobal } from '../lib/supabase';
-import Toast from 'react-native-toast-message';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import FormLogin from '../componentes/formLogin';
 
 /**
  * Pantalla principal de inicio de sesión.
@@ -20,96 +15,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 export default function Login() {
     const styles = useEstilos(estilosEscritorio, estilosMovil);
     const router = useRouter();
-    const [correo, setCorreo] = useState('');
-    const [contrasena, setContrasena] = useState('');
-    const [cargando, setCargando] = useState(false);
-
-    /**
-     * Valida las credenciales introducidas en el formulario e intenta 
-     * autenticar al usuario mediante Supabase. 
-     * * Si la autenticación es exitosa, realiza una petición a la API para
-     * comprobar si el usuario tiene rol de administrador y actualiza el estado global.
-     * Muestra mensajes (Toast) en caso de error (campos vacíos, correo inválido o error del servidor).
-     */
-    async function comprobarCredenciales() {
-        const correoLimpio = correo.trim();
-        const contrasenaLimpia = contrasena.trim();
-        if (!correoLimpio || !contrasenaLimpia) {
-            Toast.show({ type: 'error', text1: 'Por favor, rellena todos los campos.' });
-            return;
-        }
-
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correoLimpio)) {
-            Toast.show({ type: 'error', text1: 'Introduce un correo electrónico válido' });
-            return;
-        }
-
-        setCargando(true);
-
-        const { data, error } = await supabase.auth.signInWithPassword({
-            email: correoLimpio,
-            password: contrasenaLimpia,
-        });
-
-        if (error) {
-            setCargando(false);
-            Toast.show({ type: 'error', text1: 'Error', text2: traducirError(error.message) });
-        } else if (data?.session) {
-            try {
-                const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/usuarios/perfil`, {
-                    headers: { 'Authorization': `Bearer ${data.session.access_token}` }
-                });
-                
-                if (res.ok) {
-                    const perfil = await res.json();
-                    setEsAdminGlobal(perfil.administrador === true);
-                    await AsyncStorage.setItem('esAdminPersistente', perfil.administrador === true ? 'true' : 'false');
-                }
-            } catch (e) {
-                console.error('Error al obtener el perfil del usuario:', e);
-            }
-
-            setCargando(false);
-            router.replace('/inicio');
-        }
-    }
-
     return (
         <ScrollView contentContainerStyle={styles.scrollFondo}>
             <View style={styles.contenedorCentral}>
                 <View style={styles.tarjetaLogin}>
                     <Text style={styles.titulo}>Inicia sesión</Text>
 
-                    <Text style={styles.etiqueta}>Email</Text>
-                    <TextInput
-                        style={styles.input}
-                        value={correo}
-                        onChangeText={setCorreo}
-                        placeholder='tuCorreo@ejemplo.com'
-                        autoCapitalize='none'
-                    />
-
-                    <Text style={styles.etiqueta}>Contraseña</Text>
-                    <TextInput
-                        style={styles.input}
-                        value={contrasena}
-                        onChangeText={setContrasena}
-                        placeholder='Introduce tu contraseña'
-                        secureTextEntry
-                        onSubmitEditing={() => comprobarCredenciales()}
-                    />
-
-                    <Pressable style={styles.botonLogin} onPress={() => comprobarCredenciales()}>
-                        <Text style={styles.textoBoton}>Iniciar sesión</Text>
-                    </Pressable>
-
-                    <Text style={styles.avisoRecuperacion}>
-                        Si has olvidado tu contraseña, contacta con el administrador.
-                    </Text>
-
-                    <Pressable style={styles.botonVolver} onPress={() => router.push('/registro')}>
-                        <Text style={styles.textoBotonVolver}>¿No tienes cuenta? Regístrate</Text>
-                    </Pressable>
+                    <FormLogin />
 
                     <Pressable style={styles.botonVolver} onPress={() => router.push('/')}>
                         <Text style={styles.textoBotonVolver}>Volver</Text>

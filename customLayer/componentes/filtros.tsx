@@ -3,6 +3,7 @@ import { View, Text, TextInput, Pressable } from 'react-native';
 import { styles as estilosEscritorio } from '../styles/filtros/filtros.styles';
 import { styles as estilosMovil } from '../styles/filtros/filtros.styles.movil';
 import { useEstilos } from '../lib/responsive';
+import { tc } from '../lib/tema';
 
 /**
  * Propiedades para el componente Filtros.
@@ -73,7 +74,7 @@ export default function Filtros({
                         value={precioMin}
                         onChangeText={setPrecioMin}
                     />
-                    <Text style={{ color: '#a52a2a' }}>-</Text>
+                    <Text style={{ color: tc('#a52a2a') }}>-</Text>
                     <TextInput 
                         style={styles.inputRange}
                         keyboardType="numeric"

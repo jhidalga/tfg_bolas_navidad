@@ -43,6 +43,7 @@ export default function Grid({ productos }: GridProps) {
                             titulo={item.nombre} 
                             imagenUrl={imagenVisual}
                             precio={item.precio?.toString()}
+                            oferta={{ en_oferta: item.en_oferta, precio_anterior: item.precio_anterior }}
                             personalizable={item.personalizable}
                             cantidadModelos={item.modelos ? item.modelos.length : 0}
                             cantidadColores={item.colores ? item.colores.length : 0}

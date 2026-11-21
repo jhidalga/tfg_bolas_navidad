@@ -14,14 +14,14 @@ export const styles = StyleSheet.create({
         alignItems: 'center',
     },
     tituloColumna: {
-        color: '#ffffff',
+        color: '#fff7ea',
         fontSize: 22,
         fontWeight: 'bold',
         marginBottom: 10,
         textAlign: 'center',
     },
     textoDescripcion: {
-        color: '#e3cfa5',
+        color: '#f1cf8a',
         fontSize: 14,
         lineHeight: 22,
         textAlign: 'center',

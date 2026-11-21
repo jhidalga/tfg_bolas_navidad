@@ -10,6 +10,7 @@ import Footer from '../componentes/footer';
 import { supabase } from '../lib/supabase';
 import Toast from 'react-native-toast-message';
 import { Picker } from '@react-native-picker/picker';
+import { tc } from '../lib/tema';
 
 const DEPARTAMENTOS = ['Informática', 'Lengua', 'Educación Física', 'Dibujo', 'Música', 'Religión', 'Cultura Clásica', 'Geografía', 'Tecnología', 'Inglés', 'Matemáticas', 'Física y Química', 'Biología'];
 const LETRAS = ['A', 'B', 'C', 'D'];
@@ -218,7 +219,7 @@ export default function Registro() {
                         secureTextEntry={!verContrasena}
                     />
                     <Pressable onPress={() => setVerContrasena(!verContrasena)} style={{ marginTop: -12, marginBottom: 16 }}>
-                        <Text style={{ color: '#a52a2a', fontWeight: '600', fontSize: 13 }}>
+                        <Text style={{ color: tc('#a52a2a'), fontWeight: '600', fontSize: 13 }}>
                             {verContrasena ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                         </Text>
                     </Pressable>
@@ -272,7 +273,7 @@ export default function Registro() {
                         onPress={() => !cargando && comprobarCredenciales()}
                     >
                         {cargando ? (
-                            <ActivityIndicator color="#ffffff" />
+                            <ActivityIndicator color={tc("#ffffff")} />
                         ) : (
                             <Text style={styles.textoBoton}>Registrarse</Text>
                         )}
@@ -299,7 +300,7 @@ export default function Registro() {
                 <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 }}>
                     <ScrollView style={{ maxHeight: '92%', width: '100%', maxWidth: 460, alignSelf: 'center', backgroundColor: '#fff', borderRadius: 14 }} contentContainerStyle={{ padding: 20 }}>
                         <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#111827', marginBottom: 6 }}>No puedo registrarme</Text>
-                        <Text style={{ color: '#a52a2a', marginBottom: 14 }}>
+                        <Text style={{ color: tc('#a52a2a'), marginBottom: 14 }}>
                             Rellena tus datos y un administrador revisará tu correo. Cuando lo permita, podrás registrarte.
                         </Text>
 
@@ -315,7 +316,7 @@ export default function Registro() {
                         <TextInput style={styles.input} value={incCorreo} onChangeText={setIncCorreo} placeholder='tuCorreo@g.educaand.es' autoCapitalize='none' />
 
                         <Pressable style={[styles.botonLogin, enviandoInc && { opacity: 0.7 }]} onPress={() => !enviandoInc && enviarIncidencia()}>
-                            {enviandoInc ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.textoBoton}>Enviar incidencia</Text>}
+                            {enviandoInc ? <ActivityIndicator color={tc("#ffffff")} /> : <Text style={styles.textoBoton}>Enviar incidencia</Text>}
                         </Pressable>
                         <Pressable style={styles.botonVolver} onPress={() => setIncidenciaAbierta(false)} disabled={enviandoInc}>
                             <Text style={styles.textoBotonVolver}>Cancelar</Text>

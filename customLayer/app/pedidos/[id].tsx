@@ -8,6 +8,7 @@ import { styles as estilosMovil } from '../../styles/adminDetallePedido/adminDet
 import { useEstilos } from '../../lib/responsive';
 import { euros } from '../../lib/formato';
 import Navbar from '@/componentes/navbar';
+import { tc } from '../../lib/tema';
 
 /**
  * Pantalla de detalles de un pedido específico.
@@ -19,13 +20,13 @@ import Navbar from '@/componentes/navbar';
 // Colores de Navidad solo para esta pantalla de cliente (los estilos se comparten con el admin)
 const t = {
     contenedor: { backgroundColor: 'transparent' },
-    btn: { backgroundColor: '#fbf1de' },
-    txtVolver: { color: '#3b1a12' },
-    titulo: { color: '#fff7ea' },
-    total: { color: '#f1cf8a' },
-    sub: { color: '#fff7ea' },
-    msg: { color: '#e3cfa5' },
-    tarjeta: { backgroundColor: '#fbf1de' },
+    btn: { backgroundColor: tc('#fbf1de') },
+    txtVolver: { color: tc('#3b1a12') },
+    titulo: { color: tc('#fff7ea') },
+    total: { color: tc('#f1cf8a') },
+    sub: { color: tc('#fff7ea') },
+    msg: { color: tc('#e3cfa5') },
+    tarjeta: { backgroundColor: tc('#fbf1de') },
 };
 
 export default function DetallesPedidoAdmin() {
@@ -70,7 +71,7 @@ export default function DetallesPedidoAdmin() {
             <Navbar />
             <Text style={[styles.mensajeEstado, t.msg]}>No se ha podido cargar el pedido. Puede que no exista.</Text>
             <Pressable onPress={() => router.replace('/pedidos')} style={[styles.btnVolver, t.btn]}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="arrow-back" size={18} color="#3b1a12" /><Text style={[styles.txtVolver, t.txtVolver]}>Ir a mis pedidos</Text></View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="arrow-back" size={18} color={tc("#3b1a12")} /><Text style={[styles.txtVolver, t.txtVolver]}>Ir a mis pedidos</Text></View>
             </Pressable>
         </View>
     );
@@ -80,7 +81,7 @@ export default function DetallesPedidoAdmin() {
         <Navbar />
         <ScrollView style={[styles.contenedor, t.contenedor]} contentContainerStyle={{ width: '100%', maxWidth: 900, alignSelf: 'center' }}>
             <Pressable onPress={() => router.back()} style={[styles.btnVolver, t.btn]}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="arrow-back" size={18} color="#3b1a12" /><Text style={[styles.txtVolver, t.txtVolver]}>Volver</Text></View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="arrow-back" size={18} color={tc("#3b1a12")} /><Text style={[styles.txtVolver, t.txtVolver]}>Volver</Text></View>
             </Pressable>
 
             <Text style={[styles.titulo, t.titulo]}>Detalles del Pedido #{datos.pedido.id.slice(0,8).toUpperCase()}</Text>

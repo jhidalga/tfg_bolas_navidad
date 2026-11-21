@@ -28,6 +28,8 @@ export default function NuevoProductoAdmin() {
         precio: '', 
         precio_personalizacion: '',
         personalizable: false, 
+        en_oferta: true,
+        precio_anterior: '',
         imagen: ""
     });
     const [coloresTexto, setColoresTexto] = useState("");
@@ -96,6 +98,8 @@ export default function NuevoProductoAdmin() {
             precio: parseFloat(form.precio) || 0,
             precio_personalizacion: parseFloat(form.precio_personalizacion) || 0,
             personalizable: form.personalizable,
+            en_oferta: form.en_oferta,
+            precio_anterior: parseFloat(form.precio_anterior) || 0,
             colores: arrayColores
         };
         
@@ -174,6 +178,23 @@ export default function NuevoProductoAdmin() {
                             </Text>
                         </Pressable>
                     </View>
+                    <View style={[styles.switchBox, { marginTop: 12 }]}>
+                        <Text style={styles.labelSwitch}>¿En oferta?</Text>
+                        <Pressable
+                            style={[styles.btnToggleSwitch, form.en_oferta ? styles.btnOn : styles.btnOff]}
+                            onPress={() => setForm({...form, en_oferta: !form.en_oferta})}
+                        >
+                            <Text style={[ form.en_oferta ? styles.txtOn : styles.txtOff]}>{form.en_oferta ? "Sí" : "No"}</Text>
+                        </Pressable>
+                    </View>
+                    {form.en_oferta && (
+                        <View style={[styles.inputGroup, { marginTop: 12 }]}>
+                            <Text style={styles.label}>Precio de antes (€)</Text>
+                            <TextInput style={styles.input} keyboardType="numeric" value={form.precio_anterior}
+                                onChangeText={t => setForm({...form, precio_anterior: t.replace(',', '.')})}
+                                placeholder="Vacío: se enseña el doble del precio actual" />
+                        </View>
+                    )}
                 </View>
 
                 <View style={styles.tarjeta}>

@@ -7,6 +7,8 @@ import { styles as estilosEscritorio } from '../../../styles/adminProductos/admi
 import { styles as estilosMovil } from '../../../styles/adminProductos/adminProductos.styles.movil';
 import { useEstilos } from '../../../lib/responsive';
 import { euros, plural } from '../../../lib/formato';
+import { ofertasActivas, aplicarOfertasLocal } from '../../../lib/tema';
+import Toast from 'react-native-toast-message';
 
 /**
  * Pantalla principal de administración del Catálogo de Productos.
@@ -24,6 +26,29 @@ export default function AdminProductos() {
     const [busqueda, setBusqueda] = useState('');
     const [paginaActual, setPaginaActual] = useState(1);
     const itemsPorPagina = 12;
+    const [ofertas, setOfertas] = useState<boolean>(ofertasActivas);
+    const [guardandoOfertas, setGuardandoOfertas] = useState(false);
+
+    /** Activa o quita las ofertas de toda la tienda. Cada producto tiene ademas su propio interruptor. */
+    const cambiarOfertas = async () => {
+        if (guardandoOfertas) return;
+        setGuardandoOfertas(true);
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/admin/ofertas`, {
+                method: 'PATCH',
+                headers: { 'Authorization': `Bearer ${session?.access_token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ activas: !ofertas }),
+            });
+            if (!res.ok) { Toast.show({ type: 'error', text1: 'No se pudo cambiar las ofertas' }); setGuardandoOfertas(false); return; }
+            setOfertas(!ofertas);
+            Toast.show({ type: 'success', text1: !ofertas ? 'Ofertas activadas' : 'Ofertas desactivadas' });
+            setTimeout(() => aplicarOfertasLocal(!ofertas), 600);
+        } catch {
+            Toast.show({ type: 'error', text1: 'Error de conexión' });
+            setGuardandoOfertas(false);
+        }
+    };
 
     useEffect(() => {
         cargarProductos();
@@ -80,6 +105,19 @@ export default function AdminProductos() {
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="arrow-back" size={18} color="#475569" /><Text style={styles.txtVolver}>Volver</Text></View>
                 </Pressable>
                 
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, backgroundColor: '#fff', borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 12, padding: 14, marginBottom: 16 }}>
+                    <View style={{ flex: 1 }}>
+                        <Text style={{ fontWeight: '700', color: '#1e293b', fontSize: 15 }}>Ofertas de la tienda</Text>
+                        <Text style={{ color: '#64748b', fontSize: 13, marginTop: 2 }}>
+                            {ofertas ? 'Activas: se ven en los productos marcados como "En oferta".' : 'Apagadas: ningún producto enseña precio tachado ni etiqueta.'}
+                        </Text>
+                    </View>
+                    <Pressable onPress={cambiarOfertas} disabled={guardandoOfertas}
+                        style={{ paddingVertical: 10, paddingHorizontal: 18, borderRadius: 10, backgroundColor: ofertas ? '#16a34a' : '#e2e8f0', opacity: guardandoOfertas ? 0.6 : 1 }}>
+                        <Text style={{ fontWeight: '700', color: ofertas ? '#fff' : '#475569' }}>{ofertas ? 'Activas' : 'Apagadas'}</Text>
+                    </Pressable>
+                </View>
+
                 <View style={styles.cabeceraContenedor}>
                     <Text style={styles.titulo}>Gestión de Catálogo</Text>
                     <View style={styles.cabeceraAcciones}>

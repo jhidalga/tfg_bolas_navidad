@@ -48,6 +48,15 @@ class ItemCarrito(BaseModel):
 class CheckoutPedido(BaseModel):
     total: float
 
+TEMAS_WEB = ("normal", "navidad", "sanvalentin")
+CAMPOS_OFERTA = ("en_oferta", "precio_anterior")
+
+class TemaWeb(BaseModel):
+    tema: str
+
+class OfertasWeb(BaseModel):
+    activas: bool
+
 class EstadoPedido(BaseModel):
     estado: str
 
@@ -60,6 +69,8 @@ class ProductoAdminCrear(BaseModel):
     oculto: bool = False
     personalizable: bool = False
     colores: List[str] = []
+    en_oferta: bool = True
+    precio_anterior: float = 0.0
 
 class ProductoAdminUpdate(BaseModel):
     nombre: Optional[str] = None
@@ -70,6 +81,8 @@ class ProductoAdminUpdate(BaseModel):
     oculto: Optional[bool] = None
     personalizable: Optional[bool] = None
     colores: Optional[List[str]] = None
+    en_oferta: Optional[bool] = None
+    precio_anterior: Optional[float] = None
 
 class ModeloAdminData(BaseModel):
     nombre: str
@@ -271,6 +284,22 @@ if MODO_PRUEBA:
     @app.get("/api/mensajes")
     def mensaje_prueba():
         return {"id": 1, "mensaje": ""}
+
+    @app.get("/api/tema")
+    def tema_prueba():
+        return {"tema": _ESTADO.get("tema", "navidad"), "ofertas": _ESTADO.get("ofertas", True)}
+
+    @app.patch("/api/admin/ofertas")
+    def cambiar_ofertas_prueba(datos: OfertasWeb):
+        _ESTADO["ofertas"] = datos.activas
+        return {"ofertas": datos.activas}
+
+    @app.patch("/api/admin/tema")
+    def cambiar_tema_prueba(datos: TemaWeb):
+        if datos.tema not in TEMAS_WEB:
+            raise HTTPException(status_code=400, detail="Tema no valido")
+        _ESTADO["tema"] = datos.tema
+        return {"tema": datos.tema}
 
     @app.get("/api/usuarios/perfil")
     def perfil_prueba():
@@ -512,11 +541,17 @@ def obtener_carrito(authorization: Optional[str] = Header(None)):
         payload = jwt.decode(token, options={"verify_signature": False})
         user_id = payload.get("sub")
         cliente_seguro = create_client(SUPABASE_URL, SUPABASE_KEY, options=ClientOptions(headers={"Authorization": f"Bearer {token}"}))
-        res = cliente_seguro.table("carrito")\
-            .select("*, productos(nombre, precio, precio_personalizacion), modelos(nombre, imagen)")\
-            .eq("user_id", user_id)\
-            .execute()
-            
+        try:
+            res = cliente_seguro.table("carrito")\
+                .select("*, productos(nombre, precio, precio_personalizacion, en_oferta, precio_anterior), modelos(nombre, imagen)")\
+                .eq("user_id", user_id)\
+                .execute()
+        except Exception:
+            # Aun no existen las columnas de oferta (falta ofertas.sql)
+            res = cliente_seguro.table("carrito")\
+                .select("*, productos(nombre, precio, precio_personalizacion), modelos(nombre, imagen)")\
+                .eq("user_id", user_id)\
+                .execute()
         return res.data
     except Exception as e:
         logging.exception("Error interno")
@@ -802,7 +837,11 @@ def crear_producto_admin(datos: ProductoAdminCrear, authorization: Optional[str]
     token = authorization.replace("Bearer ", "") if authorization else ""
     try:
         cliente_seguro = create_client(SUPABASE_URL, SUPABASE_KEY, options=ClientOptions(headers={"Authorization": f"Bearer {token}"}))
-        res = cliente_seguro.table("productos").insert(datos.dict()).execute()
+        try:
+            res = cliente_seguro.table("productos").insert(datos.dict()).execute()
+        except Exception:
+            # Aun no existen las columnas de oferta (falta ofertas.sql): se crea sin ellas
+            res = cliente_seguro.table("productos").insert({k: v for k, v in datos.dict().items() if k not in CAMPOS_OFERTA}).execute()
         return res.data[0]
     except Exception as e:
         logging.exception("Error interno")
@@ -814,7 +853,14 @@ def actualizar_producto_admin(producto_id: str, datos: ProductoAdminUpdate, auth
     try:
         cliente_seguro = create_client(SUPABASE_URL, SUPABASE_KEY, options=ClientOptions(headers={"Authorization": f"Bearer {token}"}))
         update_data = {k: v for k, v in datos.dict().items() if v is not None}
-        res = cliente_seguro.table("productos").update(update_data).eq("id", producto_id).execute()
+        try:
+            res = cliente_seguro.table("productos").update(update_data).eq("id", producto_id).execute()
+        except Exception:
+            # Aun no existen las columnas de oferta (falta ofertas.sql): se guarda el resto
+            resto = {k: v for k, v in update_data.items() if k not in CAMPOS_OFERTA}
+            if len(resto) == len(update_data):
+                raise
+            res = cliente_seguro.table("productos").update(resto).eq("id", producto_id).execute()
         return res.data
     except Exception as e:
         logging.exception("Error interno")
@@ -974,6 +1020,7 @@ def obtener_mis_pedidos(authorization: Optional[str] = Header(None)):
 class MensajeAdminUpdate(BaseModel):
     mensaje: str
 
+
 @app.get("/api/mensajes")
 def obtener_mensaje_admin():
     try:
@@ -995,6 +1042,48 @@ def actualizar_mensaje_admin(datos: MensajeAdminUpdate, authorization: Optional[
     except Exception as e:
         logging.exception("Error interno")
         raise HTTPException(status_code=500, detail="Ha ocurrido un error en el servidor. Inténtalo de nuevo.")
+
+@app.get("/api/tema")
+def obtener_tema():
+    """Publico: tema de la web activo. Si la tabla aun no existe, se queda en navidad."""
+    try:
+        res = supabase.table("configuracion").select("clave, valor").in_("clave", ["tema", "ofertas"]).execute()
+        ajustes = {f["clave"]: f["valor"] for f in (res.data or [])}
+        valor = ajustes.get("tema", "navidad")
+        return {"tema": valor if valor in TEMAS_WEB else "navidad", "ofertas": ajustes.get("ofertas", "si") != "no"}
+    except Exception:
+        return {"tema": "navidad", "ofertas": True}
+
+
+@app.patch("/api/admin/ofertas")
+def cambiar_ofertas(datos: OfertasWeb, authorization: Optional[str] = Header(None)):
+    """Solo administradores: activa o quita las ofertas de toda la tienda."""
+    try:
+        cliente = _exigir_admin(authorization)
+        cliente.table("configuracion").upsert({"clave": "ofertas", "valor": "si" if datos.activas else "no"}).execute()
+        return {"ofertas": datos.activas}
+    except HTTPException:
+        raise
+    except Exception:
+        logging.exception("Error interno")
+        raise HTTPException(status_code=500, detail="No se pudo guardar. Comprueba que existe la tabla configuracion.")
+
+
+@app.patch("/api/admin/tema")
+def cambiar_tema(datos: TemaWeb, authorization: Optional[str] = Header(None)):
+    """Solo administradores: cambia el tema de la web para todos."""
+    if datos.tema not in TEMAS_WEB:
+        raise HTTPException(status_code=400, detail="Tema no valido")
+    try:
+        cliente = _exigir_admin(authorization)
+        cliente.table("configuracion").upsert({"clave": "tema", "valor": datos.tema}).execute()
+        return {"tema": datos.tema}
+    except HTTPException:
+        raise
+    except Exception:
+        logging.exception("Error interno")
+        raise HTTPException(status_code=500, detail="No se pudo guardar el tema. Comprueba que existe la tabla configuracion.")
+
 
 # ---------------------------------------------------------------
 # Incidencias de registro: quien no puede registrarse avisa y un admin

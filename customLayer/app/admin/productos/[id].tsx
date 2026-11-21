@@ -25,7 +25,7 @@ export default function DetalleProductoAdmin() {
     const router = useRouter();
     const { confirmar, dialogo } = useConfirmar();
     const [cargando, setCargando] = useState(true);
-    const [form, setForm] = useState({ nombre: '', descripcion: '', precio: '', precio_personalizacion: '', deshabilitado: false, oculto: false, personalizable: false });
+    const [form, setForm] = useState({ nombre: '', descripcion: '', precio: '', precio_personalizacion: '', deshabilitado: false, oculto: false, personalizable: false, en_oferta: true, precio_anterior: '' });
     const [modelos, setModelos] = useState<any[]>([]);
     const [nuevosModelos, setNuevosModelos] = useState<any[]>([]);
     const [seleccionados, setSeleccionados] = useState<string[]>([]);
@@ -54,7 +54,9 @@ export default function DetalleProductoAdmin() {
                 precio_personalizacion: datos.precio_personalizacion ? datos.precio_personalizacion.toString() : '',
                 deshabilitado: datos.deshabilitado,
                 oculto: datos.oculto,
-                personalizable: datos.personalizable
+                personalizable: datos.personalizable,
+                en_oferta: datos.en_oferta !== false,
+                precio_anterior: datos.precio_anterior ? datos.precio_anterior.toString() : ''
             });
             setModelos(datos.modelos || []);
             setCargando(false);
@@ -70,7 +72,8 @@ export default function DetalleProductoAdmin() {
         const payload = {
             ...form,
             precio: parseFloat(form.precio) || 0,
-            precio_personalizacion: parseFloat(form.precio_personalizacion) || 0
+            precio_personalizacion: parseFloat(form.precio_personalizacion) || 0,
+            precio_anterior: parseFloat(form.precio_anterior) || 0
         };
 
         const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/admin/productos/${id}`, {
@@ -250,6 +253,30 @@ export default function DetalleProductoAdmin() {
                             onChangeText={t => setForm({ ...form, descripcion: t })} 
                         />
                     </View>
+
+
+                    <Text style={[styles.tituloSeccion, { marginTop: 10 }]}>Oferta</Text>
+                    <View style={styles.switchBox}>
+                        <View style={{ flex: 1 }}><Text style={styles.labelSwitch}>En oferta</Text><Text style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>Enseña el precio de antes tachado y la etiqueta OFERTA</Text></View>
+                        <Pressable
+                            style={[styles.btnToggleSwitch, form.en_oferta ? styles.btnOn : styles.btnOff]}
+                            onPress={() => setForm({ ...form, en_oferta: !form.en_oferta })}
+                        >
+                            <Text style={[styles.txtSwitch, form.en_oferta ? styles.txtOn : styles.txtOff]}>{form.en_oferta ? "Sí" : "No"}</Text>
+                        </Pressable>
+                    </View>
+                    {form.en_oferta && (
+                        <View style={[styles.inputGroup, { marginTop: 12 }]}>
+                            <Text style={styles.label}>Precio de antes (€)</Text>
+                            <TextInput
+                                style={styles.input}
+                                keyboardType="numeric"
+                                value={form.precio_anterior}
+                                onChangeText={t => setForm({ ...form, precio_anterior: t.replace(',', '.') })}
+                                placeholder="Vacío: se enseña el doble del precio actual"
+                            />
+                        </View>
+                    )}
 
                     <Text style={[styles.tituloSeccion, { marginTop: 10 }]}>Configuración</Text>
 

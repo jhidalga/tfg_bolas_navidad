@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import PrecioOferta from '../componentes/precioOferta';
+import PrecioOferta, { factorOferta } from '../componentes/precioOferta';
 import { Ionicons } from '@expo/vector-icons';
 import { useConfirmar } from '../componentes/confirmar';
 import { View, Text, FlatList, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
@@ -13,6 +13,7 @@ import { useEstilos } from '../lib/responsive';
 import { supabase } from '../lib/supabase';
 import { avisarCarrito } from '../lib/contadorCarrito';
 import { euros, plural } from '../lib/formato';
+import { tc } from '../lib/tema';
 
 /**
  * Estructura de datos que representa un producto añadido al carrito.
@@ -38,6 +39,8 @@ export interface ItemCarrito {
         nombre: string;
         precio: number;
         precio_personalizacion?: number;
+        en_oferta?: boolean | null;
+        precio_anterior?: number | null;
     };
     /** Cantidad de unidades solicitadas de este mismo producto */
     cantidad: number;
@@ -145,6 +148,9 @@ export default function PantallaCarrito() {
     };
 
     const totalCarrito = carrito.reduce((suma, item) => suma + (calcularPrecioItem(item) * item.cantidad), 0);
+    // Lo que costaria sin oferta: cada producto con su precio anterior, o el doble. Si ninguno esta en oferta no hay tachado.
+    const hayOferta = carrito.some(item => factorOferta(item.productos) !== null);
+    const totalAntes = hayOferta ? carrito.reduce((suma, item) => suma + (calcularPrecioItem(item) * item.cantidad * (factorOferta(item.productos) ?? 1)), 0) : null;
 
     /**
      * Procesa la compra de los artículos actuales del carrito.
@@ -211,13 +217,13 @@ export default function PantallaCarrito() {
                 <Text style={styles.tituloCentral}>Tu Carrito ({carrito.length})</Text>
                 {cargando ? (
                     <View style={styles.cargandoContenedor}>
-                        <ActivityIndicator size="large" color="#e6c27a" />
+                        <ActivityIndicator size="large" color={tc("#e6c27a")} />
                         <Text style={{ marginTop: 10, color: '#666' }}>Cargando carrito...</Text>
                     </View>
                 ) : carrito.length === 0 ? (
                     <View style={{ alignItems: 'center', gap: 16, marginTop: 50 }}>
                         <Text style={[styles.textoVacio, { marginTop: 0 }]}>Tu carrito está vacío.</Text>
-                        <TouchableOpacity onPress={() => router.push('/inicio')} style={{ backgroundColor: '#a52a2a', paddingVertical: 12, paddingHorizontal: 22, borderRadius: 10 }}>
+                        <TouchableOpacity onPress={() => router.push('/inicio')} style={{ backgroundColor: tc('#a52a2a'), paddingVertical: 12, paddingHorizontal: 22, borderRadius: 10 }}>
                             <Text style={{ color: '#fff', fontWeight: '600' }}>Ver las bolas</Text>
                         </TouchableOpacity>
                     </View>
@@ -248,21 +254,21 @@ export default function PantallaCarrito() {
                                     )}
                                 </View>
                                 <View style={styles.accionesContenedor}>
-                                    <PrecioOferta valor={calcularPrecioItem(item) * item.cantidad} estilo={styles.precioProducto} etiqueta={false} />
+                                    <PrecioOferta valor={calcularPrecioItem(item) * item.cantidad} producto={item.productos} estilo={styles.precioProducto} etiqueta={false} />
                                     
                                     <TouchableOpacity 
                                         style={styles.botonEliminar} 
                                         onPress={() => eliminarProducto(item.id)}
                                         accessibilityLabel="Quitar del carrito"
                                     >
-                                        <Ionicons name="trash-outline" size={20} color="#dc2626" />
+                                        <Ionicons name="trash-outline" size={20} color={tc("#dc2626")} />
                                     </TouchableOpacity>
                                 </View>
                             </View>
                         )}
                         ListFooterComponent={() => (
                             <View style={styles.footerResumen}>
-                                <View style={{ marginBottom: 15 }}><PrecioOferta valor={totalCarrito} prefijo="Total:" estilo={[styles.textoTotal, { marginBottom: 0 }]} /></View>
+                                <View style={{ marginBottom: 15 }}><PrecioOferta valor={totalCarrito} antes={totalAntes} prefijo="Total:" estilo={[styles.textoTotal, { marginBottom: 0 }]} /></View>
                                 <TouchableOpacity style={styles.botonPagar} onPress={crearPedido}>
                                     <Text style={styles.textoBotonPagar}>Realizar pedido</Text>
                                 </TouchableOpacity>

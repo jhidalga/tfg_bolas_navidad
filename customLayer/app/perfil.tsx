@@ -1,11 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, ScrollView, ActivityIndicator, Pressable } from 'react-native';
-import Navbar from '../componentes/navbar';
+import Navbar, { cerrarSesionUsuario } from '../componentes/navbar';
+import FormLogin from '../componentes/formLogin';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
 import Toast from 'react-native-toast-message';
 import { styles as estilosEscritorio } from '../styles/perfil/perfil.styles.web';
 import { styles as estilosMovil } from '../styles/perfil/perfil.styles.movil';
 import { useEstilos } from '../lib/responsive';
+import { tc } from '../lib/tema';
 
 /**
  * Pantalla de visualización y edición del Perfil de Usuario.
@@ -15,11 +19,13 @@ import { useEstilos } from '../lib/responsive';
  */
 export default function MiPerfil() {
     const styles = useEstilos(estilosEscritorio, estilosMovil);
+    const router = useRouter();
     const [cargando, setCargando] = useState(true);
     const [editando, setEditando] = useState(false);
     const [guardando, setGuardando] = useState(false);
     
     const [usuario, setUsuario] = useState<any>(null);
+    const [sinSesion, setSinSesion] = useState(false);
     
     const [form, setForm] = useState({ nombre: '', curso: '' });
 
@@ -35,7 +41,8 @@ export default function MiPerfil() {
     const cargarPerfil = async () => {
         try {
             const { data: { session } } = await supabase.auth.getSession();
-            if (!session) return;
+            if (!session) { setSinSesion(true); return; }
+            setSinSesion(false);
 
             const respuesta = await fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/usuarios/perfil`, {
                 headers: { 'Authorization': `Bearer ${session.access_token}` }
@@ -109,8 +116,16 @@ export default function MiPerfil() {
             
             {cargando ? (
                 <View style={styles.contenedorCentral}>
-                    <ActivityIndicator size="large" color="#e6c27a" />
+                    <ActivityIndicator size="large" color={tc("#e6c27a")} />
                 </View>
+            ) : sinSesion ? (
+                <ScrollView contentContainerStyle={styles.scrollCentral}>
+                    <View style={styles.tarjetaPerfil}>
+                        <Text style={styles.titulo}>Inicia sesión</Text>
+                        <Text style={[styles.label, { marginBottom: 14 }]}>Entra con tu cuenta para ver y editar tu perfil.</Text>
+                        <FormLogin alEntrar={() => { setCargando(true); cargarPerfil(); }} />
+                    </View>
+                </ScrollView>
             ) : (
                 <ScrollView contentContainerStyle={styles.scrollCentral}>
                     <View style={styles.tarjetaPerfil}>
@@ -181,6 +196,18 @@ export default function MiPerfil() {
                                     </Pressable>
                                 </>
                             )}
+                        </View>
+
+                        <View style={{ marginTop: 26, paddingTop: 18, borderTopWidth: 1, borderTopColor: tc('#e3cfa5') }}>
+                            <Text style={[styles.label, { marginBottom: 10 }]}>Sesión</Text>
+                            <Pressable
+                                onPress={() => cerrarSesionUsuario(router)}
+                                accessibilityRole="button"
+                                style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 13, borderRadius: 12, borderWidth: 1.5, borderColor: tc('#dc2626'), backgroundColor: 'transparent' }}
+                            >
+                                <Ionicons name="log-out-outline" size={20} color={tc("#dc2626")} />
+                                <Text style={{ color: tc('#dc2626'), fontWeight: '700', fontSize: 15 }}>Cerrar sesión</Text>
+                            </Pressable>
                         </View>
                     </View>
                 </ScrollView>

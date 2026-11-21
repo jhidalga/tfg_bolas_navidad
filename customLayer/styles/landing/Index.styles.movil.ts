@@ -25,7 +25,7 @@ export const styles = StyleSheet.create({
     },
     descripcion: {
         fontSize: 18,
-        color: '#e3cfa5',
+        color: '#f1cf8a',
         textAlign: 'center',
         paddingHorizontal: 10,
     },

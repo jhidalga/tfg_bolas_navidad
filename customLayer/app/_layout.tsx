@@ -5,19 +5,21 @@ import Toast from 'react-native-toast-message';
 import { useEffect, useState } from 'react';
 import Bienvenida, { debeMostrarBienvenida } from '../componentes/bienvenida';
 import { supabase } from '../lib/supabase';
+import { temaActual, tc, sincronizarTema } from '../lib/tema';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 export default function RootLayout() {
   const router = useRouter();
   const segments = useSegments();
-  const [bienvenida, setBienvenida] = useState(() => debeMostrarBienvenida());
+  const [bienvenida, setBienvenida] = useState(() => !!temaActual.bienvenida && debeMostrarBienvenida());
 
   useEffect(() => {
     if (typeof document !== 'undefined') {
-      document.title = 'Adornos navideños | IES Laguna de Tollón';
+      document.title = temaActual.marca + ' | IES Laguna de Tollón';
+      sincronizarTema();
       // El aviso escondido mide más que pantallas muy estrechas y creaba scroll lateral
       const css = document.createElement('style');
-      css.textContent = 'html,body{overflow-x:hidden;min-height:100%;background:#3d0b0f radial-gradient(ellipse at 50% 0,#7a1d20 0%,#4a0f12 55%,#2e070a 100%) fixed}input:focus,textarea:focus,select:focus{outline:none !important;border-color:#a52a2a !important;box-shadow:inset 0 0 0 1px #a52a2a}select{background-color:transparent}';
+      css.textContent = 'html,body{overflow-x:hidden;min-height:100%;background:' + temaActual.fondo + '}input:focus,textarea:focus,select:focus{outline:none !important;border-color:' + tc('#a52a2a') + ' !important;box-shadow:inset 0 0 0 1px ' + tc('#a52a2a') + '}select{background-color:transparent}';
       document.head.appendChild(css);
     }
   }, []);

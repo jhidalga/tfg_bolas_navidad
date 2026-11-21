@@ -1,4 +1,5 @@
 import { View, Text } from 'react-native';
+import { temaActual } from '../lib/tema';
 import { styles as estilosEscritorio } from '../styles/footer/footer.styles';
 import { styles as estilosMovil } from '../styles/footer/footer.styles.movil';
 import { useEstilos } from '../lib/responsive';
@@ -14,7 +15,7 @@ export default function Footer() {
     return (
         <View style={styles.contenedorFooter}>
             <View style={styles.columna}>
-                <Text style={styles.tituloColumna}>Adornos navideños</Text>
+                <Text style={styles.tituloColumna}>{temaActual.marca}</Text>
                 <Text style={styles.textoDescripcion}>
                     Dpto. Informática | 2º DAM
                 </Text>

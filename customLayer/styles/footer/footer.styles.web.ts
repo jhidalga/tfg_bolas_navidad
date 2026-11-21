@@ -15,14 +15,14 @@ export const styles = StyleSheet.create({
         alignItems: 'center',
     },
     tituloColumna: {
-        color: '#ffffff',
+        color: '#fff7ea',
         fontSize: 24,
         fontWeight: 'bold',
         marginBottom: 15,
         textAlign: 'center',
     },
     textoDescripcion: {
-        color: '#e3cfa5',
+        color: '#f1cf8a',
         fontSize: 16,
         lineHeight: 26,
         textAlign: 'center',

@@ -8,6 +8,7 @@ import { styles as estilosMovil } from '../../styles/pedidos/pedidos.styles.movi
 import { useEstilos } from '../../lib/responsive';
 import { euros, fechaCorta, plural } from '../../lib/formato';
 import { Ionicons } from '@expo/vector-icons';
+import { tc } from '../../lib/tema';
 
 /**
  * Pantalla que lista el historial de pedidos realizados por el usuario activo.
@@ -84,7 +85,7 @@ export default function MisPedidos() {
             <ScrollView contentContainerStyle={styles.scrollContent}>
                 {cargando ? (
                     <View style={styles.estadoVacio}>
-                        <ActivityIndicator size="large" color="#3b82f6" />
+                        <ActivityIndicator size="large" color={tc("#3b82f6")} />
                         <Text style={styles.txtEstadoVacio}>Cargando tus pedidos...</Text>
                     </View>
                 ) : pedidos.length === 0 ? (

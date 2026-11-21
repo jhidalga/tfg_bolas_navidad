@@ -1,4 +1,5 @@
 import { Platform, useWindowDimensions } from 'react-native';
+import { tcEstilos } from './tema';
 
 /** A partir de este ancho (px) se usa el diseño de escritorio en la web. */
 export const ANCHO_ESCRITORIO = 1100;
@@ -27,5 +28,5 @@ export function useEsMovilWeb(): boolean {
  */
 export function useEstilos<T>(escritorio: T, movil: any): T {
     const esMovilWeb = useEsMovilWeb();
-    return Platform.OS === 'web' && !esMovilWeb ? escritorio : (movil as T);
+    return tcEstilos(Platform.OS === 'web' && !esMovilWeb ? escritorio : (movil as T));
 }

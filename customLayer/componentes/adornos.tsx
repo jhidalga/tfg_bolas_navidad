@@ -1,29 +1,25 @@
-import { View } from 'react-native';
+import { View, Image, useWindowDimensions } from 'react-native';
 import { useEffect } from 'react';
+import { temaActual } from '../lib/tema';
 
 // Dibujos de Navidad hechos en SVG (sin emojis). Se usan como imagen embebida.
 const aUri = (svg: string) => 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
 
-const ARBOL = aUri(`<svg xmlns="http://www.w3.org/2000/svg" width="240" height="300" viewBox="0 0 120 150">
-<polygon points="60,6 66,22 84,22 70,32 76,48 60,38 44,48 50,32 36,22 54,22" fill="#f4c542" stroke="#d99a1e" stroke-width="2"/>
-<polygon points="60,26 92,70 28,70" fill="#2f8f4e"/><polygon points="60,52 100,100 20,100" fill="#287d44"/><polygon points="60,80 108,128 12,128" fill="#216b39"/>
-<rect x="52" y="126" width="16" height="20" rx="2" fill="#7a4a2a"/>
-<path d="M36 60 Q60 72 84 56" stroke="#f1cf8a" stroke-width="3" fill="none"/><path d="M26 92 Q60 108 94 88" stroke="#f1cf8a" stroke-width="3" fill="none"/><path d="M18 120 Q60 140 102 116" stroke="#f1cf8a" stroke-width="3" fill="none"/>
-<circle cx="52" cy="52" r="5" fill="#c1272d"/><circle cx="72" cy="64" r="5" fill="#f4c542"/><circle cx="40" cy="88" r="5.5" fill="#f4c542"/><circle cx="66" cy="94" r="5.5" fill="#c1272d"/><circle cx="86" cy="106" r="5.5" fill="#5ec2ff"/><circle cx="32" cy="116" r="6" fill="#c1272d"/><circle cx="58" cy="118" r="6" fill="#f4c542"/><circle cx="80" cy="124" r="5" fill="#ffffff"/>
-</svg>`);
-const REGALO = aUri(`<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 80 80">
-<path d="M40 30 C28 8 12 14 22 28 Z" fill="none" stroke="#f1cf8a" stroke-width="5"/><path d="M40 30 C52 8 68 14 58 28 Z" fill="none" stroke="#f1cf8a" stroke-width="5"/>
-<rect x="8" y="28" width="64" height="14" rx="3" fill="#c1272d"/><rect x="12" y="42" width="56" height="34" rx="3" fill="#a52a2a"/>
-<rect x="35" y="28" width="10" height="48" fill="#f1cf8a"/><circle cx="40" cy="28" r="6" fill="#f1cf8a"/>
-</svg>`);
-const LUCES_A = aUri(`<svg xmlns="http://www.w3.org/2000/svg" width="160" height="40" viewBox="0 0 160 40"><path d="M0 4 Q40 22 80 4 T160 4" stroke="#8a6a3a" stroke-width="2.5" fill="none"/>
-<g><rect x="36" y="15" width="5" height="5" fill="#2a1a14"/><ellipse cx="38.5" cy="26" rx="5" ry="7" fill="#ffd36e"/><rect x="116" y="15" width="5" height="5" fill="#2a1a14"/><ellipse cx="118.5" cy="26" rx="5" ry="7" fill="#7be0a0"/></g></svg>`);
-const LUCES_B = aUri(`<svg xmlns="http://www.w3.org/2000/svg" width="160" height="40" viewBox="0 0 160 40">
-<g><rect x="2" y="3" width="5" height="5" fill="#2a1a14"/><ellipse cx="4.5" cy="14" rx="5" ry="7" fill="#ff6b6b"/><rect x="77" y="3" width="5" height="5" fill="#2a1a14"/><ellipse cx="79.5" cy="14" rx="5" ry="7" fill="#5ec2ff"/></g></svg>`);
+const lucesA = (c1: string, c2: string, hilo: string) => aUri(`<svg xmlns="http://www.w3.org/2000/svg" width="160" height="40" viewBox="0 0 160 40"><path d="M0 4 Q40 22 80 4 T160 4" stroke="${hilo}" stroke-width="2.5" fill="none"/>
+<g><rect x="36" y="15" width="5" height="5" fill="#2a1a14"/><ellipse cx="38.5" cy="26" rx="5" ry="7" fill="${c1}"/><rect x="116" y="15" width="5" height="5" fill="#2a1a14"/><ellipse cx="118.5" cy="26" rx="5" ry="7" fill="${c2}"/></g></svg>`);
+const lucesB = (c1: string, c2: string) => aUri(`<svg xmlns="http://www.w3.org/2000/svg" width="160" height="40" viewBox="0 0 160 40">
+<g><rect x="2" y="3" width="5" height="5" fill="#2a1a14"/><ellipse cx="4.5" cy="14" rx="5" ry="7" fill="${c1}"/><rect x="77" y="3" width="5" height="5" fill="#2a1a14"/><ellipse cx="79.5" cy="14" rx="5" ry="7" fill="${c2}"/></g></svg>`);
+const LUCES = {
+    navidad: [lucesA('#ffd36e', '#7be0a0', '#8a6a3a'), lucesB('#ff6b6b', '#5ec2ff')],
+    sanvalentin: [lucesA('#ffc2d4', '#fff0f4', '#b86a86'), lucesB('#ff4d6d', '#ff8fab')],
+};
 
 const CSS = `
 @keyframes ad-parpadeo-a{0%,100%{opacity:1}50%{opacity:.25}}
 @keyframes ad-parpadeo-b{0%,100%{opacity:.25}50%{opacity:1}}
+@keyframes ad-corazon-a{0%,100%{opacity:1;transform:translateY(0)}50%{opacity:.35;transform:translateY(2px)}}
+@keyframes ad-corazon-b{0%,100%{opacity:.35;transform:translateY(2px)}50%{opacity:1;transform:translateY(0)}}
+@keyframes ad-balanceo{0%{transform:rotate(-7deg)}100%{transform:rotate(7deg)}}
 @keyframes ad-flota{0%,100%{transform:translate3d(0,0,0) rotate(-1.5deg)}50%{transform:translate3d(0,-5px,0) rotate(1.5deg)}}
 `;
 function inyectarCSS() {
@@ -33,14 +29,24 @@ function inyectarCSS() {
 
 // Ramas de abeto (borde de arriba) y bolas colgando (borde de abajo) para el letrero de oferta
 const RAMAS = aUri(`<svg xmlns="http://www.w3.org/2000/svg" width="48" height="16" viewBox="0 0 48 16"><path d="M0 0h48v3c-3 5-6 8-9 13-2-5-5-8-8-10-3 3-5 6-7 10-2-4-5-8-8-10-3 2-6 5-8 10-3-4-5-8-8-13z" fill="#2f7a46"/><path d="M0 0h48v2c-4 3-7 6-10 9-2-3-5-5-7-6-3 2-5 5-7 8-2-3-4-6-7-8-3 1-6 4-8 7-3-3-6-6-9-9z" fill="#3f9a5c"/></svg>`);
-const BOLAS = aUri(`<svg xmlns="http://www.w3.org/2000/svg" width="90" height="22" viewBox="0 0 90 22"><g stroke="#e6c27a" stroke-width="1"><path d="M15 0v6M50 0v10M78 0v5"/></g><circle cx="15" cy="10" r="4.5" fill="#c0392b"/><circle cx="50" cy="15" r="5" fill="#e6c27a"/><circle cx="78" cy="9" r="4" fill="#c0392b"/><circle cx="13.5" cy="8.5" r="1.2" fill="#fff" opacity=".6"/><circle cx="48.5" cy="13.3" r="1.3" fill="#fff" opacity=".6"/></svg>`);
+const CORAZONES = aUri(`<svg xmlns="http://www.w3.org/2000/svg" width="90" height="30" viewBox="0 0 90 30"><g stroke="#ffc2d4" stroke-width="1" opacity=".8"><path d="M14 0v10M45 0v16M74 0v8"/></g>
+<path d="M14 25c-9-6-10-11-6-14 3-2 6 0 6 3 0-3 3-5 6-3 4 3 3 8-6 14z" fill="#ff4d6d"/><path d="M45 29c-6-4-7-8-4-10 2-1.5 4 0 4 2 0-2 2-3.5 4-2 3 2 2 6-4 10z" fill="#ffc2d4"/><path d="M74 21c-7-5-8-9-5-11 2-1.5 5 0 5 2.5 0-2.500 3-4 5-2.500 3 2 2 6-5 11z" fill="#ff8fab"/></svg>`);
 
-/** Fondo de abeto para un letrero: verde oscuro con ramas de abeto arriba (las luces van debajo). Va detras del texto. */
-export function FondoAbeto() {
+/** Fondo decorado del letrero de oferta segun el tema: abeto, corazones colgando o nada. */
+export function FondoLetrero() {
+    useEffect(() => { inyectarCSS(); }, []);
+    const tipo = temaActual.letrero;
+    if (tipo === 'plano') return null;
     const capa = (uri: string, extra: any) => ({ position: 'absolute', left: 0, right: 0, backgroundImage: `url("${uri}")`, backgroundRepeat: 'repeat-x', ...extra } as any);
     return (
         <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, overflow: 'hidden' }}>
-            <View style={capa(RAMAS, { top: 0, height: 27, backgroundSize: '72px 27px' })} />
+            {tipo === 'abeto'
+                ? <View style={capa(RAMAS, { top: 0, height: 27, backgroundSize: '72px 27px' })} />
+                : (<>
+                    {/* Dos tiras desplazadas que se encienden y apagan por turnos, como luces de corazones */}
+                    <View style={capa(CORAZONES, { top: 0, height: 36, backgroundSize: '90px 30px', animationName: 'ad-corazon-a', animationDuration: '1.8s', animationIterationCount: 'infinite', animationTimingFunction: 'ease-in-out' })} />
+                    <View style={capa(CORAZONES, { top: 0, height: 36, backgroundSize: '90px 30px', backgroundPosition: '45px 6px', animationName: 'ad-corazon-b', animationDuration: '1.8s', animationIterationCount: 'infinite', animationTimingFunction: 'ease-in-out' })} />
+                </>)}
         </View>
     );
 }
@@ -53,6 +59,8 @@ const fondo = (uri: string) => ({
 /** Tira de lucecitas que parpadean, de lado a lado de la pantalla. */
 export function GuirnaldaLuces({ alto = 40, fija = false }: { alto?: number; fija?: boolean }) {
     useEffect(() => { inyectarCSS(); }, []);
+    const juego = temaActual.nombre === 'sanvalentin' ? LUCES.sanvalentin : LUCES.navidad;
+    if (!temaActual.luces) return null;
     const capa = (uri: string, anim: string) => ({
         position: 'absolute', top: 0, left: 0, right: 0, height: alto,
         backgroundImage: `url("${uri}")`, backgroundRepeat: 'repeat-x', backgroundSize: `160px ${alto}px`,
@@ -60,38 +68,44 @@ export function GuirnaldaLuces({ alto = 40, fija = false }: { alto?: number; fij
     } as any);
     return (
         <View pointerEvents="none" style={{ height: alto, width: '100%', overflow: 'hidden' }}>
-            <View style={capa(LUCES_A, 'ad-parpadeo-a')} />
-            <View style={capa(LUCES_B, 'ad-parpadeo-b')} />
+            <View style={capa(juego[0], 'ad-parpadeo-a')} />
+            <View style={capa(juego[1], 'ad-parpadeo-b')} />
         </View>
     );
 }
 
-/** Arbolito de Navidad que se mece despacio. */
-export function MiniArbol({ tam = 120, retraso = 0 }: { tam?: number; retraso?: number }) {
+const PIEZAS = [
+    require('../assets/images/bienvenida/galleta.png'), require('../assets/images/bienvenida/reno.png'),
+    require('../assets/images/bienvenida/oso.png'), require('../assets/images/bienvenida/arbol.png'),
+    require('../assets/images/bienvenida/estrella.png'),
+];
+const corazon = (c: string) => aUri(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 92"><path d="M50 90C8 58 0 34 14 16c12-14 32-8 36 8 4-16 24-22 36-8 14 18 6 42-36 74z" fill="${c}"/><path d="M50 80C20 56 12 38 22 24c8-10 22-6 28 6" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round" opacity=".55"/></svg>`);
+const CORAZONES_COLGANTES = ['#ff4d6d', '#ff8fab', '#d6336c', '#ffc2d4', '#c2255c'].map(corazon);
+const HILOS = [30, 62, 40, 70, 34];
+
+/** Adornos que cuelgan del borde de arriba y se balancean. Sustituyen a las fotos de la portada. */
+export function AdornosColgantes() {
     useEffect(() => { inyectarCSS(); }, []);
+    const { width } = useWindowDimensions();
+    if (temaActual.nombre === 'normal') return null;
+    const movil = width < 700;
+    const n = movil ? 4 : 5;
+    const tam = movil ? 54 : 78;
+    const sv = temaActual.nombre === 'sanvalentin';
     return (
-        <View pointerEvents="none" style={{ width: tam, height: tam * 1.25, transformOrigin: 'bottom center', animationName: 'ad-flota', animationDuration: '4s', animationDelay: `${retraso}s`, animationIterationCount: 'infinite', animationTimingFunction: 'ease-in-out' } as any}>
-            <View style={fondo(ARBOL)} />
-        </View>
-    );
-}
-
-export function MiniRegalo({ tam = 50 }: { tam?: number }) {
-    return <View pointerEvents="none" style={[fondo(REGALO), { width: tam, height: tam }]} />;
-}
-
-/** Escena pequeña con arboles y regalos para poner al final de una pagina. */
-export function EscenaNavidad({ movil = false }: { movil?: boolean }) {
-    const t = movil ? 54 : 100;
-    return (
-        <View pointerEvents="none" style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'center', gap: movil ? 8 : 18, paddingTop: 30, paddingBottom: 10 }}>
-            <MiniRegalo tam={t * 0.42} />
-            <MiniArbol tam={t} />
-            <MiniRegalo tam={t * 0.55} />
-            <MiniArbol tam={t * 1.25} retraso={1.2} />
-            <MiniRegalo tam={t * 0.5} />
-            <MiniArbol tam={t} retraso={2.1} />
-            <MiniRegalo tam={t * 0.42} />
+        <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 220, overflow: 'hidden' }}>
+            {Array.from({ length: n }).map((_, i) => (
+                <View key={i} style={{
+                    position: 'absolute', top: 0, left: `${((i + 0.5) / n) * 100}%`, marginLeft: -tam / 2, width: tam, alignItems: 'center',
+                    transformOrigin: 'top center', animationName: 'ad-balanceo', animationDuration: `${2.6 + i * 0.35}s`,
+                    animationDelay: `${-i * 0.7}s`, animationIterationCount: 'infinite', animationDirection: 'alternate', animationTimingFunction: 'ease-in-out',
+                } as any}>
+                    <View style={{ width: 2, height: HILOS[i] * (movil ? 0.8 : 1), backgroundColor: sv ? '#ff8fab' : '#e6c27a' }} />
+                    {sv
+                        ? <View style={{ width: tam, height: tam * 0.92, backgroundImage: `url("${CORAZONES_COLGANTES[i % 5]}")`, backgroundSize: 'contain', backgroundRepeat: 'no-repeat' } as any} />
+                        : <Image source={PIEZAS[i % 5]} style={{ width: tam, height: tam * 1.2 }} resizeMode="contain" />}
+                </View>
+            ))}
         </View>
     );
 }

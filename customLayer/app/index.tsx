@@ -3,7 +3,9 @@ import { styles as estilosEscritorio } from '../styles/landing/Index.styles';
 import { styles as estilosMovil } from '../styles/landing/Index.styles.movil';
 import { useEstilos } from '../lib/responsive';
 import { useRouter } from "expo-router";
+import { temaActual } from "../lib/tema";
 import Footer from "../componentes/footer";
+import { AdornosColgantes, GuirnaldaLuces } from "../componentes/adornos";
 
 /**
  * Pantalla de inicio de bienvenida (Landing Page).
@@ -18,10 +20,12 @@ export default function Index() {
   
   return (
     <View style={styles.contenedorPantalla}>
+      <GuirnaldaLuces />
+      <AdornosColgantes />
       <View style={styles.contenedorCentral}>
-        <View style={styles.heroSection}>
+        <View style={[styles.heroSection, { marginTop: temaActual.nombre === 'normal' ? 0 : 150 }]}>
           <Image source={require('../assets/images/logo_ies.png')} style={{ width: 260, height: 94, marginBottom: 12 }} resizeMode="contain" />
-          <Text style={styles.titulo}>Adornos navideños</Text>
+          <Text style={styles.titulo}>{temaActual.marca}</Text>
           <Text style={styles.descripcion}>Dpto. Informática | 2º DAM</Text>
 
           <View style={styles.botones}>
@@ -35,10 +39,6 @@ export default function Index() {
           </View>
         </View>
 
-        <View style={styles.imagenes}>
-          <Image source={require('../assets/images/landing1.png')} style={styles.imagenGaleria} resizeMode="cover" />
-          <Image source={require('../assets/images/landing2.png')} style={styles.imagenGaleria} resizeMode="cover" />
-        </View>
       </View>
       
       <Footer />
