@@ -1,3 +1,4 @@
+import { etiquetaPedido } from '../../lib/etiquetaPedido';
 import { View, Text, ScrollView, Pressable, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -87,7 +88,7 @@ export default function DetallesPedidoAdmin() {
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="arrow-back" size={18} color={tc("#3b1a12")} /><Text style={[styles.txtVolver, t.txtVolver]}>Volver</Text></View>
             </Pressable>
 
-            <Text style={[styles.titulo, t.titulo]}>Detalles del Pedido #{datos.pedido.id.slice(0,8).toUpperCase()}</Text>
+            <Text style={[styles.titulo, t.titulo]}>Pedido de {etiquetaPedido(datos.usuario || datos.pedido.usuarios, datos.pedido.id, datos.numero)}</Text>
             <Text style={[styles.totalInfo, t.total]}>Importe Total: {euros(datos.pedido.total)}</Text>
 
             <Text style={[styles.subtitulo, t.sub]}>Productos:</Text>

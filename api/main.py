@@ -711,7 +711,19 @@ def obtener_detalle_pedido_admin(pedido_id: str, request: Request, authorization
             .eq("pedido_id", pedido_id)\
             .execute()
             
-        return {"pedido": pedido_res.data[0], "productos": detalles_res.data}
+        usuario = None
+        numero = total_usuario = None
+        try:
+            dueno = pedido_res.data[0].get("user_id")
+            u = cliente_seguro.table("usuarios").select("nombre, curso").eq("id", dueno).execute()
+            usuario = u.data[0] if u.data else None
+            todos = cliente_seguro.table("pedidos").select("id").eq("user_id", dueno).order("created_at").execute().data or []
+            ids = [x["id"] for x in todos]
+            total_usuario = len(ids)
+            numero = ids.index(pedido_id) + 1 if pedido_id in ids else None
+        except Exception:
+            pass
+        return {"pedido": pedido_res.data[0], "productos": detalles_res.data, "usuario": usuario, "numero": numero, "total_usuario": total_usuario}
     except HTTPException:
         raise
     except Exception as e:
@@ -1055,7 +1067,7 @@ def obtener_mis_pedidos(authorization: Optional[str] = Header(None)):
             options=ClientOptions(headers={"Authorization": f"Bearer {token}"})
         )
         respuesta = cliente_seguro.table("pedidos")\
-            .select("*, detalles_pedido(id)")\
+            .select("*, usuarios!user_id(nombre, curso), detalles_pedido(id)")\
             .eq("user_id", user_id)\
             .order('created_at', desc=True)\
             .execute()

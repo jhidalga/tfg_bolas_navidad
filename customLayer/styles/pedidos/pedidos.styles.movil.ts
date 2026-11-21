@@ -148,7 +148,7 @@ export const styles = StyleSheet.create({
         alignItems: "center",
         marginBottom: 15,
     },
-    idPedido: { fontSize: 18, fontWeight: "900", color: "#3b1a12" },
+    idPedido: { fontSize: 18, fontWeight: "900", color: "#3b1a12", flexShrink: 1, marginRight: 8 },
 
     badgeEstado: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
     txtBadgeEstado: {

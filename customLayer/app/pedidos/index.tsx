@@ -1,3 +1,4 @@
+import { etiquetaPedido } from '../../lib/etiquetaPedido';
 import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, ActivityIndicator, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -94,7 +95,7 @@ export default function MisPedidos() {
                     </View>
                 ) : (
                     <View style={styles.gridTarjetas}>
-                        {pedidos.map(pedido => {
+                        {pedidos.map((pedido, indice) => {
                             const badge = getEstilosBadge(pedido.estado);
                             const cantidadProductos = pedido.detalles_pedido ? pedido.detalles_pedido.length : 0;
                             
@@ -105,7 +106,7 @@ export default function MisPedidos() {
                                         onPress={() => router.push(`/pedidos/${pedido.id}` as any)}
                                     >
                                         <View style={styles.filaTop}>
-                                            <Text style={styles.idPedido}>#{pedido.id.slice(0, 8).toUpperCase()}</Text>
+                                            <Text style={styles.idPedido}>{etiquetaPedido(pedido.usuarios, pedido.id, pedidos.length - indice)}</Text>
                                             <View style={[styles.badgeEstado, badge.bg]}>
                                                 <Text style={[styles.txtBadgeEstado, badge.txt]}>
                                                     {pedido.estado}

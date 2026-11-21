@@ -1,3 +1,4 @@
+import { etiquetaPedido } from '../../../lib/etiquetaPedido';
 import { View, Text, ScrollView, Pressable, Image, Platform } from 'react-native';
 import { traducirError } from '../../../lib/errores';
 import { Ionicons } from '@expo/vector-icons';
@@ -94,7 +95,8 @@ export default function DetallesPedidoAdmin() {
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="arrow-back" size={18} color="#475569" /><Text style={styles.txtVolver}>Volver</Text></View>
             </Pressable>
 
-            <Text style={styles.titulo}>Detalles del Pedido #{datos.pedido.id.slice(0,8).toUpperCase()}</Text>
+            <Text style={styles.titulo}>Pedido de {etiquetaPedido(datos.usuario || datos.pedido.usuarios, datos.pedido.id, datos.numero)}</Text>
+            <Text style={{ fontSize: 12, color: '#9ca3af', marginTop: -8, marginBottom: 12 }}>#{datos.pedido.id.slice(0,8).toUpperCase()}</Text>
             <Text style={styles.totalInfo}>Importe Total: {euros(datos.pedido.total)}</Text>
 
             <Pressable

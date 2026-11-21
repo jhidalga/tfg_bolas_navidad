@@ -1,3 +1,4 @@
+import { etiquetaPedido } from '../../lib/etiquetaPedido';
 import { View, Text, Pressable, ScrollView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useState, useEffect, useMemo } from 'react';
@@ -147,6 +148,18 @@ export default function ListaPedidosAdmin() {
      * Filtra la lista de pedidos en memoria basándose en los estados 
      * y cursos seleccionados en los menús desplegables.
      */
+    // Número de pedido de cada persona: 1 el más antiguo, 2 el siguiente...
+    const numerosPedido = useMemo(() => {
+        const resultado: Record<string, number> = {};
+        const contador: Record<string, number> = {};
+        [...pedidos].sort((a, b) => String(a.created_at).localeCompare(String(b.created_at))).forEach(p => {
+            const clave = p.user_id || p.usuarios?.nombre || p.id;
+            contador[clave] = (contador[clave] || 0) + 1;
+            resultado[p.id] = contador[clave];
+        });
+        return resultado;
+    }, [pedidos]);
+
     const pedidosFiltrados = useMemo(() => {
         return pedidos.filter(pedido => {
             const coincideEstado = filtroEstado.length === 0 || filtroEstado.includes(pedido.estado);
@@ -340,7 +353,10 @@ export default function ListaPedidosAdmin() {
                                                             {isSelected && <Text style={{color: 'white', fontWeight: 'bold', fontSize: 12}}>✓</Text>}
                                                         </View>
                                                     )}
-                                                    <Text style={styles.idPedido}>#{pedido.id.slice(0, 8).toUpperCase()}</Text>
+                                                    <View style={{ flexShrink: 1 }}>
+                                                        <Text style={styles.idPedido}>{etiquetaPedido(pedido.usuarios, pedido.id, numerosPedido[pedido.id])}</Text>
+                                                        <Text style={{ fontSize: 11, color: '#9ca3af' }}>#{pedido.id.slice(0, 8).toUpperCase()}</Text>
+                                                    </View>
                                                 </View>
                                                 <View style={[styles.badgeEstado, badge.bg]}>
                                                     <Text style={[styles.txtBadgeEstado, badge.txt]}>{pedido.estado}</Text>
