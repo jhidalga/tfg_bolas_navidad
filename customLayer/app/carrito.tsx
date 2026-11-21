@@ -75,7 +75,7 @@ export default function PantallaCarrito() {
         try {
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) {
-                setCargando(false);
+                router.replace('/login');
                 return;
             }
             const response = await fetch(`${apiUrl}/carrito`, {

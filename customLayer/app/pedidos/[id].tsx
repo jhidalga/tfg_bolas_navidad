@@ -44,7 +44,10 @@ export default function DetallesPedidoAdmin() {
          */
         const cargarDetalle = async () => {
             const { data: { session } } = await supabase.auth.getSession();
-            if (!session) return;
+            if (!session) {
+                router.replace('/login');
+                return;
+            }
             
             try {
                 const respuesta = await fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/admin/pedidos/${id}`, {
@@ -69,7 +72,7 @@ export default function DetallesPedidoAdmin() {
     if (!datos) return (
         <View style={{ flex: 1 }}>
             <Navbar />
-            <Text style={[styles.mensajeEstado, t.msg]}>No se ha podido cargar el pedido. Puede que no exista.</Text>
+            <Text style={[styles.mensajeEstado, t.msg]}>No se ha podido cargar el pedido. Puede que no exista o que no sea tuyo.</Text>
             <Pressable onPress={() => router.replace('/pedidos')} style={[styles.btnVolver, t.btn]}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="arrow-back" size={18} color={tc("#3b1a12")} /><Text style={[styles.txtVolver, t.txtVolver]}>Ir a mis pedidos</Text></View>
             </Pressable>
@@ -80,7 +83,7 @@ export default function DetallesPedidoAdmin() {
         <View style={{ flex: 1 }}>
         <Navbar />
         <ScrollView style={[styles.contenedor, t.contenedor]} contentContainerStyle={{ width: '100%', maxWidth: 900, alignSelf: 'center' }}>
-            <Pressable onPress={() => router.back()} style={[styles.btnVolver, t.btn]}>
+            <Pressable onPress={() => { if (router.canGoBack()) router.back(); else router.replace('/pedidos'); }} style={[styles.btnVolver, t.btn]}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="arrow-back" size={18} color={tc("#3b1a12")} /><Text style={[styles.txtVolver, t.txtVolver]}>Volver</Text></View>
             </Pressable>
 

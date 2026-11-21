@@ -1,9 +1,11 @@
 import os
 import logging
 import re
+import time
 from typing import List, Optional
-from fastapi import FastAPI, HTTPException, Header, Response
-from fastapi.responses import HTMLResponse, FileResponse
+from fastapi import FastAPI, HTTPException, Header, Response, Request
+from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
+from starlette.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 from supabase import ClientOptions, create_client, Client
 from dotenv import load_dotenv
@@ -101,6 +103,48 @@ class EstadoIncidencia(BaseModel):
 class UsuarioUpdate(BaseModel):
     nombre: Optional[str] = None
     curso: Optional[str] = None
+
+
+_CACHE_ROL = {}
+
+def _identificar(authorization: Optional[str]):
+    """Devuelve (user_id, es_admin) validando el token con Supabase, o None si no vale."""
+    if not authorization or not authorization.startswith("Bearer "):
+        return None
+    token = authorization[7:].strip()
+    if not token:
+        return None
+    ahora = time.time()
+    hit = _CACHE_ROL.get(token)
+    if hit and hit[0] > ahora:
+        return hit[1], hit[2]
+    cliente = create_client(SUPABASE_URL, SUPABASE_KEY, options=ClientOptions(headers={"Authorization": f"Bearer {token}"}))
+    user_id = cliente.auth.get_user(token).user.id
+    perfil = cliente.table("usuarios").select("administrador").eq("id", user_id).single().execute()
+    es_admin = bool(perfil.data and perfil.data.get("administrador") is True)
+    if len(_CACHE_ROL) > 500:
+        _CACHE_ROL.clear()
+    _CACHE_ROL[token] = (ahora + 30, user_id, es_admin)
+    return user_id, es_admin
+
+@app.middleware("http")
+async def proteger_admin(request: Request, call_next):
+    """Todo /api/admin exige sesion valida y rol de administrador.
+    Excepcion: el detalle de un pedido tambien lo ve su dueno (se comprueba en el endpoint)."""
+    ruta = request.url.path
+    if MODO_PRUEBA or request.method == "OPTIONS" or not ruta.startswith("/api/admin"):
+        return await call_next(request)
+    try:
+        ident = await run_in_threadpool(_identificar, request.headers.get("authorization"))
+    except Exception:
+        ident = None
+    if not ident:
+        return JSONResponse({"detail": "No autorizado"}, status_code=401)
+    es_detalle = request.method == "GET" and re.fullmatch(r"/api/admin/pedidos/[^/]+", ruta) is not None
+    if not ident[1] and not es_detalle:
+        return JSONResponse({"detail": "Solo administradores"}, status_code=403)
+    request.state.user_id, request.state.es_admin = ident
+    return await call_next(request)
 
 app.add_middleware(
     CORSMiddleware,
@@ -651,13 +695,15 @@ def obtener_todos_los_pedidos(authorization: Optional[str] = Header(None)):
         raise HTTPException(status_code=500, detail="Ha ocurrido un error en el servidor. Inténtalo de nuevo.")
 
 @app.get("/api/admin/pedidos/{pedido_id}")
-def obtener_detalle_pedido_admin(pedido_id: str, authorization: Optional[str] = Header(None)):
+def obtener_detalle_pedido_admin(pedido_id: str, request: Request, authorization: Optional[str] = Header(None)):
     token = authorization.replace("Bearer ", "") if authorization else ""
     try:
         cliente_seguro = create_client(SUPABASE_URL, SUPABASE_KEY, options=ClientOptions(headers={"Authorization": f"Bearer {token}"}))
         
         pedido_res = cliente_seguro.table("pedidos").select("*").eq("id", pedido_id).execute()
         if not pedido_res.data:
+            raise HTTPException(status_code=404, detail="Pedido no encontrado")
+        if not getattr(request.state, "es_admin", False) and pedido_res.data[0].get("user_id") != getattr(request.state, "user_id", None):
             raise HTTPException(status_code=404, detail="Pedido no encontrado")
         
         detalles_res = cliente_seguro.table("detalles_pedido")\
@@ -666,6 +712,8 @@ def obtener_detalle_pedido_admin(pedido_id: str, authorization: Optional[str] = 
             .execute()
             
         return {"pedido": pedido_res.data[0], "productos": detalles_res.data}
+    except HTTPException:
+        raise
     except Exception as e:
         logging.exception("Error interno")
         raise HTTPException(status_code=500, detail="Ha ocurrido un error en el servidor. Inténtalo de nuevo.")
