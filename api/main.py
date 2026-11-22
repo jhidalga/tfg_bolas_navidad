@@ -51,7 +51,7 @@ class ItemCarrito(BaseModel):
     modelo: str
     color: str
     personalizacion: str = Field(max_length=60)
-    cantidad: int = Field(1, ge=1, le=20)
+    cantidad: int = Field(1, ge=1, le=50)
 
 class CheckoutPedido(BaseModel):
     total: float
@@ -730,7 +730,7 @@ def realizar_pedido(checkout: CheckoutPedido, authorization: Optional[str] = Hea
             raise HTTPException(status_code=400, detail="El carrito está vacío")
         for i in items_carrito:
             cant = i.get("cantidad", 1)
-            if not isinstance(cant, int) or cant < 1 or cant > 20:
+            if not isinstance(cant, int) or cant < 1 or cant > 50:
                 raise HTTPException(status_code=400, detail="La cantidad de una bola no es válida. Quítala del carrito y vuelve a añadirla.")
             if (i.get("productos") or {}).get("oculto") or (i.get("productos") or {}).get("deshabilitado"):
                 raise HTTPException(status_code=400, detail="Un producto del carrito ya no está disponible. Quítalo para poder pedir.")

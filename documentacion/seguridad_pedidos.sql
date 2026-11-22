@@ -9,10 +9,10 @@ create policy "pedidos: crear propio" on public.pedidos
 
 -- 2. Cantidades razonables en el carrito y en los pedidos (not valid: no revisa las filas que ya existen).
 alter table public.carrito drop constraint if exists carrito_cantidad_valida;
-alter table public.carrito add constraint carrito_cantidad_valida check (cantidad between 1 and 20) not valid;
+alter table public.carrito add constraint carrito_cantidad_valida check (cantidad between 1 and 50) not valid;
 
 alter table public.detalles_pedido drop constraint if exists detalles_cantidad_valida;
-alter table public.detalles_pedido add constraint detalles_cantidad_valida check (cantidad between 1 and 20) not valid;
+alter table public.detalles_pedido add constraint detalles_cantidad_valida check (cantidad between 1 and 50) not valid;
 
 -- 3. Totales no negativos.
 alter table public.pedidos drop constraint if exists pedidos_total_valido;
