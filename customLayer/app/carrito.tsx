@@ -2,14 +2,14 @@ import React, { useState, useCallback, useEffect } from 'react';
 import PrecioOferta, { factorOferta } from '../componentes/precioOferta';
 import { Ionicons } from '@expo/vector-icons';
 import { useConfirmar } from '../componentes/confirmar';
-import { View, Text, FlatList, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, Image, TouchableOpacity, ActivityIndicator, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import Toast from 'react-native-toast-message';
 import Navbar from '@/componentes/navbar';
 import { styles as estilosEscritorio } from '../styles/carrito/carrito.styles';
 import { styles as estilosMovil } from '../styles/carrito/carrito.styles.movil';
-import { useEstilos } from '../lib/responsive';
+import { useEstilos, useEsMovilWeb } from '../lib/responsive';
 import { supabase } from '../lib/supabase';
 import { avisarCarrito } from '../lib/contadorCarrito';
 import { euros, plural } from '../lib/formato';
@@ -55,6 +55,8 @@ export interface ItemCarrito {
 export default function PantallaCarrito() {
     const styles = useEstilos(estilosEscritorio, estilosMovil);
     const insets = useSafeAreaInsets();
+    // En móvil la barra de navegación va abajo y flota sobre la página: hay que dejarle sitio
+    const barraAbajo = useEsMovilWeb() || Platform.OS !== 'web';
     const [carrito, setCarrito] = useState<ItemCarrito[]>([]);
     useEffect(() => { avisarCarrito(); }, [carrito]);
     const [cargando, setCargando] = useState(true);
@@ -213,7 +215,7 @@ export default function PantallaCarrito() {
         <View style={styles.pagina}>
             {dialogo}
             <Navbar />
-            <View style={[styles.contenedorPrincipal, { paddingBottom: insets.bottom + 20 }]}>
+            <View style={[styles.contenedorPrincipal, { paddingBottom: insets.bottom + (barraAbajo ? 92 : 20) }]}>
                 <Text style={styles.tituloCentral}>Tu Carrito ({carrito.length})</Text>
                 {cargando ? (
                     <View style={styles.cargandoContenedor}>
@@ -229,6 +231,7 @@ export default function PantallaCarrito() {
                     </View>
                 ) : (
                     <FlatList
+                        style={{ flex: 1 }}
                         data={carrito}
                         keyExtractor={(item) => item.id}
                         showsVerticalScrollIndicator={false}
@@ -266,15 +269,15 @@ export default function PantallaCarrito() {
                                 </View>
                             </View>
                         )}
-                        ListFooterComponent={() => (
-                            <View style={styles.footerResumen}>
-                                <View style={{ marginBottom: 15 }}><PrecioOferta valor={totalCarrito} antes={totalAntes} prefijo="Total:" estilo={[styles.textoTotal, { marginBottom: 0 }]} /></View>
-                                <TouchableOpacity style={styles.botonPagar} onPress={crearPedido}>
-                                    <Text style={styles.textoBotonPagar}>Realizar pedido</Text>
-                                </TouchableOpacity>
-                            </View>
-                        )}
                     />
+                )}
+                {carrito.length > 0 && (
+                    <View style={styles.footerResumen}>
+                        <PrecioOferta valor={totalCarrito} antes={totalAntes} prefijo="Total:" estilo={[styles.textoTotal, { marginBottom: 0 }]} />
+                        <TouchableOpacity style={styles.botonPagar} onPress={crearPedido}>
+                            <Text style={styles.textoBotonPagar}>Realizar pedido</Text>
+                        </TouchableOpacity>
+                    </View>
                 )}
             </View>
         </View>
