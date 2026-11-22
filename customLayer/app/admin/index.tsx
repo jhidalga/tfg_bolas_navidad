@@ -12,7 +12,8 @@ import { Entypo, FontAwesome, Ionicons } from '@expo/vector-icons';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import Toast from 'react-native-toast-message';
-import { euros, fechaCorta } from '../../lib/formato';
+import { euros, fechaCorta, plural } from '../../lib/formato';
+import { useConfirmar } from '../../componentes/confirmar';
 import Tutorial from '../../componentes/tutorial';
 
 /**
@@ -44,6 +45,7 @@ export default function ListaPedidosAdmin() {
     const itemsPorPagina = 12;
 
     const [modoEliminar, setModoEliminar] = useState(false);
+    const { confirmar, dialogo } = useConfirmar();
     const [seleccionados, setSeleccionados] = useState<string[]>([]);
 
     useEffect(() => {
@@ -124,6 +126,8 @@ export default function ListaPedidosAdmin() {
      * en el "modo eliminación" comunicándose con la API.
      */
     const borrarPedidosSeleccionados = async () => {
+        if (seleccionados.length === 0) return;
+        if (!(await confirmar(`¿Eliminar ${plural(seleccionados.length, 'pedido', 'pedidos')}? No se puede deshacer.`, 'Eliminar'))) return;
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) return;
         
@@ -247,6 +251,7 @@ export default function ListaPedidosAdmin() {
 
     return (
         <View style={styles.contenedorPantalla}>
+            {dialogo}
             <Tutorial prefijo="tutorial_admin" texto="Ver tutorial del panel" admin />
             <View style={styles.cabeceraPrincipal}>
                 <Text style={styles.tituloHeader}>Gestión de Pedidos</Text>
