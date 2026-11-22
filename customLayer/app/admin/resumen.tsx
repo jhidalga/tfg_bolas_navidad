@@ -10,7 +10,7 @@ import Toast from 'react-native-toast-message';
 const API_URL = `${process.env.EXPO_PUBLIC_API_URL || ''}/api`;
 
 type CeldaModelo = { cantidad: number; estados: Record<string, number> };
-type Fila = { id: string; nombre: string; email: string; curso: string; num_pedidos: number; bolas: number; total: number; modelos?: Record<string, CeldaModelo> };
+type Fila = { id: string; nombre: string; email: string; curso: string; num_pedidos: number; bolas: number; total: number; pagado?: boolean; modelos?: Record<string, CeldaModelo> };
 
 const ANCHO_MODELO = 105;
 
@@ -21,7 +21,7 @@ const textoEstados = (c?: CeldaModelo) => {
     return lista.length === 1 ? lista[0][0] : lista.map(([est, n]) => `${n} ${est}`).join(', ');
 };
 const colorEstado = (est: string) => est === 'Entregado' ? '#15803d' : est === 'Completado' ? '#1d4ed8' : est === 'Cancelado' ? '#b91c1c' : '#b45309';
-type Columna = 'curso' | 'nombre' | 'email' | 'num_pedidos' | 'bolas' | 'total';
+type Columna = 'curso' | 'nombre' | 'email' | 'num_pedidos' | 'bolas' | 'total' | 'pagado';
 
 const COLUMNAS: { clave: Columna; titulo: string; ancho: number; numero?: boolean }[] = [
     { clave: 'curso', titulo: 'Curso', ancho: 100 },
@@ -30,6 +30,7 @@ const COLUMNAS: { clave: Columna; titulo: string; ancho: number; numero?: boolea
     { clave: 'num_pedidos', titulo: 'Tickets', ancho: 80, numero: true },
     { clave: 'bolas', titulo: 'Bolas', ancho: 80, numero: true },
     { clave: 'total', titulo: 'Total gastado', ancho: 120, numero: true },
+    { clave: 'pagado', titulo: 'Pagado', ancho: 80 },
 ];
 
 
@@ -71,7 +72,7 @@ export default function ResumenAdmin() {
         const lista = filas.filter(f => (curso === 'Todos' || f.curso === curso) &&
             (!q || f.nombre.toLowerCase().includes(q) || f.email.toLowerCase().includes(q)));
         return [...lista].sort((a, b) => {
-            const x = a[orden.col], y = b[orden.col];
+            const x = orden.col === 'pagado' ? Number(!!a.pagado) : a[orden.col], y = orden.col === 'pagado' ? Number(!!b.pagado) : b[orden.col];
             const r = typeof x === 'number' && typeof y === 'number' ? x - y : String(x).localeCompare(String(y), 'es');
             return orden.asc ? r : -r;
         });
@@ -81,17 +82,41 @@ export default function ResumenAdmin() {
         personas: visibles.length,
         tickets: visibles.reduce((s, f) => s + f.num_pedidos, 0),
         bolas: visibles.reduce((s, f) => s + f.bolas, 0),
-        total: visibles.reduce((s, f) => s + f.total, 0),
+        total: visibles.reduce((s, f) => s + (f.pagado ? f.total : 0), 0),
+        pendiente: visibles.reduce((s, f) => s + (f.pagado ? 0 : f.total), 0),
         porModelo: Object.fromEntries(modelos.map(m => [m, visibles.reduce((s, f) => s + (f.modelos?.[m]?.cantidad || 0), 0)])) as Record<string, number>,
     }), [visibles, modelos]);
+
+    const cambiarPago = async (f: Fila) => {
+        const nuevo = !f.pagado;
+        setFilas(l => l.map(x => x.id === f.id ? { ...x, pagado: nuevo } : x));
+        const volver = () => setFilas(l => l.map(x => x.id === f.id ? { ...x, pagado: !nuevo } : x));
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const res = await fetch(`${API_URL}/admin/resumen/${f.id}/pagado`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` },
+                body: JSON.stringify({ pagado: nuevo }),
+            });
+            if (!res.ok) {
+                const datos = await res.json().catch(() => ({}));
+                volver();
+                Toast.show({ type: 'error', text1: traducirError(datos.detail, 'No se pudo guardar el pago') });
+            }
+        } catch {
+            volver();
+            Toast.show({ type: 'error', text1: 'Error de conexión' });
+        }
+    };
 
     const ordenarPor = (col: Columna) => setOrden(o => ({ col, asc: o.col === col ? !o.asc : true }));
 
     const descargar = () => {
         const esc = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
-        const lineas = [['Curso', 'Nombre', 'Correo', 'Tickets', 'Bolas', 'Total gastado', ...modelos].map(esc).join(';')];
-        visibles.forEach(f => lineas.push([f.curso, f.nombre, f.email, f.num_pedidos, f.bolas, f.total.toFixed(2).replace('.', ','), ...modelos.map(m => f.modelos?.[m] ? `${f.modelos[m].cantidad} (${textoEstados(f.modelos[m])})` : '')].map(esc).join(';')));
-        lineas.push(['TOTAL', `${totales.personas} ${totales.personas === 1 ? 'persona' : 'personas'}`, '', totales.tickets, totales.bolas, totales.total.toFixed(2).replace('.', ','), ...modelos.map(m => totales.porModelo[m] || 0)].map(esc).join(';'));
+        const lineas = [['Curso', 'Nombre', 'Correo', 'Tickets', 'Bolas', 'Total gastado', 'Pagado', ...modelos].map(esc).join(';')];
+        visibles.forEach(f => lineas.push([f.curso, f.nombre, f.email, f.num_pedidos, f.bolas, f.total.toFixed(2).replace('.', ','), f.pagado ? 'Sí' : 'No', ...modelos.map(m => f.modelos?.[m] ? `${f.modelos[m].cantidad} (${textoEstados(f.modelos[m])})` : '')].map(esc).join(';')));
+        lineas.push(['TOTAL COBRADO', `${totales.personas} ${totales.personas === 1 ? 'persona' : 'personas'}`, '', totales.tickets, totales.bolas, totales.total.toFixed(2).replace('.', ','), '', ...modelos.map(m => totales.porModelo[m] || 0)].map(esc).join(';'));
+        lineas.push(['PENDIENTE DE COBRAR', '', '', '', '', totales.pendiente.toFixed(2).replace('.', ',')].map(esc).join(';'));
         const csv = '﻿' + lineas.join('\n');
         if (Platform.OS === 'web') {
             const enlace = document.createElement('a');
@@ -152,6 +177,11 @@ export default function ResumenAdmin() {
                                     <View style={[e.celda, { width: COLUMNAS[3].ancho, alignItems: 'flex-end' }]}><Text style={e.texto}>{f.num_pedidos}</Text></View>
                                     <View style={[e.celda, { width: COLUMNAS[4].ancho, alignItems: 'flex-end' }]}><Text style={e.texto}>{f.bolas}</Text></View>
                                     <View style={[e.celda, { width: COLUMNAS[5].ancho, alignItems: 'flex-end' }]}><Text style={e.texto}>{euros(f.total)}</Text></View>
+                                    <View style={[e.celda, { width: COLUMNAS[6].ancho, alignItems: 'center' }]}>
+                                        <Pressable onPress={() => cambiarPago(f)} accessibilityRole="checkbox" accessibilityState={{ checked: !!f.pagado }} accessibilityLabel={`Pagado ${f.nombre}`} hitSlop={8}>
+                                            <Ionicons name={f.pagado ? 'checkbox' : 'square-outline'} size={26} color={f.pagado ? '#15803d' : '#94a3b8'} />
+                                        </Pressable>
+                                    </View>
                                     {modelos.map(m => {
                                         const c = f.modelos?.[m];
                                         return (
@@ -168,14 +198,21 @@ export default function ResumenAdmin() {
                         </ScrollView>
                         <View style={[e.fila, e.pie]}>
                             <View style={[e.celda, { width: COLUMNAS[0].ancho + COLUMNAS[1].ancho + COLUMNAS[2].ancho }]}>
-                                <Text style={e.pieTexto}>TOTAL ({totales.personas} {totales.personas === 1 ? 'persona' : 'personas'})</Text>
+                                <Text style={e.pieTexto}>TOTAL COBRADO ({totales.personas} {totales.personas === 1 ? 'persona' : 'personas'})</Text>
                             </View>
                             <View style={[e.celda, { width: COLUMNAS[3].ancho, alignItems: 'flex-end' }]}><Text style={e.pieTexto}>{totales.tickets}</Text></View>
                             <View style={[e.celda, { width: COLUMNAS[4].ancho, alignItems: 'flex-end' }]}><Text style={e.pieTexto}>{totales.bolas}</Text></View>
                             <View style={[e.celda, { width: COLUMNAS[5].ancho, alignItems: 'flex-end' }]}><Text style={e.pieTexto}>{euros(totales.total)}</Text></View>
+                            <View style={[e.celda, { width: COLUMNAS[6].ancho }]} />
                             {modelos.map(m => (
                                 <View key={m} style={[e.celda, { width: ANCHO_MODELO }]}><Text style={e.pieTexto}>{totales.porModelo[m] || 0}</Text></View>
                             ))}
+                        </View>
+                        <View style={[e.fila, e.pie, { borderTopWidth: 0, backgroundColor: '#fff7ed' }]}>
+                            <View style={[e.celda, { width: COLUMNAS[0].ancho + COLUMNAS[1].ancho + COLUMNAS[2].ancho + COLUMNAS[3].ancho + COLUMNAS[4].ancho }]}>
+                                <Text style={[e.pieTexto, { color: '#9a3412' }]}>PENDIENTE DE COBRAR</Text>
+                            </View>
+                            <View style={[e.celda, { width: COLUMNAS[5].ancho, alignItems: 'flex-end' }]}><Text style={[e.pieTexto, { color: '#9a3412' }]}>{euros(totales.pendiente)}</Text></View>
                         </View>
                     </View>
                 </ScrollView>

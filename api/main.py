@@ -68,6 +68,9 @@ class OfertasWeb(BaseModel):
 class EstadoPedido(BaseModel):
     estado: str
 
+class PagadoUsuario(BaseModel):
+    pagado: bool
+
 class ProductoAdminCrear(BaseModel):
     nombre: str
     descripcion: Optional[str] = ""
@@ -512,7 +515,13 @@ if MODO_PRUEBA:
             u = p["usuarios"]
             por_persona.setdefault(u["nombre"], {"id": u["nombre"], "nombre": u["nombre"], "curso": u["curso"],
                 "email": u["nombre"].lower().replace(" ", ".") + "@g.educaand.es", "pedidos": []})["pedidos"].append(p)
-        return _agregar_resumen(list(por_persona.values()))
+        return _agregar_resumen(list(por_persona.values()), _ESTADO.setdefault("pagados", set()))
+
+    @app.patch("/api/admin/resumen/{usuario_id}/pagado")
+    def pagado_prueba(usuario_id: str, datos: PagadoUsuario):
+        pagados = _ESTADO.setdefault("pagados", set())
+        (pagados.add if datos.pagado else pagados.discard)(usuario_id)
+        return {"mensaje": "Pago actualizado", "pagado": datos.pagado}
 
     @app.get("/api/admin/usuarios")
     def usuarios_prueba():
@@ -1246,10 +1255,11 @@ def _modelo_resumen(modelo):
     return _NOMBRE_FIGURA.get(figura_para(modelo or ""), "Otros")
 
 
-def _agregar_resumen(usuarios):
+def _agregar_resumen(usuarios, pagados=None):
     """Una fila por persona con pedidos: curso, nombre, correo, pedidos, bolas, total gastado
     y, por cada modelo, cuantas bolas pidio y en que estado esta cada una.
     Cada usuario trae sus pedidos con el total, el estado y las lineas con modelo y cantidad."""
+    pagados = pagados or set()
     filas = []
     usados = set()
     for u in usuarios:
@@ -1271,14 +1281,16 @@ def _agregar_resumen(usuarios):
                 celda["estados"][est] = celda["estados"].get(est, 0) + cant
         filas.append({"id": u.get("id"), "nombre": u.get("nombre") or "", "email": u.get("email") or "",
                       "curso": u.get("curso") or "", "num_pedidos": len(pedidos), "bolas": bolas, "total": total,
-                      "modelos": modelos})
+                      "pagado": u.get("id") in pagados, "modelos": modelos})
     filas.sort(key=lambda f: f["nombre"].lower())
     columnas = [m for m in _ORDEN_MODELOS if m in usados] + (["Otros"] if "Otros" in usados else [])
     return {
         "filas": filas,
         "modelos": columnas,
         "totales": {"personas": len(filas), "pedidos": sum(f["num_pedidos"] for f in filas),
-                    "bolas": sum(f["bolas"] for f in filas), "total": round(sum(f["total"] for f in filas), 2)},
+                    "bolas": sum(f["bolas"] for f in filas),
+                    "total": round(sum(f["total"] for f in filas if f["pagado"]), 2),
+                    "pendiente": round(sum(f["total"] for f in filas if not f["pagado"]), 2)},
     }
 
 
@@ -1301,7 +1313,22 @@ def resumen_admin(authorization: Optional[str] = Header(None)):
     try:
         cliente = _exigir_admin(authorization)
         usuarios = cliente.table("usuarios").select("id, nombre, email, curso, pedidos(id, total, estado, detalles_pedido(cantidad, modelo))").execute().data
-        return _agregar_resumen(usuarios or [])
+        pagos = cliente.table("pagos_usuarios").select("user_id").eq("pagado", True).execute().data
+        return _agregar_resumen(usuarios or [], {x["user_id"] for x in (pagos or [])})
+    except HTTPException:
+        raise
+    except Exception:
+        logging.exception("Error interno")
+        raise HTTPException(status_code=500, detail="Ha ocurrido un error en el servidor. Inténtalo de nuevo.")
+
+
+@app.patch("/api/admin/resumen/{usuario_id}/pagado")
+def marcar_pagado(usuario_id: str, datos: PagadoUsuario, authorization: Optional[str] = Header(None)):
+    """El admin marca si una persona ya ha pagado. Solo las personas pagadas suman en el total."""
+    try:
+        cliente = _exigir_admin(authorization)
+        cliente.table("pagos_usuarios").upsert({"user_id": usuario_id, "pagado": datos.pagado}, returning="minimal").execute()
+        return {"mensaje": "Pago actualizado", "pagado": datos.pagado}
     except HTTPException:
         raise
     except Exception:
