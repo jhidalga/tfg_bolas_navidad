@@ -101,9 +101,6 @@ export default function AdminProductos() {
     return (
         <View style={styles.contenedor}>
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-                <Pressable onPress={() => router.back()} style={styles.btnVolver}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="arrow-back" size={18} color="#475569" /><Text style={styles.txtVolver}>Volver</Text></View>
-                </Pressable>
                 
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, backgroundColor: '#fff', borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 12, padding: 14, marginBottom: 16 }}>
                     <View style={{ flex: 1 }}>

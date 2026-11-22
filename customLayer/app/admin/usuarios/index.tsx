@@ -1,6 +1,5 @@
 import { View, Text, Pressable, ScrollView, ActivityIndicator, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { styles as estilosEscritorio } from '../../../styles/adminUsuarios/adminUsuarios.styles';
@@ -26,7 +25,6 @@ const API_URL = `${process.env.EXPO_PUBLIC_API_URL || ''}/api`;
  */
 export default function GestorUsuariosAdmin() {
     const styles = useEstilos(estilosEscritorio, estilosMovil);
-    const router = useRouter();
     const { confirmar, dialogo } = useConfirmar();
     const [cargando, setCargando] = useState(true);
     const [usuarios, setUsuarios] = useState<any[]>([]);
@@ -164,9 +162,6 @@ export default function GestorUsuariosAdmin() {
             {dialogo}
             <ScrollView contentContainerStyle={styles.scrollContent}>
                 <View style={styles.header}>
-                    <Pressable onPress={() => router.back()} style={styles.btnVolver}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="arrow-back" size={18} color="#475569" /><Text style={styles.txtVolver}>Volver</Text></View>
-                    </Pressable>
                     <Text style={styles.titulo}>Gestión de Usuarios</Text>
                     <TextInput placeholder="Buscar por nombre o correo" style={styles.inputBuscar} value={busqueda} onChangeText={(text) => setBusqueda(text)} />
                 </View>
