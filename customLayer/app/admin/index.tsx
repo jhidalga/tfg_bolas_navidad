@@ -13,6 +13,7 @@ import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import Toast from 'react-native-toast-message';
 import { euros, fechaCorta } from '../../lib/formato';
+import Tutorial from '../../componentes/tutorial';
 
 /**
  * Pantalla principal del panel de administración para la gestión de pedidos.
@@ -246,6 +247,7 @@ export default function ListaPedidosAdmin() {
 
     return (
         <View style={styles.contenedorPantalla}>
+            <Tutorial prefijo="tutorial_admin" texto="Ver tutorial del panel" admin />
             <View style={styles.cabeceraPrincipal}>
                 <Text style={styles.tituloHeader}>Gestión de Pedidos</Text>
                 
