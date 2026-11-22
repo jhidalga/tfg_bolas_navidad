@@ -8,7 +8,7 @@ import { styles as estilosEscritorio } from '../../styles/adminPedidos/adminPedi
 import { styles as estilosMovil } from '../../styles/adminPedidos/adminPedidos.styles.movil';
 import { useEstilos } from '../../lib/responsive';
 import FontAwesome5 from '@expo/vector-icons/build/FontAwesome5';
-import { Entypo, FontAwesome } from '@expo/vector-icons';
+import { Entypo, FontAwesome, Ionicons } from '@expo/vector-icons';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import Toast from 'react-native-toast-message';
@@ -370,6 +370,12 @@ export default function ListaPedidosAdmin() {
                                                 <Text style={styles.txtDato}><FontAwesome5 name="book" size={14} color="black" /> {pedido.usuarios?.curso || "Desconocido"}</Text>
                                             </View>
                                             <Text style={styles.precioTotal}>{euros(pedido.total)}</Text>
+                                            {pedido.nota ? (
+                                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6 }} accessibilityLabel="Pedido con nota">
+                                                    <Ionicons name="chatbubble-ellipses" size={16} color="#b45309" />
+                                                    <Text style={{ fontSize: 12, color: '#b45309', fontWeight: 'bold' }}>Con nota</Text>
+                                                </View>
+                                            ) : null}
                                         </Pressable>
                                         <View style={styles.tarjetaAcciones}>
                                             {['Pendiente', 'Completado', 'Entregado', 'Cancelado'].map(est => (

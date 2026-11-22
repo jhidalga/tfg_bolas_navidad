@@ -101,6 +101,10 @@ export const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '600',
     },
+    cajaNota: { marginTop: 4, marginBottom: 12 },
+    etiquetaNota: { color: '#fff7ea', fontWeight: 'bold', marginBottom: 6, fontSize: 14 },
+    inputNota: { backgroundColor: '#fff7ea', color: '#3b1a12', borderRadius: 8, borderWidth: 1, borderColor: '#e3cfa5', padding: 10, minHeight: 60, textAlignVertical: 'top' },
+    contadorNota: { color: '#e3cfa5', fontSize: 12, textAlign: 'right', marginTop: 4 },
     footerResumen: {
         marginTop: 8,
         paddingTop: 12,

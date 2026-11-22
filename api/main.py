@@ -55,6 +55,7 @@ class ItemCarrito(BaseModel):
 
 class CheckoutPedido(BaseModel):
     total: float
+    nota: str = Field("", max_length=200)
 
 TEMAS_WEB = ("normal", "navidad", "sanvalentin")
 CAMPOS_OFERTA = ("en_oferta", "precio_anterior")
@@ -537,6 +538,7 @@ if MODO_PRUEBA:
             d["id"] = f"d{_ESTADO['n']}-{len(detalles) + 1}"
             detalles.append(d)
         pedido = {"id": f"{_ESTADO['n']:08d}-nuevo", "total": checkout.total, "estado": "Pendiente",
+                  "nota": checkout.nota.strip() or None,
                   "created_at": "2026-11-17T14:30:00", "usuarios": {"nombre": "Admin de prueba", "curso": "2DAM"},
                   "detalles_pedido": detalles}
         lista.insert(0, pedido)
@@ -755,6 +757,8 @@ def realizar_pedido(checkout: CheckoutPedido, authorization: Optional[str] = Hea
         # El total lo calcula el servidor con los precios de la base de datos, no el que manda la web
         total_servidor = round(sum(float(i["productos"]["precio"]) * int(i.get("cantidad", 1) or 1) for i in items_carrito), 2)
         nuevo_pedido = {"user_id": user_id, "total": total_servidor, "estado": "Pendiente"}
+        if checkout.nota.strip():
+            nuevo_pedido["nota"] = checkout.nota.strip()
         pedido_res = cliente_seguro.table("pedidos").insert(nuevo_pedido).execute()
         pedido_id = pedido_res.data[0]["id"]
         

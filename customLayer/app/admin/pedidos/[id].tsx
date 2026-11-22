@@ -99,6 +99,13 @@ export default function DetallesPedidoAdmin() {
             <Text style={{ fontSize: 12, color: '#9ca3af', marginTop: -8, marginBottom: 12 }}>#{datos.pedido.id.slice(0,8).toUpperCase()}</Text>
             <Text style={styles.totalInfo}>Importe Total: {euros(datos.pedido.total)}</Text>
 
+            {datos.pedido.nota ? (
+                <View style={{ backgroundColor: '#fef3c7', borderColor: '#f59e0b', borderWidth: 1, borderRadius: 10, padding: 12, marginVertical: 8 }}>
+                    <Text style={{ fontWeight: 'bold', color: '#92400e', marginBottom: 4 }}>Nota del cliente</Text>
+                    <Text style={{ color: '#78350f' }}>{datos.pedido.nota}</Text>
+                </View>
+            ) : null}
+
             <Pressable
                 style={{ backgroundColor: '#111827', paddingVertical: 12, paddingHorizontal: 16, borderRadius: 10, alignSelf: 'flex-start', marginVertical: 10 }}
                 onPress={() => descargar3mf(null, `pedido_${String(datos.pedido.id).slice(0, 8)}_3mf.zip`)}

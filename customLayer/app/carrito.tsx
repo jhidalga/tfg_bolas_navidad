@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import PrecioOferta, { factorOferta } from '../componentes/precioOferta';
 import { Ionicons } from '@expo/vector-icons';
 import { useConfirmar } from '../componentes/confirmar';
-import { View, Text, FlatList, Image, TouchableOpacity, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, FlatList, Image, TouchableOpacity, ActivityIndicator, Platform, TextInput } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import Toast from 'react-native-toast-message';
@@ -58,6 +58,7 @@ export default function PantallaCarrito() {
     // En móvil la barra de navegación va abajo y flota sobre la página: hay que dejarle sitio
     const barraAbajo = useEsMovilWeb() || Platform.OS !== 'web';
     const [carrito, setCarrito] = useState<ItemCarrito[]>([]);
+    const [nota, setNota] = useState('');
     useEffect(() => { avisarCarrito(); }, [carrito]);
     const [cargando, setCargando] = useState(true);
     const apiUrl = `${process.env.EXPO_PUBLIC_API_URL || ''}/api`;
@@ -183,7 +184,7 @@ export default function PantallaCarrito() {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${session.access_token}`
                     },
-                    body: JSON.stringify({ total: totalCarrito })
+                    body: JSON.stringify({ total: totalCarrito, nota: nota.trim() })
                 });
                 if (response.ok) {
                     const data = await response.json();
@@ -192,7 +193,7 @@ export default function PantallaCarrito() {
                         text1: '¡Pedido creado con éxito!',
                         text2: `ID del pedido: ${data.pedido_id}`
                     });
-                    setCarrito([]);
+                    setCarrito([]); setNota("");
                     router.push('/pedidos');
                 } else {
                     Toast.show({
@@ -235,6 +236,22 @@ export default function PantallaCarrito() {
                         data={carrito}
                         keyExtractor={(item) => item.id}
                         showsVerticalScrollIndicator={false}
+                        ListFooterComponent={
+                            <View style={styles.cajaNota}>
+                                <Text style={styles.etiquetaNota}>Nota para el pedido (opcional)</Text>
+                                <TextInput
+                                    style={styles.inputNota}
+                                    value={nota}
+                                    onChangeText={(t) => setNota(t.slice(0, 200))}
+                                    placeholder="Ej: pago el viernes"
+                                    placeholderTextColor="#9a8a6a"
+                                    multiline
+                                    maxLength={200}
+                                    accessibilityLabel="Nota para el pedido"
+                                />
+                                <Text style={styles.contadorNota}>{nota.length}/200</Text>
+                            </View>
+                        }
                         renderItem={({ item }) => (
                             <View style={styles.tarjetaProducto}>
                                 <Image
