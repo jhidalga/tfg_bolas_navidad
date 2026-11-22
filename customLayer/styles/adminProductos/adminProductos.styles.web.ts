@@ -82,7 +82,7 @@ export const styles = StyleSheet.create({
         borderBottomColor: '#e5e7eb',
     },
     colFotoHeader: { flex: 0.5, fontSize: 16, color: '#374151', fontWeight: '500' },
-    colDetallesCabecera: { flex: 4.5, flexDirection: 'row' },
+    colDetallesCabecera: { flex: 5.5, flexDirection: 'row' },
     colInfoCabecera: { flex: 2, fontSize: 16, color: '#374151', fontWeight: '500' },
     colPrecioCabecera: { flex: 1, fontSize: 16, color: '#374151', fontWeight: '500' },
     colBadgeCabecera: { flex: 1, fontSize: 16, color: '#374151', fontWeight: '500' },
@@ -102,7 +102,7 @@ export const styles = StyleSheet.create({
         flex: 0.5,
     },
     colDetalles: {
-        flex: 4.5,
+        flex: 5.5,
         flexDirection: 'row',
         alignItems: 'center',
     },
@@ -116,7 +116,7 @@ export const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     contenedorBadges: {
-        flex: 2,
+        flex: 3,
         flexDirection: 'row',
         alignItems: 'center',
     },

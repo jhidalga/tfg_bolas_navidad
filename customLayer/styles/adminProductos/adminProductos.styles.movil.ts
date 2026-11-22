@@ -113,7 +113,8 @@ export const styles = StyleSheet.create({
     },
     contenedorBadges: {
         flexDirection: 'row',
-        gap: 10,
+        flexWrap: 'wrap',
+        gap: 8,
     },
     colVisibilidad: { width: 'auto' },
     colEstado: { width: 'auto' },

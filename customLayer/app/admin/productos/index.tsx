@@ -1,4 +1,4 @@
-import { View, Text, Pressable, ScrollView, Image, ActivityIndicator, TextInput } from 'react-native';
+import { View, Text, Pressable, ScrollView, Image, ActivityIndicator, TextInput, StyleSheet, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState, useEffect, useMemo } from 'react';
@@ -9,6 +9,10 @@ import { useEstilos } from '../../../lib/responsive';
 import { euros, plural } from '../../../lib/formato';
 import { ofertasActivas, aplicarOfertasLocal } from '../../../lib/tema';
 import Toast from 'react-native-toast-message';
+import Desplegable from '../../../componentes/desplegable';
+
+const ORDENES = ['Producto', 'Precio', 'Visibilidad', 'Personalizable', 'Estado'];
+/** Estas columnas empiezan con los "sí" arriba. El precio empieza con los más baratos. */
 
 /**
  * Pantalla principal de administración del Catálogo de Productos.
@@ -21,9 +25,13 @@ import Toast from 'react-native-toast-message';
 export default function AdminProductos() {
     const styles = useEstilos(estilosEscritorio, estilosMovil);
     const router = useRouter();
+    const movil = useWindowDimensions().width < 700;
     const [productos, setProductos] = useState<any[]>([]);
     const [cargando, setCargando] = useState(true);
     const [busqueda, setBusqueda] = useState('');
+    const [orden, setOrden] = useState('Producto');
+    const [descendente, setDescendente] = useState(false);
+    const [abierto, setAbierto] = useState(false);
     const [paginaActual, setPaginaActual] = useState(1);
     const itemsPorPagina = 12;
     const [ofertas, setOfertas] = useState<boolean>(ofertasActivas);
@@ -56,7 +64,7 @@ export default function AdminProductos() {
 
     useEffect(() => {
         setPaginaActual(1);
-    }, [busqueda]);
+    }, [busqueda, orden, descendente]);
 
     /**
      * Obtiene la lista del catálogo completo de productos desde la API.
@@ -80,15 +88,31 @@ export default function AdminProductos() {
         }
     };
 
+    /** Elige la columna de orden. Si ya era esa, cambia el sentido. */
+    const ordenarPor = (col: string) => {
+        if (col === orden) { setDescendente(!descendente); return; }
+        setOrden(col);
+        setDescendente(false);
+    };
+
     /**
-     * Filtra la lista de productos en memoria basándose en el texto introducido
-     * en la barra de búsqueda (evaluación parcial de nombre, case-insensitive).
+     * Filtra la lista por el texto de la búsqueda y la ordena por la columna elegida.
+     * En Visibilidad, Personalizable y Estado, ascendente pone primero los que dicen "Visible", "Sí" y "Activo".
      */
     const productosFiltrados = useMemo(() => {
-        return productos.filter(p => 
-            p.nombre.toLowerCase().includes(busqueda.toLowerCase())
-        );
-    }, [productos, busqueda]);
+        const lista = productos.filter(p => p.nombre.toLowerCase().includes(busqueda.toLowerCase()));
+        const porNombre = (a: any, b: any) => a.nombre.toLowerCase().localeCompare(b.nombre.toLowerCase(), 'es');
+        lista.sort((a, b) => {
+            let r = 0;
+            if (orden === 'Producto') r = porNombre(a, b);
+            else if (orden === 'Precio') r = (a.precio || 0) - (b.precio || 0) || porNombre(a, b);
+            else if (orden === 'Visibilidad') r = Number(!!a.oculto) - Number(!!b.oculto) || porNombre(a, b);
+            else if (orden === 'Personalizable') r = Number(!!b.personalizable) - Number(!!a.personalizable) || porNombre(a, b);
+            else r = Number(!!a.deshabilitado) - Number(!!b.deshabilitado) || porNombre(a, b);
+            return descendente ? -r : r;
+        });
+        return lista;
+    }, [productos, busqueda, orden, descendente]);
 
     const totalPaginas = Math.ceil(productosFiltrados.length / itemsPorPagina);
     const productosPaginados = productosFiltrados.slice(
@@ -131,14 +155,35 @@ export default function AdminProductos() {
                     </View>
                 </View>
 
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 14, alignItems: 'center', zIndex: 20 }}>
+                    <Text style={{ color: '#475569', fontWeight: '600', flexShrink: 0 }}>Ordenar por</Text>
+                    <Desplegable titulo="Ordenar por" opciones={ORDENES} valor={orden} abierto={abierto} ancho={170}
+                        alAbrir={() => setAbierto(!abierto)}
+                        alElegir={(v) => { setOrden(v); setDescendente(false); setAbierto(false); }} />
+                    <Pressable onPress={() => setDescendente(!descendente)} accessibilityLabel="Cambiar sentido del orden"
+                        style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#fff', borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10 }}>
+                        <Ionicons name={descendente ? 'arrow-down' : 'arrow-up'} size={16} color="#475569" />
+                        <Text style={{ color: '#1e293b', fontSize: 15 }}>{orden === 'Precio' ? (descendente ? 'Más caros primero' : 'Más baratos primero') : orden === 'Producto' ? (descendente ? 'Z a A' : 'A a Z') : (descendente ? 'Los "no" primero' : 'Los "sí" primero')}</Text>
+                    </Pressable>
+                    <Text style={{ color: '#64748b' }}>{plural(productosFiltrados.length, 'producto', 'productos')}</Text>
+                </View>
+
                 <View style={styles.tabla}>
                     <View style={styles.filaCabecera}>
                         <Text style={styles.colFotoHeader}>Foto</Text>
                         <View style={styles.colDetallesCabecera}>
-                            <Text style={styles.colInfoCabecera}>Producto</Text>
-                            <Text style={styles.colPrecioCabecera}>Precio</Text>
-                            <Text style={styles.colBadgeCabecera}>Visibilidad</Text>
-                            <Text style={styles.colBadgeCabecera}>Estado</Text>
+                            {[
+                                ['Producto', styles.colInfoCabecera],
+                                ['Precio', styles.colPrecioCabecera],
+                                ['Visibilidad', styles.colBadgeCabecera],
+                                ['Personalizable', styles.colBadgeCabecera],
+                                ['Estado', styles.colBadgeCabecera],
+                            ].map(([col, estilo]: any) => (
+                                <Pressable key={col} onPress={() => ordenarPor(col)} accessibilityLabel={`Ordenar por ${col}`} style={[{ flexDirection: 'row', alignItems: 'center', gap: 4 }, { flex: (StyleSheet.flatten(estilo) as any).flex }]}>
+                                    <Text style={[estilo, { flex: 0 }, orden === col && { color: '#1d4ed8' }]}>{col}</Text>
+                                    {orden === col && <Ionicons name={descendente ? 'arrow-down' : 'arrow-up'} size={14} color="#1d4ed8" />}
+                                </Pressable>
+                            ))}
                         </View>
                     </View>
 
@@ -183,6 +228,20 @@ export default function AdminProductos() {
                                             </View>
                                         </View>
                                         
+                                        <View style={styles.colVisibilidad}>
+                                            <View style={[
+                                                styles.badge,
+                                                { backgroundColor: prod.personalizable ? '#dbeafe' : '#f1f5f9' }
+                                            ]}>
+                                                <Text style={[
+                                                    styles.txtBadge,
+                                                    { color: prod.personalizable ? '#1d4ed8' : '#64748b' }
+                                                ]}>
+                                                    {prod.personalizable ? (movil ? 'Personalizable' : 'Sí') : (movil ? 'No personalizable' : 'No')}
+                                                </Text>
+                                            </View>
+                                        </View>
+
                                         <View style={styles.colEstado}>
                                             <View style={[
                                                 styles.badge,
