@@ -11,3 +11,20 @@ export const fechaCorta = (valor: string | number | Date | null | undefined) => 
 
 /** "1 modelo" o "3 modelos" */
 export const plural = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;
+
+const PARTICULAS = ['de', 'del', 'la', 'las', 'los', 'y'];
+
+/**
+ * Pone un nombre con la primera letra de cada palabra en mayúscula y el resto en minúscula.
+ * Las partículas como "de" o "del" quedan en minúscula, salvo si van al principio.
+ * Ejemplo: "ángel GARCÍA de la torre" pasa a "Ángel García de la Torre".
+ */
+export function normalizarNombre(texto: string): string {
+    return texto
+        .trim()
+        .replace(/\s+/g, ' ')
+        .toLowerCase()
+        .split(' ')
+        .map((p, i) => (i > 0 && PARTICULAS.includes(p) ? p : p.replace(/(^|[-'])(\p{L})/gu, (_m, sep, l) => sep + l.toUpperCase())))
+        .join(' ');
+}

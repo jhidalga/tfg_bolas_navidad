@@ -1,3 +1,4 @@
+import { normalizarNombre } from '../lib/formato';
 import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, ScrollView, ActivityIndicator, Pressable } from 'react-native';
 import Navbar, { cerrarSesionUsuario } from '../componentes/navbar';
@@ -83,7 +84,7 @@ export default function MiPerfil() {
                     'Authorization': `Bearer ${session.access_token}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ nombre: form.nombre, curso: form.curso })
+                body: JSON.stringify({ nombre: normalizarNombre(form.nombre), curso: form.curso })
             });
 
             if (respuesta.ok) {

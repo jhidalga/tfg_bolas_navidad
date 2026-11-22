@@ -13,6 +13,7 @@ import { toastConfig } from '../componentes/avisos';
 import { Picker } from '@react-native-picker/picker';
 import { tc } from '../lib/tema';
 import { DEPARTAMENTOS, GRUPOS } from '../lib/cursos';
+import { normalizarNombre } from '../lib/formato';
 
 export default function Registro() {
     const styles = useEstilos(estilosEscritorio, estilosMovil);
@@ -94,10 +95,19 @@ export default function Registro() {
         const nombreSolo = nombre.trim();
         const apellido1Limpio = apellido1.trim();
         const apellido2Limpio = apellido2.trim();
-        const nombreLimpio = [nombreSolo, apellido1Limpio, apellido2Limpio].join(' ');
+        const nombreLimpio = normalizarNombre([nombreSolo, apellido1Limpio, apellido2Limpio].join(' '));
 
-        if (!correoLimpio || !contrasenaLimpia || !cursoLimpio || !nombreSolo || !apellido1Limpio || !apellido2Limpio) {
-            Toast.show({ type: 'error', text1: 'Por favor, rellena todos los campos.' });
+        const faltan = [
+            !nombreSolo && 'Nombre',
+            !apellido1Limpio && 'Primer apellido',
+            !apellido2Limpio && 'Segundo apellido',
+            !correoLimpio && 'Correo',
+            !contrasenaLimpia && 'Contraseña',
+            !contrasena2.trim() && 'Repite la contraseña',
+            !cursoLimpio && (profesor ? 'Departamento' : etapa ? 'Curso' : 'Etapa y curso'),
+        ].filter(Boolean);
+        if (faltan.length > 0) {
+            Toast.show({ type: 'error', text1: 'Todos los campos son obligatorios.', text2: `Falta: ${faltan.join(', ')}` });
             return;
         }
 
@@ -157,7 +167,7 @@ export default function Registro() {
                 <View style={styles.tarjetaLogin}>
                     <Text style={styles.titulo}>Registro</Text>
 
-                    <Text style={styles.etiqueta}>Nombre</Text>
+                    <Text style={styles.etiqueta}>Nombre *</Text>
                     <TextInput
                         style={styles.input}
                         value={nombre}
@@ -165,7 +175,7 @@ export default function Registro() {
                         placeholder='Tu nombre'
                     />
 
-                    <Text style={styles.etiqueta}>Primer apellido</Text>
+                    <Text style={styles.etiqueta}>Primer apellido *</Text>
                     <TextInput
                         style={styles.input}
                         value={apellido1}
@@ -173,7 +183,7 @@ export default function Registro() {
                         placeholder='Tu primer apellido'
                     />
 
-                    <Text style={styles.etiqueta}>Segundo apellido</Text>
+                    <Text style={styles.etiqueta}>Segundo apellido *</Text>
                     <TextInput
                         style={styles.input}
                         value={apellido2}
@@ -181,7 +191,7 @@ export default function Registro() {
                         placeholder='Tu segundo apellido'
                     />
 
-                    <Text style={styles.etiqueta}>Correo</Text>
+                    <Text style={styles.etiqueta}>Correo *</Text>
                     <TextInput
                         style={styles.input}
                         value={correo}
@@ -197,7 +207,7 @@ export default function Registro() {
                         </Text>
                     )}
 
-                    <Text style={styles.etiqueta}>Contraseña</Text>
+                    <Text style={styles.etiqueta}>Contraseña *</Text>
                     <TextInput
                         style={styles.input}
                         value={contrasena}
@@ -206,7 +216,7 @@ export default function Registro() {
                         secureTextEntry={!verContrasena}
                     />
 
-                    <Text style={styles.etiqueta}>Repite la contraseña</Text>
+                    <Text style={styles.etiqueta}>Repite la contraseña *</Text>
                     <TextInput
                         style={styles.input}
                         value={contrasena2}
@@ -239,7 +249,7 @@ export default function Registro() {
 
                     {profesor ? (
                         <>
-                            <Text style={styles.etiqueta}>Departamento</Text>
+                            <Text style={styles.etiqueta}>Departamento *</Text>
                             <Picker selectedValue={curso} onValueChange={setCurso} style={styles.input}>
                                 <Picker.Item label='Elige departamento' value='' />
                                 {DEPARTAMENTOS.map((d) => <Picker.Item key={d} label={d} value={d} />)}
@@ -247,14 +257,14 @@ export default function Registro() {
                         </>
                     ) : (
                         <>
-                            <Text style={styles.etiqueta}>Etapa</Text>
+                            <Text style={styles.etiqueta}>Etapa *</Text>
                             <Picker selectedValue={etapa} onValueChange={(v) => { setEtapa(v); setCurso(''); }} style={styles.input}>
                                 <Picker.Item label='Elige etapa' value='' />
                                 {Object.keys(GRUPOS).map((e) => <Picker.Item key={e} label={e} value={e} />)}
                             </Picker>
                             {etapa !== '' && (
                                 <>
-                                    <Text style={styles.etiqueta}>Curso</Text>
+                                    <Text style={styles.etiqueta}>Curso *</Text>
                                     <Picker selectedValue={curso} onValueChange={setCurso} style={styles.input}>
                                         <Picker.Item label='Elige curso' value='' />
                                         {GRUPOS[etapa].map((c) => <Picker.Item key={c} label={c} value={c} />)}

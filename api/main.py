@@ -117,6 +117,21 @@ class UsuarioUpdate(BaseModel):
     curso: Optional[str] = Field(None, max_length=60)
 
 
+_PARTICULAS = ("de", "del", "la", "las", "los", "y")
+
+
+def _normalizar_nombre(texto: str) -> str:
+    """Primera letra de cada palabra en mayúscula y el resto en minúscula. Las partículas como "de" quedan en minúscula."""
+    palabras = texto.strip().lower().split()
+    salida = []
+    for i, p in enumerate(palabras):
+        if i > 0 and p in _PARTICULAS:
+            salida.append(p)
+        else:
+            salida.append(re.sub(r"(^|[-'])(\w)", lambda m: m.group(1) + m.group(2).upper(), p))
+    return " ".join(salida)
+
+
 _CACHE_ROL = {}
 
 def _identificar(authorization: Optional[str]):
@@ -640,6 +655,8 @@ def actualizar_perfil(datos: UsuarioUpdate, authorization: Optional[str] = Heade
         )
         
         update_data = {k: v for k, v in datos.dict().items() if v is not None}
+        if "nombre" in update_data:
+            update_data["nombre"] = _normalizar_nombre(update_data["nombre"])
         
         if update_data:
             respuesta = cliente_seguro.table("usuarios").update(update_data).eq("id", user_id).execute()
