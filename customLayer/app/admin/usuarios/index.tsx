@@ -10,6 +10,7 @@ import Toast from 'react-native-toast-message';
 import { plural } from '../../../lib/formato';
 import { useConfirmar } from '../../../componentes/confirmar';
 import Desplegable from '../../../componentes/desplegable';
+import { DEPARTAMENTOS, TODOS_LOS_CURSOS } from '../../../lib/cursos';
 
 const ORDENES = ['Nombre', 'Email', 'Curso', 'Profesor', 'Pedidos', 'Rol'];
 const INICIA_DESC = ['Profesor', 'Pedidos', 'Rol'];
@@ -120,8 +121,8 @@ export default function GestorUsuariosAdmin() {
         setDescendente(col === 'Pedidos');
     };
 
-    const cursos = useMemo(() => ['Todos', ...Array.from(new Set(usuarios.filter(u => !u.profesor).map(u => u.curso).filter(Boolean))).sort() as string[]], [usuarios]);
-    const deptos = useMemo(() => ['Todos', ...Array.from(new Set(usuarios.filter(u => u.profesor).map(u => u.curso).filter(Boolean))).sort() as string[]], [usuarios]);
+    const cursos = ['Todos', ...TODOS_LOS_CURSOS];
+    const deptos = ['Todos', ...DEPARTAMENTOS];
 
     /**
      * Filtra la lista en memoria por texto, curso, departamento, rol y profesor.

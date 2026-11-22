@@ -7,6 +7,7 @@ import { useEsMovilWeb } from '../../lib/responsive';
 import { euros } from '../../lib/formato';
 import Toast from 'react-native-toast-message';
 import Desplegable from '../../componentes/desplegable';
+import { DEPARTAMENTOS, TODOS_LOS_CURSOS } from '../../lib/cursos';
 
 const API_URL = `${process.env.EXPO_PUBLIC_API_URL || ''}/api`;
 
@@ -68,8 +69,8 @@ export default function ResumenAdmin() {
         })();
     }, []);
 
-    const cursos = useMemo(() => ['Todos', ...Array.from(new Set(filas.filter(f => !f.profesor).map(f => f.curso).filter(Boolean))).sort()], [filas]);
-    const deptos = useMemo(() => ['Todos', ...Array.from(new Set(filas.filter(f => f.profesor).map(f => f.curso).filter(Boolean))).sort()], [filas]);
+    const cursos = ['Todos', ...TODOS_LOS_CURSOS];
+    const deptos = ['Todos', ...DEPARTAMENTOS];
 
     const visibles = useMemo(() => {
         const q = busqueda.trim().toLowerCase();

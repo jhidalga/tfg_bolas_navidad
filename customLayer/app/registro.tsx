@@ -12,15 +12,7 @@ import Toast from 'react-native-toast-message';
 import { toastConfig } from '../componentes/avisos';
 import { Picker } from '@react-native-picker/picker';
 import { tc } from '../lib/tema';
-
-const DEPARTAMENTOS = ['Informática', 'Lengua', 'Educación Física', 'Dibujo', 'Música', 'Religión', 'Cultura Clásica', 'Geografía', 'Tecnología', 'Inglés', 'Matemáticas', 'Física y Química', 'Biología'];
-const LETRAS = ['A', 'B', 'C', 'D'];
-const GRUPOS: Record<string, string[]> = {
-    'ESO': [1, 2, 3, 4].flatMap((n) => LETRAS.map((l) => `${n}º ESO ${l}`)),
-    'Bachillerato': [1, 2].flatMap((n) => ['A', 'B'].map((l) => `${n}º Bach ${l}`)),
-    'SMR': ['1º SMR', '2º SMR'],
-    'DAM': ['1º DAM', '2º DAM'],
-};
+import { DEPARTAMENTOS, GRUPOS } from '../lib/cursos';
 
 export default function Registro() {
     const styles = useEstilos(estilosEscritorio, estilosMovil);
