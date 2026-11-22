@@ -42,6 +42,7 @@ export default function Registro() {
     const [incApellido2, setIncApellido2] = useState('');
     const [incCurso, setIncCurso] = useState('');
     const [incCorreo, setIncCorreo] = useState('');
+    const [incMotivo, setIncMotivo] = useState('');
     const [enviandoInc, setEnviandoInc] = useState(false);
 
     function abrirIncidencia() {
@@ -51,6 +52,7 @@ export default function Registro() {
         setIncApellido2(apellido2);
         setIncCurso(curso);
         setIncCorreo(correo);
+        setIncMotivo('');
         setIncidenciaAbierta(true);
     }
 
@@ -61,6 +63,7 @@ export default function Registro() {
             apellido2: incApellido2.trim(),
             curso: incCurso.trim(),
             correo: incCorreo.trim(),
+            motivo: incMotivo.trim(),
         };
         if (!Object.values(datos).every(Boolean)) {
             Toast.show({ type: 'error', text1: 'Rellena todos los campos.' });
@@ -315,6 +318,16 @@ export default function Registro() {
                         <TextInput style={styles.input} value={incCurso} onChangeText={setIncCurso} placeholder='Ej: 2º DAM o Informática' />
                         <Text style={styles.etiqueta}>Correo que no te deja usar</Text>
                         <TextInput style={styles.input} value={incCorreo} onChangeText={setIncCorreo} placeholder='tuCorreo@g.educaand.es' autoCapitalize='none' />
+                        <Text style={styles.etiqueta}>Motivo</Text>
+                        <TextInput
+                            style={[styles.input, { minHeight: 84, textAlignVertical: 'top' }]}
+                            value={incMotivo}
+                            onChangeText={setIncMotivo}
+                            placeholder='Cuéntanos brevemente qué te pasa. Ej: mi correo tiene otra forma'
+                            multiline
+                            maxLength={300}
+                        />
+                        <Text style={{ color: '#6b7280', fontSize: 12, textAlign: 'right', marginTop: -6, marginBottom: 10 }}>{incMotivo.length}/300</Text>
 
                         <Pressable style={[styles.botonLogin, enviandoInc && { opacity: 0.7 }]} onPress={() => !enviandoInc && enviarIncidencia()}>
                             {enviandoInc ? <ActivityIndicator color={tc("#ffffff")} /> : <Text style={styles.textoBoton}>Enviar incidencia</Text>}

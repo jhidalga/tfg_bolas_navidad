@@ -9,7 +9,7 @@ from starlette.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 from supabase import ClientOptions, create_client, Client
 from dotenv import load_dotenv
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 import jwt
 try:
     from .bolas3d import zip_pedido, zip_lineas, generar_3mf, nombre_fichero, figura_para
@@ -50,8 +50,8 @@ class ItemCarrito(BaseModel):
     modelo_id: str
     modelo: str
     color: str
-    personalizacion: str
-    cantidad: int = 1
+    personalizacion: str = Field(max_length=60)
+    cantidad: int = Field(1, ge=1, le=20)
 
 class CheckoutPedido(BaseModel):
     total: float
@@ -67,6 +67,8 @@ class OfertasWeb(BaseModel):
 
 class EstadoPedido(BaseModel):
     estado: str
+
+ESTADOS_PEDIDO = ("Pendiente", "Completado", "Entregado", "Cancelado")
 
 class PagadoUsuario(BaseModel):
     pagado: bool
@@ -105,13 +107,14 @@ class IncidenciaRegistro(BaseModel):
     apellido2: str
     curso: str
     correo: str
+    motivo: str
 
 class EstadoIncidencia(BaseModel):
     estado: str
 
 class UsuarioUpdate(BaseModel):
-    nombre: Optional[str] = None
-    curso: Optional[str] = None
+    nombre: Optional[str] = Field(None, max_length=120)
+    curso: Optional[str] = Field(None, max_length=60)
 
 
 _CACHE_ROL = {}
@@ -155,13 +158,40 @@ async def proteger_admin(request: Request, call_next):
     request.state.user_id, request.state.es_admin = ident
     return await call_next(request)
 
+# La web se sirve desde este mismo servidor, asi que solo hace falta abrirla a estos origenes
+_ORIGENES = [o.strip() for o in os.getenv("CORS_ORIGINS", "https://laguna-tollon-pedidos-navidad.up.railway.app,http://localhost:8081,http://localhost:19006,http://localhost:3000").split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_ORIGENES,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def cabeceras_seguras(request: Request, call_next):
+    respuesta = await call_next(request)
+    respuesta.headers.setdefault("X-Content-Type-Options", "nosniff")
+    respuesta.headers.setdefault("X-Frame-Options", "DENY")
+    respuesta.headers.setdefault("Referrer-Policy", "same-origin")
+    return respuesta
+
+
+_USOS = {}
+
+def _limitar(request: Request, nombre: str, maximo: int, segundos: int):
+    """Limite sencillo por IP para los endpoints publicos. Detras de Railway la IP real viene en X-Forwarded-For."""
+    ip = (request.headers.get("x-forwarded-for") or (request.client.host if request.client else "?")).split(",")[0].strip()
+    ahora = time.time()
+    clave = (nombre, ip)
+    usos = [t for t in _USOS.get(clave, []) if t > ahora - segundos]
+    if len(usos) >= maximo:
+        raise HTTPException(status_code=429, detail="Demasiados intentos. Espera un poco y vuelve a probar.")
+    usos.append(ahora)
+    _USOS[clave] = usos
+    if len(_USOS) > 5000:
+        _USOS.clear()
 
 def _respuesta_3mf_pedido(pedido_id: str, detalles: list, detalle: Optional[str] = None):
     """Un 3MF suelto (si se da el id de la linea) o un zip con todas las bolas con nombre del pedido."""
@@ -653,7 +683,9 @@ def agregar_al_carrito(item: ItemCarrito, authorization: Optional[str] = Header(
         payload = jwt.decode(token, options={"verify_signature": False})
         user_id = payload.get("sub")
         cliente_seguro = create_client(SUPABASE_URL, SUPABASE_KEY, options=ClientOptions(headers={"Authorization": f"Bearer {token}"}))
-        prod = cliente_seguro.table("productos").select("personalizable").eq("id", item.producto_id).execute().data
+        prod = cliente_seguro.table("productos").select("personalizable, oculto, deshabilitado").eq("id", item.producto_id).execute().data
+        if not prod or prod[0].get("oculto") or prod[0].get("deshabilitado"):
+            raise HTTPException(status_code=400, detail="Este producto no está disponible ahora mismo")
         error_nombre = _error_nombre_bola(item.personalizacion, bool(prod and prod[0].get("personalizable")))
         if error_nombre:
             raise HTTPException(status_code=400, detail=error_nombre)
@@ -692,10 +724,16 @@ def realizar_pedido(checkout: CheckoutPedido, authorization: Optional[str] = Hea
         user_id = payload.get("sub")
         cliente_seguro = create_client(SUPABASE_URL, SUPABASE_KEY, options=ClientOptions(headers={"Authorization": f"Bearer {token}"}))
         
-        carrito_res = cliente_seguro.table("carrito").select("*, productos(precio, precio_personalizacion)").eq("user_id", user_id).execute()
+        carrito_res = cliente_seguro.table("carrito").select("*, productos(precio, precio_personalizacion, oculto, deshabilitado)").eq("user_id", user_id).execute()
         items_carrito = carrito_res.data
         if not items_carrito:
             raise HTTPException(status_code=400, detail="El carrito está vacío")
+        for i in items_carrito:
+            cant = i.get("cantidad", 1)
+            if not isinstance(cant, int) or cant < 1 or cant > 20:
+                raise HTTPException(status_code=400, detail="La cantidad de una bola no es válida. Quítala del carrito y vuelve a añadirla.")
+            if (i.get("productos") or {}).get("oculto") or (i.get("productos") or {}).get("deshabilitado"):
+                raise HTTPException(status_code=400, detail="Un producto del carrito ya no está disponible. Quítalo para poder pedir.")
             
         # El total lo calcula el servidor con los precios de la base de datos, no el que manda la web
         total_servidor = round(sum(float(i["productos"]["precio"]) * int(i.get("cantidad", 1) or 1) for i in items_carrito), 2)
@@ -775,6 +813,8 @@ def obtener_detalle_pedido_admin(pedido_id: str, request: Request, authorization
 
 @app.patch("/api/admin/pedidos/{pedido_id}/estado")
 def cambiar_estado_pedido(pedido_id: str, nuevo_estado: EstadoPedido, authorization: Optional[str] = Header(None)):
+    if nuevo_estado.estado not in ESTADOS_PEDIDO:
+        raise HTTPException(status_code=400, detail="Estado no valido")
     token = authorization.replace("Bearer ", "") if authorization else ""
     try:
         cliente_seguro = create_client(SUPABASE_URL, SUPABASE_KEY, options=ClientOptions(headers={"Authorization": f"Bearer {token}"}))
@@ -851,8 +891,9 @@ if MODO_PRUEBA:
                         headers={"Content-Disposition": f'attachment; filename="{nombre_fichero(modelo, nombre)}"'})
 
 @app.get("/api/preview")
-def vista_previa_bola(modelo: str, nombre: str):
+def vista_previa_bola(modelo: str, nombre: str, request: Request):
     """Imagen PNG de la bola con el nombre puesto. Es publica porque la usa el cliente antes de comprar."""
+    _limitar(request, "preview", 120, 60)
     if len(modelo) > 80 or len(nombre) > 60:
         raise HTTPException(status_code=400, detail="Texto demasiado largo")
     try:
@@ -1336,13 +1377,16 @@ def marcar_pagado(usuario_id: str, datos: PagadoUsuario, authorization: Optional
         raise HTTPException(status_code=500, detail="Ha ocurrido un error en el servidor. Inténtalo de nuevo.")
 
 @app.post("/api/registro/incidencia")
-def crear_incidencia_registro(datos: IncidenciaRegistro):
+def crear_incidencia_registro(datos: IncidenciaRegistro, request: Request):
     """Publico: lo usa quien no consigue registrarse."""
+    _limitar(request, "incidencia", 5, 3600)
     campos = {k: v.strip() for k, v in datos.dict().items()}
     if not all(campos.values()):
         raise HTTPException(status_code=400, detail="Rellena todos los campos")
-    if any(len(v) > 120 for v in campos.values()):
+    if any(len(v) > 120 for k, v in campos.items() if k != "motivo"):
         raise HTTPException(status_code=400, detail="Algun campo es demasiado largo")
+    if len(campos["motivo"]) > 300:
+        raise HTTPException(status_code=400, detail="El motivo puede tener como maximo 300 letras")
     if "@" not in campos["correo"]:
         raise HTTPException(status_code=400, detail="Correo no valido")
     try:
@@ -1359,8 +1403,9 @@ def crear_incidencia_registro(datos: IncidenciaRegistro):
 
 
 @app.get("/api/registro/permitido")
-def correo_permitido(correo: str):
+def correo_permitido(correo: str, request: Request):
     """Publico: dice si un admin ha permitido saltar la regla del correo para esta direccion."""
+    _limitar(request, "permitido", 60, 600)
     if len(correo) > 200:
         return {"permitido": False}
     try:

@@ -96,6 +96,12 @@ export default function Incidencias() {
                         </View>
                         <Text style={{ color: '#475569', marginTop: 6 }}>Curso: {i.curso}</Text>
                         <Text style={{ color: '#111827', marginTop: 2, fontWeight: '600' }}>{i.correo}</Text>
+                        {!!i.motivo && (
+                            <View style={{ backgroundColor: '#f8fafc', borderRadius: 8, padding: 10, marginTop: 8, borderWidth: 1, borderColor: '#e2e8f0' }}>
+                                <Text style={{ color: '#64748b', fontSize: 12, fontWeight: '700', marginBottom: 2 }}>MOTIVO</Text>
+                                <Text style={{ color: '#1e293b' }}>{i.motivo}</Text>
+                            </View>
+                        )}
                         <Text style={{ color: '#94a3b8', marginTop: 2, fontSize: 12 }}>{String(i.created_at || '').slice(0, 10)}</Text>
 
                         <View style={{ flexDirection: 'row', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
