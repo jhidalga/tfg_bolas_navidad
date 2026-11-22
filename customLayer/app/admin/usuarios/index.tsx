@@ -9,6 +9,9 @@ import { useEstilos } from '../../../lib/responsive';
 import Toast from 'react-native-toast-message';
 import { plural } from '../../../lib/formato';
 import { useConfirmar } from '../../../componentes/confirmar';
+import Desplegable from '../../../componentes/desplegable';
+
+const ORDENES = ['Nombre', 'Email', 'Profesor', 'Pedidos'];
 
 const API_URL = `${process.env.EXPO_PUBLIC_API_URL || ''}/api`;
 
@@ -26,6 +29,13 @@ export default function GestorUsuariosAdmin() {
     const [cargando, setCargando] = useState(true);
     const [usuarios, setUsuarios] = useState<any[]>([]);
     const [busqueda, setBusqueda] = useState('');
+    const [curso, setCurso] = useState('Todos');
+    const [depto, setDepto] = useState('Todos');
+    const [rol, setRol] = useState('Todos');
+    const [prof, setProf] = useState('Todos');
+    const [orden, setOrden] = useState('Nombre');
+    const [descendente, setDescendente] = useState(false);
+    const [abierto, setAbierto] = useState<string | null>(null);
     const [paginaActual, setPaginaActual] = useState(1);
     const itemsPorPagina = 12;
 
@@ -33,7 +43,7 @@ export default function GestorUsuariosAdmin() {
 
     useEffect(() => {
         setPaginaActual(1);
-    }, [busqueda]);
+    }, [busqueda, curso, depto, rol, prof, orden, descendente]);
 
     /**
      * Muestra una notificación emergente (Toast) en pantalla.
@@ -102,16 +112,33 @@ export default function GestorUsuariosAdmin() {
         }
     };
 
+    const cursos = useMemo(() => ['Todos', ...Array.from(new Set(usuarios.filter(u => !u.profesor).map(u => u.curso).filter(Boolean))).sort() as string[]], [usuarios]);
+    const deptos = useMemo(() => ['Todos', ...Array.from(new Set(usuarios.filter(u => u.profesor).map(u => u.curso).filter(Boolean))).sort() as string[]], [usuarios]);
+
     /**
-     * Filtra la lista de usuarios en memoria basándose en el texto de búsqueda.
-     * Se evalúa coincidencia parcial con el nombre del usuario (case-insensitive).
+     * Filtra la lista en memoria por texto, curso, departamento, rol y profesor.
+     * Después la ordena por el campo elegido.
      */
     const usuariosFiltrados = useMemo(() => {
-        return usuarios.filter(u => {
-            if (!busqueda) return true;
-            return u.nombre?.toLowerCase().includes(busqueda.toLowerCase());
+        const q = busqueda.trim().toLowerCase();
+        const lista = usuarios.filter(u =>
+            (!q || u.nombre?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q)) &&
+            (curso === 'Todos' || (!u.profesor && u.curso === curso)) &&
+            (depto === 'Todos' || (!!u.profesor && u.curso === depto)) &&
+            (rol === 'Todos' || (rol === 'Solo admins' ? !!u.administrador : !u.administrador)) &&
+            (prof === 'Todos' || (prof === 'Solo profesores' ? !!u.profesor : !u.profesor))
+        );
+        const texto = (v: any) => String(v || '').toLowerCase();
+        lista.sort((a, b) => {
+            let r = 0;
+            if (orden === 'Nombre') r = texto(a.nombre).localeCompare(texto(b.nombre), 'es');
+            else if (orden === 'Email') r = texto(a.email).localeCompare(texto(b.email), 'es');
+            else if (orden === 'Profesor') r = Number(!!b.profesor) - Number(!!a.profesor) || texto(a.nombre).localeCompare(texto(b.nombre), 'es');
+            else r = (a.num_pedidos || 0) - (b.num_pedidos || 0);
+            return descendente ? -r : r;
         });
-    }, [usuarios, busqueda]);
+        return lista;
+    }, [usuarios, busqueda, curso, depto, rol, prof, orden, descendente]);
 
     const totalPaginas = Math.ceil(usuariosFiltrados.length / itemsPorPagina);
     const usuariosPaginados = usuariosFiltrados.slice(
@@ -130,7 +157,36 @@ export default function GestorUsuariosAdmin() {
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Ionicons name="arrow-back" size={18} color="#475569" /><Text style={styles.txtVolver}>Volver</Text></View>
                     </Pressable>
                     <Text style={styles.titulo}>Gestión de Usuarios</Text>
-                    <TextInput placeholder="Buscar..." style={styles.inputBuscar} value={busqueda} onChangeText={(text) => setBusqueda(text)} />
+                    <TextInput placeholder="Buscar por nombre o correo" style={styles.inputBuscar} value={busqueda} onChangeText={(text) => setBusqueda(text)} />
+                </View>
+
+                <View style={{ width: '100%', maxWidth: 1000, marginBottom: 18 }}>
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 0, alignItems: 'flex-start', zIndex: 20 }}>
+                        <Desplegable titulo="Curso" opciones={cursos} valor={curso} abierto={abierto === 'curso'} ancho={150}
+                            alAbrir={() => setAbierto(abierto === 'curso' ? null : 'curso')}
+                            alElegir={(v) => { setCurso(v); setDepto('Todos'); setAbierto(null); }} />
+                        <Desplegable titulo="Departamento" opciones={deptos} valor={depto} abierto={abierto === 'depto'} ancho={170}
+                            alAbrir={() => setAbierto(abierto === 'depto' ? null : 'depto')}
+                            alElegir={(v) => { setDepto(v); setCurso('Todos'); setAbierto(null); }} />
+                        <Desplegable titulo="Rol" opciones={['Todos', 'Solo admins', 'Sin admin']} valor={rol} abierto={abierto === 'rol'} ancho={150} etiquetaTodos="Todos (rol)"
+                            alAbrir={() => setAbierto(abierto === 'rol' ? null : 'rol')}
+                            alElegir={(v) => { setRol(v); setAbierto(null); }} />
+                        <Desplegable titulo="Profesor" opciones={['Todos', 'Solo profesores', 'Sin profesores']} valor={prof} abierto={abierto === 'prof'} ancho={160} etiquetaTodos="Todos (profesor)"
+                            alAbrir={() => setAbierto(abierto === 'prof' ? null : 'prof')}
+                            alElegir={(v) => { setProf(v); setAbierto(null); }} />
+                    </View>
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 10, alignItems: 'center', zIndex: 10 }}>
+                        <Text style={{ color: '#475569', fontWeight: '600', flexShrink: 0 }}>Ordenar por</Text>
+                        <Desplegable titulo="Ordenar por" opciones={ORDENES} valor={orden} abierto={abierto === 'orden'} ancho={140}
+                            alAbrir={() => setAbierto(abierto === 'orden' ? null : 'orden')}
+                            alElegir={(v) => { setOrden(v); setDescendente(v === 'Pedidos'); setAbierto(null); }} />
+                        <Pressable onPress={() => setDescendente(!descendente)} accessibilityLabel="Cambiar sentido del orden"
+                            style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#fff', borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10 }}>
+                            <Ionicons name={descendente ? 'arrow-down' : 'arrow-up'} size={16} color="#475569" />
+                            <Text style={{ color: '#1e293b', fontSize: 15 }}>{orden === 'Pedidos' ? (descendente ? 'Más primero' : 'Menos primero') : orden === 'Profesor' ? (descendente ? 'Alumnos primero' : 'Profes primero') : (descendente ? 'Z a A' : 'A a Z')}</Text>
+                        </Pressable>
+                    </View>
+                    <Text style={{ color: '#64748b', marginTop: 10 }}>{plural(usuariosFiltrados.length, 'usuario', 'usuarios')}</Text>
                 </View>
 
                 <View style={styles.contenedorTabla}>

@@ -6,6 +6,7 @@ import { traducirError } from '../../lib/errores';
 import { useEsMovilWeb } from '../../lib/responsive';
 import { euros } from '../../lib/formato';
 import Toast from 'react-native-toast-message';
+import Desplegable from '../../componentes/desplegable';
 
 const API_URL = `${process.env.EXPO_PUBLIC_API_URL || ''}/api`;
 
@@ -13,27 +14,6 @@ type CeldaModelo = { cantidad: number; estados: Record<string, number> };
 type Fila = { id: string; nombre: string; email: string; curso: string; num_pedidos: number; bolas: number; total: number; pagado?: boolean; profesor?: boolean; modelos?: Record<string, CeldaModelo> };
 
 const ANCHO_MODELO = 105;
-
-/** Desplegable sencillo: botón con el valor y, al abrirlo, una lista con scroll debajo. */
-function Desplegable({ titulo, opciones, valor, abierto, ancho, alAbrir, alElegir }: { titulo: string; opciones: string[]; valor: string; abierto: boolean; ancho: number; alAbrir: () => void; alElegir: (v: string) => void }) {
-    return (
-        <View style={{ width: ancho }}>
-            <Pressable onPress={alAbrir} style={[e.input, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]} accessibilityLabel={`Filtrar por ${titulo}`}>
-                <Text style={{ color: valor === 'Todos' ? '#64748b' : '#1e293b', fontSize: 15, flexShrink: 1 }} numberOfLines={1}>{valor === 'Todos' ? titulo : valor}</Text>
-                <Ionicons name={abierto ? 'chevron-up' : 'chevron-down'} size={16} color="#64748b" />
-            </Pressable>
-            {abierto && (
-                <ScrollView style={e.listaDesplegable} nestedScrollEnabled>
-                    {opciones.map(o => (
-                        <Pressable key={o} onPress={() => alElegir(o)} style={[e.opcionDesplegable, o === valor && { backgroundColor: '#eff6ff' }]}>
-                            <Text style={{ color: o === valor ? '#1d4ed8' : '#1e293b', fontWeight: o === valor ? '700' : '400' }}>{o === 'Todos' ? `Todos (${titulo.toLowerCase()})` : o}</Text>
-                        </Pressable>
-                    ))}
-                </ScrollView>
-            )}
-        </View>
-    );
-}
 
 /** Estado de las bolas de un modelo: uno solo si coinciden, o el recuento si hay varios. */
 const textoEstados = (c?: CeldaModelo) => {
@@ -248,8 +228,6 @@ export default function ResumenAdmin() {
 
 const e = StyleSheet.create({
     input: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, fontSize: 15 },
-    listaDesplegable: { maxHeight: 220, backgroundColor: '#fff', borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 8, marginTop: 4 },
-    opcionDesplegable: { paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
     botonDescarga: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#10b981', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 8, justifyContent: 'center' },
     tarjeta: { backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: '#e2e8f0', flexGrow: 0, alignSelf: 'flex-start', maxWidth: '100%' },
     fila: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
