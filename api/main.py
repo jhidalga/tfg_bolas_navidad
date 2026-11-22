@@ -513,7 +513,7 @@ if MODO_PRUEBA:
         por_persona = {}
         for p in _pedidos(str(request.base_url)):
             u = p["usuarios"]
-            por_persona.setdefault(u["nombre"], {"id": u["nombre"], "nombre": u["nombre"], "curso": u["curso"],
+            por_persona.setdefault(u["nombre"], {"id": u["nombre"], "nombre": u["nombre"], "curso": u["curso"], "profesor": not any(ch.isdigit() for ch in u["curso"]),
                 "email": u["nombre"].lower().replace(" ", ".") + "@g.educaand.es", "pedidos": []})["pedidos"].append(p)
         return _agregar_resumen(list(por_persona.values()), _ESTADO.setdefault("pagados", set()))
 
@@ -1280,7 +1280,7 @@ def _agregar_resumen(usuarios, pagados=None):
                 est = p.get("estado") or "Pendiente"
                 celda["estados"][est] = celda["estados"].get(est, 0) + cant
         filas.append({"id": u.get("id"), "nombre": u.get("nombre") or "", "email": u.get("email") or "",
-                      "curso": u.get("curso") or "", "num_pedidos": len(pedidos), "bolas": bolas, "total": total,
+                      "curso": u.get("curso") or "", "profesor": bool(u.get("profesor")), "num_pedidos": len(pedidos), "bolas": bolas, "total": total,
                       "pagado": u.get("id") in pagados, "modelos": modelos})
     filas.sort(key=lambda f: f["nombre"].lower())
     columnas = [m for m in _ORDEN_MODELOS if m in usados] + (["Otros"] if "Otros" in usados else [])
@@ -1312,7 +1312,7 @@ def resumen_admin(authorization: Optional[str] = Header(None)):
     """Tabla resumen para el admin: que persona ha pedido cuantas bolas y cuanto ha gastado."""
     try:
         cliente = _exigir_admin(authorization)
-        usuarios = cliente.table("usuarios").select("id, nombre, email, curso, pedidos(id, total, estado, detalles_pedido(cantidad, modelo))").execute().data
+        usuarios = cliente.table("usuarios").select("id, nombre, email, curso, profesor, pedidos(id, total, estado, detalles_pedido(cantidad, modelo))").execute().data
         pagos = cliente.table("pagos_usuarios").select("user_id").eq("pagado", True).execute().data
         return _agregar_resumen(usuarios or [], {x["user_id"] for x in (pagos or [])})
     except HTTPException:

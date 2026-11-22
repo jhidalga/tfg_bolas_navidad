@@ -10,9 +10,30 @@ import Toast from 'react-native-toast-message';
 const API_URL = `${process.env.EXPO_PUBLIC_API_URL || ''}/api`;
 
 type CeldaModelo = { cantidad: number; estados: Record<string, number> };
-type Fila = { id: string; nombre: string; email: string; curso: string; num_pedidos: number; bolas: number; total: number; pagado?: boolean; modelos?: Record<string, CeldaModelo> };
+type Fila = { id: string; nombre: string; email: string; curso: string; num_pedidos: number; bolas: number; total: number; pagado?: boolean; profesor?: boolean; modelos?: Record<string, CeldaModelo> };
 
 const ANCHO_MODELO = 105;
+
+/** Desplegable sencillo: botón con el valor y, al abrirlo, una lista con scroll debajo. */
+function Desplegable({ titulo, opciones, valor, abierto, ancho, alAbrir, alElegir }: { titulo: string; opciones: string[]; valor: string; abierto: boolean; ancho: number; alAbrir: () => void; alElegir: (v: string) => void }) {
+    return (
+        <View style={{ width: ancho }}>
+            <Pressable onPress={alAbrir} style={[e.input, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]} accessibilityLabel={`Filtrar por ${titulo}`}>
+                <Text style={{ color: valor === 'Todos' ? '#64748b' : '#1e293b', fontSize: 15, flexShrink: 1 }} numberOfLines={1}>{valor === 'Todos' ? titulo : valor}</Text>
+                <Ionicons name={abierto ? 'chevron-up' : 'chevron-down'} size={16} color="#64748b" />
+            </Pressable>
+            {abierto && (
+                <ScrollView style={e.listaDesplegable} nestedScrollEnabled>
+                    {opciones.map(o => (
+                        <Pressable key={o} onPress={() => alElegir(o)} style={[e.opcionDesplegable, o === valor && { backgroundColor: '#eff6ff' }]}>
+                            <Text style={{ color: o === valor ? '#1d4ed8' : '#1e293b', fontWeight: o === valor ? '700' : '400' }}>{o === 'Todos' ? `Todos (${titulo.toLowerCase()})` : o}</Text>
+                        </Pressable>
+                    ))}
+                </ScrollView>
+            )}
+        </View>
+    );
+}
 
 /** Estado de las bolas de un modelo: uno solo si coinciden, o el recuento si hay varios. */
 const textoEstados = (c?: CeldaModelo) => {
@@ -46,6 +67,8 @@ export default function ResumenAdmin() {
     const [modelos, setModelos] = useState<string[]>([]);
     const [busqueda, setBusqueda] = useState('');
     const [curso, setCurso] = useState('Todos');
+    const [depto, setDepto] = useState('Todos');
+    const [abierto, setAbierto] = useState<'curso' | 'depto' | null>(null);
     const [orden, setOrden] = useState<{ col: Columna; asc: boolean }>({ col: 'nombre', asc: true });
 
     useEffect(() => {
@@ -65,18 +88,19 @@ export default function ResumenAdmin() {
         })();
     }, []);
 
-    const cursos = useMemo(() => ['Todos', ...Array.from(new Set(filas.map(f => f.curso).filter(Boolean))).sort()], [filas]);
+    const cursos = useMemo(() => ['Todos', ...Array.from(new Set(filas.filter(f => !f.profesor).map(f => f.curso).filter(Boolean))).sort()], [filas]);
+    const deptos = useMemo(() => ['Todos', ...Array.from(new Set(filas.filter(f => f.profesor).map(f => f.curso).filter(Boolean))).sort()], [filas]);
 
     const visibles = useMemo(() => {
         const q = busqueda.trim().toLowerCase();
-        const lista = filas.filter(f => (curso === 'Todos' || f.curso === curso) &&
+        const lista = filas.filter(f => (curso === 'Todos' || (!f.profesor && f.curso === curso)) && (depto === 'Todos' || (!!f.profesor && f.curso === depto)) &&
             (!q || f.nombre.toLowerCase().includes(q) || f.email.toLowerCase().includes(q)));
         return [...lista].sort((a, b) => {
             const x = orden.col === 'pagado' ? Number(!!a.pagado) : a[orden.col], y = orden.col === 'pagado' ? Number(!!b.pagado) : b[orden.col];
             const r = typeof x === 'number' && typeof y === 'number' ? x - y : String(x).localeCompare(String(y), 'es');
             return orden.asc ? r : -r;
         });
-    }, [filas, busqueda, curso, orden]);
+    }, [filas, busqueda, curso, depto, orden]);
 
     const totales = useMemo(() => ({
         personas: visibles.length,
@@ -136,17 +160,18 @@ export default function ResumenAdmin() {
         <View style={{ flex: 1, backgroundColor: '#f8fafc', padding: movil ? 14 : 28 }}>
             <Text style={{ fontSize: movil ? 22 : 28, fontWeight: 'bold', color: '#1e293b', marginBottom: 14 }}>Resumen de pedidos</Text>
 
-            <View style={{ flexDirection: movil ? 'column' : 'row', gap: 10, marginBottom: 14 }}>
+            <View style={{ flexDirection: movil ? 'column' : 'row', gap: 10, marginBottom: 14, alignItems: movil ? 'stretch' : 'flex-start' }}>
                 <TextInput style={[e.input, { flex: movil ? undefined : 1 }]} value={busqueda} onChangeText={setBusqueda}
                     placeholder="Buscar por nombre o correo" />
-                <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
-                    {cursos.map(c => (
-                        <Pressable key={c} onPress={() => setCurso(c)} style={[e.chip, curso === c && e.chipActivo]}>
-                            <Text style={[e.chipTexto, curso === c && e.chipTextoActivo]}>{c}</Text>
-                        </Pressable>
-                    ))}
+                <View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap', alignItems: 'flex-start', zIndex: 20 }}>
+                    <Desplegable titulo="Curso" opciones={cursos} valor={curso} abierto={abierto === 'curso'} ancho={movil ? 150 : 170}
+                        alAbrir={() => setAbierto(abierto === 'curso' ? null : 'curso')}
+                        alElegir={(v) => { setCurso(v); setDepto('Todos'); setAbierto(null); }} />
+                    <Desplegable titulo="Departamento" opciones={deptos} valor={depto} abierto={abierto === 'depto'} ancho={movil ? 170 : 190}
+                        alAbrir={() => setAbierto(abierto === 'depto' ? null : 'depto')}
+                        alElegir={(v) => { setDepto(v); setCurso('Todos'); setAbierto(null); }} />
                 </View>
-                <Pressable onPress={descargar} style={e.botonDescarga} accessibilityLabel="Descargar CSV">
+                <Pressable onPress={descargar} style={[e.botonDescarga, !movil && { height: 44 }]} accessibilityLabel="Descargar CSV">
                     <Ionicons name="download-outline" size={18} color="#fff" />
                     <Text style={{ color: '#fff', fontWeight: '600' }}>Descargar CSV</Text>
                 </Pressable>
@@ -223,10 +248,8 @@ export default function ResumenAdmin() {
 
 const e = StyleSheet.create({
     input: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, fontSize: 15 },
-    chip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, backgroundColor: '#fff', borderWidth: 1, borderColor: '#e2e8f0' },
-    chipActivo: { backgroundColor: '#3b82f6', borderColor: '#3b82f6' },
-    chipTexto: { color: '#475569', fontWeight: '600', fontSize: 13 },
-    chipTextoActivo: { color: '#fff' },
+    listaDesplegable: { maxHeight: 220, backgroundColor: '#fff', borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 8, marginTop: 4 },
+    opcionDesplegable: { paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
     botonDescarga: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#10b981', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 8, justifyContent: 'center' },
     tarjeta: { backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: '#e2e8f0', flexGrow: 0, alignSelf: 'flex-start', maxWidth: '100%' },
     fila: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
