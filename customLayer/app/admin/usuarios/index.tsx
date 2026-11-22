@@ -11,7 +11,8 @@ import { plural } from '../../../lib/formato';
 import { useConfirmar } from '../../../componentes/confirmar';
 import Desplegable from '../../../componentes/desplegable';
 
-const ORDENES = ['Nombre', 'Email', 'Profesor', 'Pedidos'];
+const ORDENES = ['Nombre', 'Email', 'Curso', 'Profesor', 'Pedidos', 'Rol'];
+const INICIA_DESC = ['Profesor', 'Pedidos', 'Rol'];
 
 const API_URL = `${process.env.EXPO_PUBLIC_API_URL || ''}/api`;
 
@@ -112,6 +113,13 @@ export default function GestorUsuariosAdmin() {
         }
     };
 
+    /** Elige la columna de orden. Si ya era esa, cambia el sentido. */
+    const ordenarPor = (col: string) => {
+        if (col === orden) { setDescendente(!descendente); return; }
+        setOrden(col);
+        setDescendente(col === 'Pedidos');
+    };
+
     const cursos = useMemo(() => ['Todos', ...Array.from(new Set(usuarios.filter(u => !u.profesor).map(u => u.curso).filter(Boolean))).sort() as string[]], [usuarios]);
     const deptos = useMemo(() => ['Todos', ...Array.from(new Set(usuarios.filter(u => u.profesor).map(u => u.curso).filter(Boolean))).sort() as string[]], [usuarios]);
 
@@ -134,6 +142,8 @@ export default function GestorUsuariosAdmin() {
             if (orden === 'Nombre') r = texto(a.nombre).localeCompare(texto(b.nombre), 'es');
             else if (orden === 'Email') r = texto(a.email).localeCompare(texto(b.email), 'es');
             else if (orden === 'Profesor') r = Number(!!b.profesor) - Number(!!a.profesor) || texto(a.nombre).localeCompare(texto(b.nombre), 'es');
+            else if (orden === 'Curso') r = texto(a.curso).localeCompare(texto(b.curso), 'es');
+            else if (orden === 'Rol') r = Number(!!b.administrador) - Number(!!a.administrador) || texto(a.nombre).localeCompare(texto(b.nombre), 'es');
             else r = (a.num_pedidos || 0) - (b.num_pedidos || 0);
             return descendente ? -r : r;
         });
@@ -179,11 +189,11 @@ export default function GestorUsuariosAdmin() {
                         <Text style={{ color: '#475569', fontWeight: '600', flexShrink: 0 }}>Ordenar por</Text>
                         <Desplegable titulo="Ordenar por" opciones={ORDENES} valor={orden} abierto={abierto === 'orden'} ancho={140}
                             alAbrir={() => setAbierto(abierto === 'orden' ? null : 'orden')}
-                            alElegir={(v) => { setOrden(v); setDescendente(v === 'Pedidos'); setAbierto(null); }} />
+                            alElegir={(v) => { ordenarPor(v); setAbierto(null); }} />
                         <Pressable onPress={() => setDescendente(!descendente)} accessibilityLabel="Cambiar sentido del orden"
                             style={{ flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#fff', borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10 }}>
                             <Ionicons name={descendente ? 'arrow-down' : 'arrow-up'} size={16} color="#475569" />
-                            <Text style={{ color: '#1e293b', fontSize: 15 }}>{orden === 'Pedidos' ? (descendente ? 'Más primero' : 'Menos primero') : orden === 'Profesor' ? (descendente ? 'Alumnos primero' : 'Profes primero') : (descendente ? 'Z a A' : 'A a Z')}</Text>
+                            <Text style={{ color: '#1e293b', fontSize: 15 }}>{orden === 'Pedidos' ? (descendente ? 'Más primero' : 'Menos primero') : orden === 'Profesor' ? (descendente ? 'Alumnos primero' : 'Profes primero') : orden === 'Rol' ? (descendente ? 'Sin admin primero' : 'Admins primero') : (descendente ? 'Z a A' : 'A a Z')}</Text>
                         </Pressable>
                     </View>
                     <Text style={{ color: '#64748b', marginTop: 10 }}>{plural(usuariosFiltrados.length, 'usuario', 'usuarios')}</Text>
@@ -192,12 +202,19 @@ export default function GestorUsuariosAdmin() {
                 <View style={styles.contenedorTabla}>
                     <View style={styles.tabla}>
                         <View style={styles.cabecera}>
-                            <Text style={[styles.colCabecera, styles.colNombre]}>Nombre</Text>
-                            <Text style={[styles.colCabecera, styles.colEmail]}>Email</Text>
-                            <Text style={[styles.colCabecera, styles.colCurso, { textAlign: 'center' }]}>Curso/Departamento</Text>
-                            <Text style={[styles.colCabecera, styles.colProf, { textAlign: 'center' }]}>Profesor</Text>
-                            <Text style={[styles.colCabecera, styles.colPedidos, { textAlign: 'center' }]}>Pedidos</Text>
-                            <Text style={[styles.colCabecera, styles.colRol, { textAlign: 'center' }]}>Rol</Text>
+                            {[
+                                ['Nombre', 'Nombre', styles.colNombre, null],
+                                ['Email', 'Email', styles.colEmail, null],
+                                ['Curso/Dpto.', 'Curso', styles.colCurso, 'center'],
+                                ['Profesor', 'Profesor', styles.colProf, 'center'],
+                                ['Pedidos', 'Pedidos', styles.colPedidos, 'center'],
+                                ['Rol', 'Rol', styles.colRol, 'center'],
+                            ].map(([texto, col, estilo, alinea]: any) => (
+                                <Pressable key={col} onPress={() => ordenarPor(col)} style={[estilo, { flexDirection: 'row', alignItems: 'center', gap: 4, justifyContent: alinea ? 'center' : 'flex-start' }]} accessibilityLabel={`Ordenar por ${col}`}>
+                                    <Text style={[styles.colCabecera, { flex: 0, width: undefined }, orden === col && { color: '#1d4ed8' }]}>{texto}</Text>
+                                    {orden === col && <Ionicons name={descendente ? 'arrow-down' : 'arrow-up'} size={14} color="#1d4ed8" />}
+                                </Pressable>
+                            ))}
                         </View>
 
                         {usuariosPaginados.map((u) => (
