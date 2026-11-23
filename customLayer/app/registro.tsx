@@ -135,6 +135,7 @@ export default function Registro() {
             email: correoLimpio,
             password: contrasenaLimpia,
             options: {
+                emailRedirectTo: typeof window !== 'undefined' ? `${window.location.origin}/login` : undefined,
                 data: {
                     curso: cursoLimpio,
                     profesor: profesor,
@@ -153,7 +154,9 @@ export default function Registro() {
         }
 
         if (!data.session) {
-            Toast.show({ type: 'error', text1: 'No se ha podido iniciar sesión. Contacta con el administrador.' });
+            // Con la verificacion de correo activada no hay sesion hasta pulsar el enlace del correo
+            Toast.show({ type: 'success', text1: 'Revisa tu correo', text2: `Te hemos enviado un enlace a ${correoLimpio}. Púlsalo para activar tu cuenta.`, visibilityTime: 8000 });
+            router.replace('/login');
             return;
         }
 

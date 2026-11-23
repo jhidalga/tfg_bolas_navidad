@@ -1,5 +1,74 @@
-import { Redirect } from 'expo-router';
+import { View, Text, TextInput, ScrollView, Pressable } from 'react-native';
+import { useState } from 'react';
+import { useRouter } from 'expo-router';
+import Toast from 'react-native-toast-message';
+import { styles as estilosEscritorio } from '../styles/login/login.styles';
+import { styles as estilosMovil } from '../styles/login/login.styles.movil';
+import { useEstilos } from '../lib/responsive';
+import { supabase } from '../lib/supabase';
+import { traducirError } from '../lib/errores';
+import Footer from '../componentes/footer';
 
+/** Pide el correo y manda el enlace para poner una contraseña nueva. */
 export default function RecuperarPassword() {
-    return <Redirect href="/login" />;
+    const styles = useEstilos(estilosEscritorio, estilosMovil);
+    const router = useRouter();
+    const [correo, setCorreo] = useState('');
+    const [cargando, setCargando] = useState(false);
+    const [enviado, setEnviado] = useState(false);
+
+    async function enviar() {
+        const limpio = correo.trim();
+        if (cargando) return;
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(limpio)) {
+            Toast.show({ type: 'error', text1: 'Introduce un correo electrónico válido' });
+            return;
+        }
+        setCargando(true);
+        const { error } = await supabase.auth.resetPasswordForEmail(limpio, {
+            redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/nueva-clave` : undefined,
+        });
+        setCargando(false);
+        if (error) {
+            Toast.show({ type: 'error', text1: 'Error', text2: traducirError(error.message) });
+            return;
+        }
+        // Mismo mensaje exista o no el correo, para no dar pistas de quien tiene cuenta
+        setEnviado(true);
+    }
+
+    return (
+        <ScrollView contentContainerStyle={styles.scrollFondo}>
+            <View style={styles.contenedorCentral}>
+                <View style={styles.tarjetaLogin}>
+                    <Text style={styles.titulo}>Recuperar contraseña</Text>
+                    {enviado ? (
+                        <Text style={styles.avisoRecuperacion} accessibilityLabel="Correo enviado">
+                            Si ese correo tiene cuenta, te hemos enviado un enlace para elegir una contraseña nueva. Revisa también la carpeta de spam.
+                        </Text>
+                    ) : (
+                        <View>
+                            <Text style={styles.etiqueta}>Email</Text>
+                            <TextInput
+                                style={styles.input}
+                                value={correo}
+                                onChangeText={setCorreo}
+                                placeholder='tuCorreo@ejemplo.com'
+                                autoCapitalize='none'
+                                keyboardType='email-address'
+                                onSubmitEditing={enviar}
+                            />
+                            <Pressable style={[styles.botonLogin, cargando && { opacity: 0.7 }]} onPress={enviar} disabled={cargando}>
+                                <Text style={styles.textoBoton}>{cargando ? 'Enviando...' : 'Enviar enlace'}</Text>
+                            </Pressable>
+                        </View>
+                    )}
+                    <Pressable style={styles.botonVolver} onPress={() => router.replace('/login')}>
+                        <Text style={styles.textoBotonVolver}>Volver</Text>
+                    </Pressable>
+                </View>
+            </View>
+            <Footer />
+        </ScrollView>
+    );
 }

@@ -91,9 +91,9 @@ export default function FormLogin({ alEntrar }: { alEntrar?: () => void }) {
                 <Text style={styles.textoBoton}>{cargando ? 'Entrando...' : 'Iniciar sesión'}</Text>
             </Pressable>
 
-            <Text style={styles.avisoRecuperacion}>
-                Si has olvidado tu contraseña, contacta con el administrador.
-            </Text>
+            <Pressable onPress={() => router.push('/recuperar')} style={{ marginTop: 14, alignItems: 'center' }}>
+                <Text style={{ color: tc('#a52a2a'), fontWeight: '700', fontSize: 14 }}>¿Has olvidado tu contraseña?</Text>
+            </Pressable>
 
             <Pressable style={styles.botonVolver} onPress={() => router.push('/registro')}>
                 <Text style={styles.textoBotonVolver}>¿No tienes cuenta? Regístrate</Text>
