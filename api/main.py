@@ -828,7 +828,9 @@ def _enviar_a_hoja(cliente: str, fecha, detalles: list) -> None:
             cuerpo = _filas_para_hoja(cliente, fecha, detalles)
             cuerpo["secret"] = secreto
             req = urllib.request.Request(url, data=_json.dumps(cuerpo).encode("utf-8"),
-                                         headers={"Content-Type": "text/plain;charset=utf-8"}, method="POST")
+                                         headers={"Content-Type": "text/plain;charset=utf-8",
+                                                  "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
+                                                  "Accept": "*/*"}, method="POST")
             urllib.request.urlopen(req, timeout=20).read()
         except Exception:
             logging.exception("No se pudo anadir el pedido a la hoja")
