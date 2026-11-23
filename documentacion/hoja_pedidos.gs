@@ -47,7 +47,7 @@ function doPost(e) {
       var fila = hoja.getLastRow() + 1;
       hoja.getRange(fila, 1, 1, 7).setValues([[idFigura, idPedido, datos.cliente, datos.fecha, fig.figura, fig.precio, '']]);
       hoja.getRange(fila, 9).setValue(datos.pedido_ref || '');
-      hoja.getRange(fila, 8).setFormula('=IF(G' + fila + '="","",F' + fila + '-G' + fila + ')');
+      hoja.getRange(fila, 8).setFormula('=IF(ISNUMBER(G' + fila + '),F' + fila + '-G' + fila + ',"")');
     });
     return ContentService.createTextOutput('ok ' + idPedido);
   } finally {
