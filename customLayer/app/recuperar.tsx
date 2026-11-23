@@ -44,7 +44,7 @@ export default function RecuperarPassword() {
                     <Text style={styles.titulo}>Recuperar contraseña</Text>
                     {enviado ? (
                         <Text style={styles.avisoRecuperacion} accessibilityLabel="Correo enviado">
-                            Si ese correo tiene cuenta, te hemos enviado un enlace para elegir una contraseña nueva. Revisa también la carpeta de spam.
+                            Si ese correo tiene cuenta, te hemos enviado un enlace para elegir una contraseña nueva. Puede llegar a la carpeta de spam o correo no deseado, revísala. El enlace solo se puede usar una vez.
                         </Text>
                     ) : (
                         <View>

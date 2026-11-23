@@ -155,7 +155,7 @@ export default function Registro() {
 
         if (!data.session) {
             // Con la verificacion de correo activada no hay sesion hasta pulsar el enlace del correo
-            Toast.show({ type: 'success', text1: 'Revisa tu correo', text2: `Te hemos enviado un enlace a ${correoLimpio}. Púlsalo para activar tu cuenta.`, visibilityTime: 8000 });
+            Toast.show({ type: 'success', text1: 'Revisa tu correo', text2: `Te hemos enviado un enlace a ${correoLimpio}. Púlsalo para activar tu cuenta. Si no lo ves, mira en spam. El enlace solo sirve una vez.`, visibilityTime: 12000 });
             router.replace('/login');
             return;
         }
