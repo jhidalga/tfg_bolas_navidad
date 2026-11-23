@@ -778,12 +778,6 @@ def realizar_pedido(checkout: CheckoutPedido, authorization: Optional[str] = Hea
             
         cliente_seguro.table("detalles_pedido").insert(detalles).execute()
         cliente_seguro.table("carrito").delete().eq("user_id", user_id).execute()
-        try:
-            u = cliente_seguro.table("usuarios").select("nombre").eq("id", user_id).execute().data
-            fecha = datetime.fromisoformat((pedido_res.data[0].get("created_at") or "").replace("Z", "+00:00")) if pedido_res.data[0].get("created_at") else datetime.now(timezone.utc)
-            _enviar_a_hoja((u[0]["nombre"] if u else ""), fecha, detalles)
-        except Exception:
-            logging.exception("No se pudo preparar el aviso a la hoja")
         return {"mensaje": "Pedido procesado correctamente", "pedido_id": pedido_id}
     except Exception as e:
         logging.exception("Error interno")
@@ -793,6 +787,8 @@ def realizar_pedido(checkout: CheckoutPedido, authorization: Optional[str] = Hea
 # ---------- Aviso a la hoja de calculo de pedidos ----------
 # Cada pedido nuevo manda sus figuras a un Google Apps Script que las anade a la hoja.
 # Si no estan puestas las variables SHEET_WEBHOOK_URL y SHEET_SECRET no hace nada.
+# Solo los pedidos Completado o Entregado estan en la hoja.
+_ESTADOS_PARA_HOJA = ("Completado", "Entregado")
 _FIGURAS_CORTAS = [("galleta", "Galleta"), ("oso", "Oso"), ("reno", "Reno"), ("estrella", "Estrella"),
                    ("arbol", "Árbol"), ("árbol", "Árbol"), ("saco", "Saco"), ("pudin", "Pudin"), ("calcet", "Calcetín")]
 
@@ -805,38 +801,45 @@ def _figura_corta(modelo: str) -> str:
     return (modelo or "Figura").strip() or "Figura"
 
 
-def _filas_para_hoja(cliente: str, fecha, detalles: list) -> dict:
+def _filas_para_hoja(cliente: str, fecha, detalles: list, pedido_ref: str = "") -> dict:
     from zoneinfo import ZoneInfo
     f = fecha.astimezone(ZoneInfo("Europe/Madrid")) if getattr(fecha, "tzinfo", None) else fecha
     figuras = []
     for d in detalles:
         for _ in range(int(d.get("cantidad") or 1)):
             figuras.append({"figura": _figura_corta(d.get("modelo")), "precio": float(d.get("precio_unitario") or 0)})
-    return {"cliente": cliente, "fecha": f.strftime("%d/%m/%Y %H:%M"), "figuras": figuras}
+    return {"cliente": cliente, "fecha": f.strftime("%d/%m/%Y %H:%M"), "figuras": figuras, "pedido_ref": pedido_ref}
 
 
-def _enviar_a_hoja(cliente: str, fecha, detalles: list) -> None:
+def _llamar_hoja(cuerpo: dict) -> None:
     url = os.getenv("SHEET_WEBHOOK_URL")
     secreto = os.getenv("SHEET_SECRET")
     if not url or not secreto:
         return
     import json as _json
     import urllib.request
+    cuerpo["secret"] = secreto
 
     def _tarea():
         try:
-            cuerpo = _filas_para_hoja(cliente, fecha, detalles)
-            cuerpo["secret"] = secreto
             req = urllib.request.Request(url, data=_json.dumps(cuerpo).encode("utf-8"),
                                          headers={"Content-Type": "text/plain;charset=utf-8",
                                                   "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
                                                   "Accept": "*/*"}, method="POST")
             urllib.request.urlopen(req, timeout=20).read()
         except Exception:
-            logging.exception("No se pudo anadir el pedido a la hoja")
+            logging.exception("No se pudo avisar a la hoja")
 
     import threading
     threading.Thread(target=_tarea, daemon=True).start()
+
+
+def _enviar_a_hoja(cliente: str, fecha, detalles: list, pedido_ref: str = "") -> None:
+    _llamar_hoja(_filas_para_hoja(cliente, fecha, detalles, pedido_ref))
+
+
+def _quitar_de_hoja(pedido_ref: str) -> None:
+    _llamar_hoja({"accion": "borrar", "pedido_ref": str(pedido_ref)})
 
 
 @app.get("/api/admin/pedidos")
@@ -896,7 +899,22 @@ def cambiar_estado_pedido(pedido_id: str, nuevo_estado: EstadoPedido, authorizat
     token = authorization.replace("Bearer ", "") if authorization else ""
     try:
         cliente_seguro = create_client(SUPABASE_URL, SUPABASE_KEY, options=ClientOptions(headers={"Authorization": f"Bearer {token}"}))
+        antes = cliente_seguro.table("pedidos").select("estado").eq("id", pedido_id).execute().data
+        estado_antes = antes[0]["estado"] if antes else None
         respuesta = cliente_seguro.table("pedidos").update({"estado": nuevo_estado.estado}).eq("id", pedido_id).execute()
+        try:
+            en_hoja_antes = estado_antes in _ESTADOS_PARA_HOJA
+            en_hoja_ahora = nuevo_estado.estado in _ESTADOS_PARA_HOJA
+            if en_hoja_ahora and not en_hoja_antes and respuesta.data:
+                ped = respuesta.data[0]
+                u = cliente_seguro.table("usuarios").select("nombre").eq("id", ped.get("user_id")).execute().data
+                dets = cliente_seguro.table("detalles_pedido").select("modelo, precio_unitario, cantidad").eq("pedido_id", pedido_id).execute().data
+                fecha = datetime.fromisoformat(str(ped.get("created_at")).replace("Z", "+00:00")) if ped.get("created_at") else datetime.now(timezone.utc)
+                _enviar_a_hoja((u[0]["nombre"] if u else ""), fecha, dets, str(pedido_id))
+            elif en_hoja_antes and not en_hoja_ahora:
+                _quitar_de_hoja(pedido_id)
+        except Exception:
+            logging.exception("No se pudo actualizar la hoja")
         return {"mensaje": "Estado actualizado", "data": respuesta.data}
     except Exception as e:
         logging.exception("Error interno")
@@ -1049,6 +1067,10 @@ def eliminar_pedido_admin(pedido_id: str, authorization: Optional[str] = Header(
         cliente_seguro = create_client(SUPABASE_URL, SUPABASE_KEY, options=ClientOptions(headers={"Authorization": f"Bearer {token}"}))
         cliente_seguro.table("detalles_pedido").delete().eq("pedido_id", pedido_id).execute()
         respuesta = cliente_seguro.table("pedidos").delete().eq("id", pedido_id).execute()
+        try:
+            _quitar_de_hoja(pedido_id)
+        except Exception:
+            logging.exception("No se pudo actualizar la hoja")
         return {"mensaje": "Pedido eliminado correctamente", "data": respuesta.data}
     except Exception as e:
         logging.exception("Error interno")
