@@ -2,6 +2,7 @@ import os
 import logging
 import re
 import time
+from datetime import datetime, timezone
 from typing import List, Optional
 from fastapi import FastAPI, HTTPException, Header, Response, Request
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
@@ -777,10 +778,64 @@ def realizar_pedido(checkout: CheckoutPedido, authorization: Optional[str] = Hea
             
         cliente_seguro.table("detalles_pedido").insert(detalles).execute()
         cliente_seguro.table("carrito").delete().eq("user_id", user_id).execute()
+        try:
+            u = cliente_seguro.table("usuarios").select("nombre").eq("id", user_id).execute().data
+            fecha = datetime.fromisoformat((pedido_res.data[0].get("created_at") or "").replace("Z", "+00:00")) if pedido_res.data[0].get("created_at") else datetime.now(timezone.utc)
+            _enviar_a_hoja((u[0]["nombre"] if u else ""), fecha, detalles)
+        except Exception:
+            logging.exception("No se pudo preparar el aviso a la hoja")
         return {"mensaje": "Pedido procesado correctamente", "pedido_id": pedido_id}
     except Exception as e:
         logging.exception("Error interno")
         raise HTTPException(status_code=500, detail="Error al procesar el pedido")
+
+
+# ---------- Aviso a la hoja de calculo de pedidos ----------
+# Cada pedido nuevo manda sus figuras a un Google Apps Script que las anade a la hoja.
+# Si no estan puestas las variables SHEET_WEBHOOK_URL y SHEET_SECRET no hace nada.
+_FIGURAS_CORTAS = [("galleta", "Galleta"), ("oso", "Oso"), ("reno", "Reno"), ("estrella", "Estrella"),
+                   ("arbol", "Árbol"), ("árbol", "Árbol"), ("saco", "Saco"), ("pudin", "Pudin"), ("calcet", "Calcetín")]
+
+
+def _figura_corta(modelo: str) -> str:
+    bajo = (modelo or "").lower()
+    for clave, corto in _FIGURAS_CORTAS:
+        if clave in bajo:
+            return corto
+    return (modelo or "Figura").strip() or "Figura"
+
+
+def _filas_para_hoja(cliente: str, fecha, detalles: list) -> dict:
+    from zoneinfo import ZoneInfo
+    f = fecha.astimezone(ZoneInfo("Europe/Madrid")) if getattr(fecha, "tzinfo", None) else fecha
+    figuras = []
+    for d in detalles:
+        for _ in range(int(d.get("cantidad") or 1)):
+            figuras.append({"figura": _figura_corta(d.get("modelo")), "precio": float(d.get("precio_unitario") or 0)})
+    return {"cliente": cliente, "fecha": f.strftime("%d/%m/%Y %H:%M"), "figuras": figuras}
+
+
+def _enviar_a_hoja(cliente: str, fecha, detalles: list) -> None:
+    url = os.getenv("SHEET_WEBHOOK_URL")
+    secreto = os.getenv("SHEET_SECRET")
+    if not url or not secreto:
+        return
+    import json as _json
+    import urllib.request
+
+    def _tarea():
+        try:
+            cuerpo = _filas_para_hoja(cliente, fecha, detalles)
+            cuerpo["secret"] = secreto
+            req = urllib.request.Request(url, data=_json.dumps(cuerpo).encode("utf-8"),
+                                         headers={"Content-Type": "text/plain;charset=utf-8"}, method="POST")
+            urllib.request.urlopen(req, timeout=20).read()
+        except Exception:
+            logging.exception("No se pudo anadir el pedido a la hoja")
+
+    import threading
+    threading.Thread(target=_tarea, daemon=True).start()
+
 
 @app.get("/api/admin/pedidos")
 def obtener_todos_los_pedidos(authorization: Optional[str] = Header(None)):
