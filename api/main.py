@@ -778,6 +778,13 @@ def realizar_pedido(checkout: CheckoutPedido, authorization: Optional[str] = Hea
             
         cliente_seguro.table("detalles_pedido").insert(detalles).execute()
         cliente_seguro.table("carrito").delete().eq("user_id", user_id).execute()
+        try:
+            ped = pedido_res.data[0]
+            u = cliente_seguro.table("usuarios").select("nombre").eq("id", user_id).execute().data
+            fecha = datetime.fromisoformat(str(ped.get("created_at")).replace("Z", "+00:00")) if ped.get("created_at") else datetime.now(timezone.utc)
+            _enviar_a_hoja((u[0]["nombre"] if u else ""), fecha, detalles, str(pedido_id), _etiqueta_pedido(cliente_seguro, ped), "Pendiente")
+        except Exception:
+            logging.exception("No se pudo avisar a la hoja")
         return {"mensaje": "Pedido procesado correctamente", "pedido_id": pedido_id}
     except Exception as e:
         logging.exception("Error interno")
@@ -787,7 +794,7 @@ def realizar_pedido(checkout: CheckoutPedido, authorization: Optional[str] = Hea
 # ---------- Aviso a la hoja de calculo de pedidos ----------
 # Cada pedido nuevo manda sus figuras a un Google Apps Script que las anade a la hoja.
 # Si no estan puestas las variables SHEET_WEBHOOK_URL y SHEET_SECRET no hace nada.
-# Solo los pedidos Completado o Entregado estan en la hoja.
+# Todos los pedidos estan en la hoja. El coste solo cuenta si estan Completado o Entregado (lo decide el script).
 _ESTADOS_PARA_HOJA = ("Completado", "Entregado")
 _FIGURAS_CORTAS = [("galleta", "Galleta"), ("oso", "Oso"), ("reno", "Reno"), ("estrella", "Estrella"),
                    ("arbol", "Árbol"), ("árbol", "Árbol"), ("saco", "Saco"), ("pudin", "Pudin"), ("calcet", "Calcetín")]
@@ -926,18 +933,12 @@ def cambiar_estado_pedido(pedido_id: str, nuevo_estado: EstadoPedido, authorizat
         estado_antes = antes[0]["estado"] if antes else None
         respuesta = cliente_seguro.table("pedidos").update({"estado": nuevo_estado.estado}).eq("id", pedido_id).execute()
         try:
-            en_hoja_antes = estado_antes in _ESTADOS_PARA_HOJA
-            en_hoja_ahora = nuevo_estado.estado in _ESTADOS_PARA_HOJA
-            if en_hoja_ahora and not en_hoja_antes and respuesta.data:
+            if respuesta.data and estado_antes != nuevo_estado.estado:
                 ped = respuesta.data[0]
                 u = cliente_seguro.table("usuarios").select("nombre").eq("id", ped.get("user_id")).execute().data
                 dets = cliente_seguro.table("detalles_pedido").select("modelo, precio_unitario, cantidad").eq("pedido_id", pedido_id).execute().data
                 fecha = datetime.fromisoformat(str(ped.get("created_at")).replace("Z", "+00:00")) if ped.get("created_at") else datetime.now(timezone.utc)
                 _enviar_a_hoja((u[0]["nombre"] if u else ""), fecha, dets, str(pedido_id), _etiqueta_pedido(cliente_seguro, ped), nuevo_estado.estado)
-            elif en_hoja_antes and not en_hoja_ahora:
-                _quitar_de_hoja(pedido_id)
-            elif en_hoja_antes and en_hoja_ahora and estado_antes != nuevo_estado.estado:
-                _estado_en_hoja(pedido_id, nuevo_estado.estado)
         except Exception:
             logging.exception("No se pudo actualizar la hoja")
         return {"mensaje": "Estado actualizado", "data": respuesta.data}
