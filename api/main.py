@@ -1554,6 +1554,74 @@ def _exigir_admin(authorization: Optional[str]):
     return cliente
 
 
+_COSTES_FIGURA = {"reno": 0.18, "estrella": 0.16, "arbol": 0.14, "galleta": 0.16, "oso": 0.19}
+
+
+def _coste_figura(figura: str, estado: str) -> float:
+    """Coste de hacer una figura. Solo cuenta si el pedido esta Completado o Entregado."""
+    if estado not in _ESTADOS_PARA_HOJA:
+        return 0.0
+    import unicodedata
+    n = unicodedata.normalize("NFD", (figura or "").lower()).encode("ascii", "ignore").decode()
+    for clave, valor in _COSTES_FIGURA.items():
+        if clave in n:
+            return valor
+    return 0.0
+
+
+@app.get("/api/admin/hoja")
+def hoja_de_gastos(authorization: Optional[str] = Header(None)):
+    """Lo mismo que el Excel: una fila por figura con coste, beneficio, estado y pagado, mas los totales."""
+    try:
+        cliente = _exigir_admin(authorization)
+        from zoneinfo import ZoneInfo
+        from datetime import datetime as _dt
+        pedidos = cliente.table("pedidos")\
+            .select("id, user_id, estado, created_at, usuarios!user_id(nombre, curso, email), detalles_pedido(modelo, precio_unitario, cantidad)")\
+            .order("created_at").execute().data or []
+        pagos = cliente.table("pagos_usuarios").select("user_id").eq("pagado", True).execute().data or []
+        pagados = {x["user_id"] for x in pagos}
+        import re as _re, unicodedata as _ud
+        contador_usuario: dict = {}
+        letras: dict = {}
+        filas = []
+        for n, ped in enumerate(pedidos, start=1):
+            clave = ped.get("user_id") or ped.get("id")
+            contador_usuario[clave] = contador_usuario.get(clave, 0) + 1
+            u = ped.get("usuarios") or {}
+            correo = str(u.get("email") or "").split("@")[0].strip().lower()
+            curso = _re.sub(r"[^a-z0-9]", "", _ud.normalize("NFD", str(u.get("curso") or "")).encode("ascii", "ignore").decode().lower())
+            etiqueta = "-".join([x for x in [correo, curso, str(contador_usuario[clave]).zfill(2)] if x]) if correo else "#" + str(ped["id"])[:8].upper()
+            f = _dt.fromisoformat(str(ped.get("created_at")).replace("Z", "+00:00")) if ped.get("created_at") else None
+            fecha = f.astimezone(ZoneInfo("Europe/Madrid")).strftime("%d/%m/%Y %H:%M") if f else ""
+            estado = ped.get("estado") or ""
+            pagado = ped.get("user_id") in pagados
+            for d in ped.get("detalles_pedido") or []:
+                for _ in range(int(d.get("cantidad") or 1)):
+                    figura = _figura_corta(d.get("modelo"))
+                    letra = figura[:1].upper()
+                    letras[letra] = letras.get(letra, 0) + 1
+                    precio = float(d.get("precio_unitario") or 0)
+                    coste = _coste_figura(figura, estado)
+                    filas.append({"id_figura": f"{letra}{letras[letra]:03d}", "id_pedido": f"P{n:03d}", "cliente": u.get("nombre") or "",
+                                  "fecha": fecha, "figura": figura, "precio": precio, "coste": coste,
+                                  "beneficio": round((precio - coste) if pagado else -coste, 2),
+                                  "pedido_web": etiqueta, "estado": estado, "pagado": pagado, "user_id": ped.get("user_id")})
+        validas = [x for x in filas if x["estado"] != "Cancelado"]
+        totales = {"figuras": len(filas),
+                   "precio": round(sum(x["precio"] for x in validas), 2),
+                   "coste": round(sum(x["coste"] for x in filas), 2),
+                   "beneficio": round(sum(x["beneficio"] for x in filas), 2),
+                   "cobrado": round(sum(x["precio"] for x in filas if x["pagado"]), 2),
+                   "por_cobrar": round(sum(x["precio"] for x in validas if not x["pagado"]), 2)}
+        return {"filas": filas, "totales": totales}
+    except HTTPException:
+        raise
+    except Exception:
+        logging.exception("Error interno")
+        raise HTTPException(status_code=500, detail="Ha ocurrido un error en el servidor. Inténtalo de nuevo.")
+
+
 @app.get("/api/admin/resumen")
 def resumen_admin(authorization: Optional[str] = Header(None)):
     """Tabla resumen para el admin: que persona ha pedido cuantas bolas y cuanto ha gastado."""
