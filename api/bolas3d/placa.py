@@ -40,7 +40,7 @@ def _leer(datos):
     proj = json.loads(z.read("Metadata/project_settings.config"))
     mallas = {}
     for p in set(re.findall(r'p:path="([^"]+)"', bloque.group(0))):
-        mallas[p] = z.read(p.lstrip("/"))
+        mallas[p] = z.read(p.lstrip("/")).decode("utf-8")
     return {"bloque": bloque.group(0), "ajustes": obj_aj.group(0), "plate": plate, "proj": proj,
             "proj_bytes": z.read("Metadata/project_settings.config"), "mallas": mallas, "z": z_item,
             "content_types": z.read("[Content_Types].xml")}
@@ -63,12 +63,13 @@ def _cama(proj):
 
 def _centros(n, ancho, alto):
     """3 columnas y 2 filas. La segunda fila (si hay menos de 3) va centrada."""
-    cw, ch = ancho / 3, alto / 2
+    cw = ancho / 3
+    y1, y2 = alto * 0.17, alto * 0.55   # arriba queda libre el hueco de la torre de purga
     fila1 = min(n, 3)
     fila2 = n - fila1
-    res = [(cw * (i + 0.5), ch * 0.5) for i in range(fila1)]
+    res = [(cw * (i + 0.5), y1) for i in range(fila1)]
     off = (3 - fila2) * cw / 2
-    res += [(off + cw * (i + 0.5), ch * 1.5) for i in range(fila2)]
+    res += [(off + cw * (i + 0.5), y2) for i in range(fila2)]
     return res
 
 
@@ -82,29 +83,47 @@ def unir_3mf(lista):
     centros = _centros(len(figs), ancho, alto)
 
     recursos, items, ajustes_obj, instancias, assemble, cortes = [], [], [], [], [], []
-    ficheros = {}   # ruta nueva -> bytes
-    rels = []
+    mallas_nuevas = []   # bloques <object> de todas las figuras con ids unicos
+    sig = [1]            # siguiente id de malla libre
+    bloque_malla = re.compile(r'<object id="(\d+)"([^>]*)>(.*?)</object>', re.S)
     for i, f in enumerate(figs):
         nid = 101 + i
-        bloque = f["bloque"]
+        # bloques de malla de esta figura por (ruta, id)
+        por_ruta = {ruta: {m.group(1): m for m in bloque_malla.finditer(txt)} for ruta, txt in f["mallas"].items()}
+        nuevo_id = {}   # id viejo -> id nuevo (para los <part id> de los ajustes)
+        n_comp = [0]
+
+        def cambia(m):
+            ruta, oid = m.group(1), m.group(2)
+            bm = por_ruta[ruta][oid]
+            n = sig[0]; sig[0] += 1
+            nuevo_id[oid] = n
+            attrs = re.sub(r'p:UUID="[^"]*"', 'p:UUID="%08x-81cb-4c03-9d28-80fed5dfa1dc"' % (0x00010000 + n - 1), bm.group(2))
+            mallas_nuevas.append(' <object id="%d"%s>%s</object>' % (n, attrs, bm.group(3)))
+            k = n_comp[0]; n_comp[0] += 1
+            resto = re.sub(r'p:UUID="[^"]*"', 'p:UUID="%04x%04x-b206-40ff-9872-83e8017abed1"' % (i + 1, k), m.group(3))
+            return '<component p:path="/3D/Objects/object_1.model" objectid="%d"%s' % (n, resto)
+
+        bloque = re.sub(r'<component p:path="([^"]+)" objectid="(\d+)"([^>]*)', cambia, f["bloque"])
         bloque = re.sub(r'<object id="\d+"', '<object id="%d"' % nid, bloque, count=1)
-        for k, (ruta, datos) in enumerate(f["mallas"].items()):
-            nueva = "/3D/Objects/fig%d_%d.model" % (i + 1, k + 1)
-            bloque = bloque.replace('p:path="%s"' % ruta, 'p:path="%s"' % nueva)
-            ficheros[nueva.lstrip("/")] = datos
-            rels.append(nueva)
-        bloque = re.sub(r'p:UUID="[^"]*"', lambda m: 'p:UUID="%s"' % _uid(), bloque)
+        bloque = re.sub(r'(<object id="%d"[^>]*?)p:UUID="[^"]*"' % nid, lambda m: '%sp:UUID="%08x-61cb-4c03-9d28-80fed5dfa1dc"' % (m.group(1), i + 1), bloque, count=1)
         recursos.append(bloque)
         cx, cy = centros[i]
-        items.append('  <item objectid="%d" p:UUID="%s" transform="1 0 0 0 1 0 0 0 1 %.4f %.4f %s" printable="1" />'
-                     % (nid, _uid(), cx, cy, f["z"]))
+        items.append('  <item objectid="%d" p:UUID="%08x-b1ec-4553-aec9-835e5b724bb4" transform="1 0 0 0 1 0 0 0 1 %.4f %.4f %s" printable="1" />'
+                     % (nid, i + 1, cx, cy, f["z"]))
         aj = re.sub(r'<object id="\d+">', '<object id="%d">' % nid, f["ajustes"], count=1)
+        aj = re.sub(r'<part id="(\d+)"', lambda m: '<part id="%d"' % nuevo_id.get(m.group(1), int(m.group(1))), aj)
+        aj = re.sub(r' uuid="[^"]*"', lambda m: ' uuid="%s"' % _uid(), aj)
         ajustes_obj.append("  " + aj)
         instancias.append('    <model_instance>\n      <metadata key="object_id" value="%d"/>\n'
                           '      <metadata key="instance_id" value="0"/>\n'
                           '      <metadata key="identify_id" value="%d"/>\n    </model_instance>' % (nid, 500 + i))
         assemble.append('   <assemble_item object_id="%d" instance_id="0" transform="1 0 0 0 1 0 0 0 1 0 0 %s" offset="0 0 0" />' % (nid, f["z"]))
         cortes.append(' <object id="%d">\n  <cut_id id="0" check_sum="1" connectors_cnt="0"/>\n </object>' % nid)
+
+    malla_xml = (CABECERA + " <resources>\n" + "\n".join(mallas_nuevas) + "\n </resources>\n <build/>\n</model>\n")
+    ficheros = {"3D/Objects/object_1.model": malla_xml.encode("utf-8")}
+    rels = ["/3D/Objects/object_1.model"]
 
     modelo = (CABECERA + " <resources>\n" + "\n".join(recursos) + "\n </resources>\n"
               + ' <build p:UUID="%s">\n' % _uid() + "\n".join(items) + "\n </build>\n</model>\n")
@@ -132,7 +151,10 @@ def unir_3mf(lista):
         z.writestr("3D/_rels/3dmodel.model.rels", rels_xml)
         for ruta, datos in ficheros.items():
             z.writestr(ruta, datos)
-        z.writestr("Metadata/project_settings.config", base["proj_bytes"])
+        proj = dict(base["proj"])
+        proj["wipe_tower_x"] = [str(round(ancho / 2 - 30))] * len(proj.get("wipe_tower_x", ["0", "0"]))
+        proj["wipe_tower_y"] = [str(round(alto * 0.75))] * len(proj.get("wipe_tower_y", ["0", "0"]))
+        z.writestr("Metadata/project_settings.config", json.dumps(proj, indent=4, ensure_ascii=False))
         z.writestr("Metadata/model_settings.config", ajustes)
         z.writestr("Metadata/cut_information.xml", '<?xml version="1.0" encoding="utf-8"?>\n<objects>\n' + "\n".join(cortes) + "\n</objects>\n")
         z.writestr("Metadata/slice_info.config", '<?xml version="1.0" encoding="UTF-8"?>\n<config>\n  <header>\n'
