@@ -801,14 +801,14 @@ def _figura_corta(modelo: str) -> str:
     return (modelo or "Figura").strip() or "Figura"
 
 
-def _filas_para_hoja(cliente: str, fecha, detalles: list, pedido_ref: str = "", etiqueta: str = "") -> dict:
+def _filas_para_hoja(cliente: str, fecha, detalles: list, pedido_ref: str = "", etiqueta: str = "", estado: str = "") -> dict:
     from zoneinfo import ZoneInfo
     f = fecha.astimezone(ZoneInfo("Europe/Madrid")) if getattr(fecha, "tzinfo", None) else fecha
     figuras = []
     for d in detalles:
         for _ in range(int(d.get("cantidad") or 1)):
             figuras.append({"figura": _figura_corta(d.get("modelo")), "precio": float(d.get("precio_unitario") or 0)})
-    return {"cliente": cliente, "fecha": f.strftime("%d/%m/%Y %H:%M"), "figuras": figuras, "pedido_ref": pedido_ref, "etiqueta": etiqueta}
+    return {"cliente": cliente, "fecha": f.strftime("%d/%m/%Y %H:%M"), "figuras": figuras, "pedido_ref": pedido_ref, "etiqueta": etiqueta, "estado": estado}
 
 
 def _llamar_hoja(cuerpo: dict) -> None:
@@ -834,8 +834,12 @@ def _llamar_hoja(cuerpo: dict) -> None:
     threading.Thread(target=_tarea, daemon=True).start()
 
 
-def _enviar_a_hoja(cliente: str, fecha, detalles: list, pedido_ref: str = "", etiqueta: str = "") -> None:
-    _llamar_hoja(_filas_para_hoja(cliente, fecha, detalles, pedido_ref, etiqueta))
+def _enviar_a_hoja(cliente: str, fecha, detalles: list, pedido_ref: str = "", etiqueta: str = "", estado: str = "") -> None:
+    _llamar_hoja(_filas_para_hoja(cliente, fecha, detalles, pedido_ref, etiqueta, estado))
+
+
+def _estado_en_hoja(pedido_ref: str, estado: str) -> None:
+    _llamar_hoja({"accion": "estado", "pedido_ref": str(pedido_ref), "estado": estado})
 
 
 def _etiqueta_pedido(cliente_seguro, ped: dict) -> str:
@@ -929,9 +933,11 @@ def cambiar_estado_pedido(pedido_id: str, nuevo_estado: EstadoPedido, authorizat
                 u = cliente_seguro.table("usuarios").select("nombre").eq("id", ped.get("user_id")).execute().data
                 dets = cliente_seguro.table("detalles_pedido").select("modelo, precio_unitario, cantidad").eq("pedido_id", pedido_id).execute().data
                 fecha = datetime.fromisoformat(str(ped.get("created_at")).replace("Z", "+00:00")) if ped.get("created_at") else datetime.now(timezone.utc)
-                _enviar_a_hoja((u[0]["nombre"] if u else ""), fecha, dets, str(pedido_id), _etiqueta_pedido(cliente_seguro, ped))
+                _enviar_a_hoja((u[0]["nombre"] if u else ""), fecha, dets, str(pedido_id), _etiqueta_pedido(cliente_seguro, ped), nuevo_estado.estado)
             elif en_hoja_antes and not en_hoja_ahora:
                 _quitar_de_hoja(pedido_id)
+            elif en_hoja_antes and en_hoja_ahora and estado_antes != nuevo_estado.estado:
+                _estado_en_hoja(pedido_id, nuevo_estado.estado)
         except Exception:
             logging.exception("No se pudo actualizar la hoja")
         return {"mensaje": "Estado actualizado", "data": respuesta.data}
