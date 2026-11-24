@@ -56,28 +56,32 @@ function doPost(e) {
   }
 }
 
-// Da estilo a la hoja. Se ejecuta a mano una vez (Ejecutar > darFormato). Las filas nuevas heredan el estilo.
+// Da estilo a la hoja. Se ejecuta a mano (Ejecutar > darFormato). Las filas nuevas heredan el estilo.
+// Coste en rojo. Beneficio en verde si es mayor que el coste, en naranja si es menor o igual, en rojo si es negativo.
 function darFormato() {
   var hoja = SpreadsheetApp.getActive().getSheetByName(HOJA);
   var filas = 1000;
   hoja.getRange('I1').setValue('Referencia web');
-  hoja.getRange(1, 1, filas, 9).setFontFamily('Arial').setFontSize(10).setVerticalAlignment('middle').setFontColor('#1f2937');
-  hoja.getRange('A1:I1').setBackground('#7a1c24').setFontColor('#ffffff').setFontWeight('bold').setHorizontalAlignment('center').setFontSize(11);
+  hoja.getRange(1, 1, filas, 9).setFontFamily('Arial').setFontSize(10).setVerticalAlignment('middle').setFontColor('#1f2937').setBackground(null);
+  hoja.getRange('A1:I1').setBackground('#1f2937').setFontColor('#ffffff').setFontWeight('bold').setHorizontalAlignment('center').setFontSize(11);
   hoja.setRowHeight(1, 34);
   hoja.setFrozenRows(1);
   hoja.getRange('A2:B' + filas).setHorizontalAlignment('center');
   hoja.getRange('E2:E' + filas).setHorizontalAlignment('center');
   hoja.getRange('F2:H' + filas).setNumberFormat('#,##0.00 [$€]').setHorizontalAlignment('right');
   hoja.getRange('I2:I' + filas).setFontColor('#9ca3af').setFontSize(8);
+  hoja.getRange('G2:G' + filas).setFontColor('#b91c1c').setFontWeight('bold').setBackground('#fee2e2');
   hoja.getRange('H2:H' + filas).setFontWeight('bold');
-  [95, 95, 220, 135, 110, 135, 135, 175, 125].forEach(function (w, i) { hoja.setColumnWidth(i + 1, w); });
+  [95, 95, 220, 135, 110, 135, 135, 190, 125].forEach(function (w, i) { hoja.setColumnWidth(i + 1, w); });
   hoja.getBandings().forEach(function (b) { b.remove(); });
-  var banda = hoja.getRange(2, 1, filas - 1, 9).applyRowBanding(SpreadsheetApp.BandingTheme.LIGHT_GREY, false, false);
-  banda.setFirstRowColor('#ffffff').setSecondRowColor('#fbeeee');
+  var banda = hoja.getRange(2, 1, filas - 1, 5).applyRowBanding(SpreadsheetApp.BandingTheme.LIGHT_GREY, false, false);
+  banda.setFirstRowColor('#ffffff').setSecondRowColor('#f3f4f6');
   hoja.getRange(1, 1, filas, 9).setBorder(null, null, null, null, null, true, '#e5e7eb', SpreadsheetApp.BorderStyle.SOLID);
+  var rango = [hoja.getRange('H2:H' + filas)];
   hoja.setConditionalFormatRules([
-    SpreadsheetApp.newConditionalFormatRule().whenNumberGreaterThan(0).setFontColor('#15803d').setRanges([hoja.getRange('H2:H' + filas)]).build(),
-    SpreadsheetApp.newConditionalFormatRule().whenNumberLessThan(0).setFontColor('#b91c1c').setRanges([hoja.getRange('H2:H' + filas)]).build()
+    SpreadsheetApp.newConditionalFormatRule().whenFormulaSatisfied('=AND(ISNUMBER($H2);$H2<0)').setBackground('#fecaca').setFontColor('#991b1b').setRanges(rango).build(),
+    SpreadsheetApp.newConditionalFormatRule().whenFormulaSatisfied('=AND(ISNUMBER($H2);ISNUMBER($G2);$H2>$G2)').setBackground('#dcfce7').setFontColor('#15803d').setRanges(rango).build(),
+    SpreadsheetApp.newConditionalFormatRule().whenFormulaSatisfied('=AND(ISNUMBER($H2);ISNUMBER($G2);$H2<=$G2)').setBackground('#fef3c7').setFontColor('#b45309').setRanges(rango).build()
   ]);
   if (hoja.getFilter()) hoja.getFilter().remove();
   hoja.getRange(1, 1, 200, 9).createFilter();
