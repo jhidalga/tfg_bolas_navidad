@@ -898,6 +898,12 @@ def sincronizar_hoja(authorization: Optional[str] = Header(None)):
             fecha = _dt.fromisoformat(str(ped.get("created_at")).replace("Z", "+00:00")) if ped.get("created_at") else datetime.now(timezone.utc)
             _llamar_hoja(_filas_para_hoja(u.get("nombre") or "", fecha, ped.get("detalles_pedido") or [], str(ped["id"]), etiqueta, ped.get("estado") or ""), tareas)
 
+        # Despues de mandar los pedidos se copia tambien el Pagado de cada persona
+        pagados = {x["user_id"] for x in (cliente_seguro.table("pagos_usuarios").select("user_id").eq("pagado", True).execute().data or [])}
+        refs_pagados = [str(p["id"]) for p in pedidos if p.get("user_id") in pagados]
+        if refs_pagados:
+            _llamar_hoja({"accion": "pagado", "pedido_refs": refs_pagados, "pagado": True}, tareas)
+
         def _todas():
             for t in tareas:
                 t()
