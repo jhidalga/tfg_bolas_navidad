@@ -39,7 +39,7 @@ export default function ColaImpresion() {
         cargar();
     }, [estado]);
 
-    const descargar = async (consulta: string, nombreZip: string) => {
+    const descargar = async (consulta: string, nombreZip: string, ext: string = 'zip') => {
         if (Platform.OS !== 'web') {
             Toast.show({ type: 'info', text1: 'La descarga del 3MF solo funciona en la versión web' });
             return;
@@ -51,14 +51,14 @@ export default function ColaImpresion() {
             });
             if (!res.ok) {
                 const e = await res.json().catch(() => ({}));
-                Toast.show({ type: 'error', text1: 'No se pudo generar el zip', text2: traducirError(e.detail, '') });
+                Toast.show({ type: 'error', text1: 'No se pudo generar la descarga', text2: traducirError(e.detail, '') });
                 return;
             }
             const blob = await res.blob();
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `cola_${nombreZip.replace(/[^A-Za-z0-9]+/g, '_')}_3mf.zip`;
+            a.download = ext === '3mf' ? `${nombreZip.replace(/[^A-Za-z0-9]+/g, '_')}.3mf` : `cola_${nombreZip.replace(/[^A-Za-z0-9]+/g, '_')}_3mf.zip`;
             a.click();
             URL.revokeObjectURL(url);
         } catch (e) {
@@ -151,10 +151,16 @@ export default function ColaImpresion() {
                                     <View key={n} style={{ marginBottom: 8 }}>
                                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                                             <Text style={{ color: '#111827', fontWeight: 'bold' }}>Pack {n + 1} · {pk.length} {pk.length === 1 ? 'bola' : 'bolas'}</Text>
-                                            <Pressable style={{ backgroundColor: '#16a34a', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 8 }}
-                                                onPress={() => descargar(`color=${encodeURIComponent(g.color)}&pack=${n + 1}&orden=${orden}`, `pack${n + 1}_${g.color}`)}>
-                                                <Text style={{ color: '#fff', fontWeight: 'bold' }}>Descargar pack {n + 1}</Text>
-                                            </Pressable>
+                                            <View style={{ flexDirection: 'row', gap: 6 }}>
+                                                <Pressable style={{ backgroundColor: '#16a34a', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 8 }}
+                                                    onPress={() => descargar(`color=${encodeURIComponent(g.color)}&pack=${n + 1}&orden=${orden}`, `pack${n + 1}_${g.color}`, '3mf')}>
+                                                    <Text style={{ color: '#fff', fontWeight: 'bold' }}>Descargar pack {n + 1} (1 solo 3MF)</Text>
+                                                </Pressable>
+                                                <Pressable style={{ backgroundColor: '#e2e8f0', paddingVertical: 6, paddingHorizontal: 10, borderRadius: 8 }}
+                                                    onPress={() => descargar(`color=${encodeURIComponent(g.color)}&pack=${n + 1}&orden=${orden}&formato=zip`, `pack${n + 1}_${g.color}`)}>
+                                                    <Text style={{ color: '#111827', fontWeight: 'bold' }}>Zip</Text>
+                                                </Pressable>
+                                            </View>
                                         </View>
                                         {pk.map((u: any, j: number) => <Text key={j} style={{ color: '#475569', fontSize: 13 }}>{nombreDe(u)}</Text>)}
                                     </View>

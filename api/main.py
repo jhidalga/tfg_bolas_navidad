@@ -14,9 +14,11 @@ from pydantic import BaseModel, Field
 import jwt
 try:
     from .bolas3d import zip_pedido, zip_lineas, generar_3mf, nombre_fichero, figura_para
+    from .bolas3d.placa import unir_3mf
     from .bolas3d.preview import preview_png
 except ImportError:
     from bolas3d import zip_pedido, zip_lineas, generar_3mf, nombre_fichero, figura_para
+    from bolas3d.placa import unir_3mf
     from bolas3d.preview import preview_png
 
 load_dotenv()
@@ -273,6 +275,11 @@ def _packs_de_grupo(lineas: list):
     return {k: [v[i:i + TAM_PACK] for i in range(0, len(v), TAM_PACK)] for k, v in orden.items()}
 
 
+def _3mf_pack(unidades: list):
+    """Un solo 3MF con todas las figuras del pack colocadas en la cama."""
+    return unir_3mf([generar_3mf(u["modelo"], u["personalizacion"]) for u in unidades])
+
+
 def _zip_pack(unidades: list):
     items = []
     for u in unidades:
@@ -290,7 +297,7 @@ def _zip_cola(grupo: dict):
     return zip_lineas(items)
 
 
-def _respuesta_cola(grupos: list, color: Optional[str], cliente: Optional[str] = None, pack: Optional[int] = None, orden: str = "antiguos"):
+def _respuesta_cola(grupos: list, color: Optional[str], cliente: Optional[str] = None, pack: Optional[int] = None, orden: str = "antiguos", formato: str = "3mf"):
     """Sin color ni cliente devuelve los grupos. Con color o con cliente devuelve el zip de esas bolas.
     Con color y pack devuelve el zip de ese pack de 5."""
     if color is None and cliente is None:
@@ -302,13 +309,15 @@ def _respuesta_cola(grupos: list, color: Optional[str], cliente: Optional[str] =
         packs = (g or {}).get("packs", {}).get(orden if orden in ("antiguos", "persona") else "antiguos", [])
         if not g or pack < 1 or pack > len(packs):
             raise HTTPException(status_code=404, detail="Ese pack no existe en la cola")
+        fichero = "".join(ch if ch.isalnum() else "_" for ch in norm(color)) or "cola"
         try:
-            datos = _zip_pack(packs[pack - 1])
+            if formato == "zip":
+                return Response(content=_zip_pack(packs[pack - 1]), media_type="application/zip",
+                                headers={"Content-Disposition": f'attachment; filename="pack{pack}_{fichero}_3mf.zip"'})
+            return Response(content=_3mf_pack(packs[pack - 1]), media_type="application/octet-stream",
+                            headers={"Content-Disposition": f'attachment; filename="pack{pack}_{fichero}.3mf"'})
         except ValueError as e:
             raise HTTPException(status_code=422, detail=str(e))
-        fichero = "".join(ch if ch.isalnum() else "_" for ch in norm(color)) or "cola"
-        return Response(content=datos, media_type="application/zip",
-                        headers={"Content-Disposition": f'attachment; filename="pack{pack}_{fichero}_3mf.zip"'})
     lineas = [l for g in grupos for l in g["lineas"]
               if (color is None or norm(l["color"]) == norm(color)) and (cliente is None or norm(l["cliente"]) == norm(cliente))]
     if not lineas:
@@ -592,10 +601,10 @@ if MODO_PRUEBA:
         return _cola_impresion([p for p in _pedidos(str(request.base_url)) if p["estado"] == estado])
 
     @app.get("/api/admin/impresion/3mf")
-    def cola_3mf_prueba(request: Request, color: Optional[str] = None, cliente: Optional[str] = None, pack: Optional[int] = None, orden: str = "antiguos", estado: str = "Pendiente"):
+    def cola_3mf_prueba(request: Request, color: Optional[str] = None, cliente: Optional[str] = None, pack: Optional[int] = None, orden: str = "antiguos", formato: str = "3mf", estado: str = "Pendiente"):
         if color is None and cliente is None:
             raise HTTPException(status_code=400, detail="Indica color o cliente")
-        return _respuesta_cola(_cola_impresion([p for p in _pedidos(str(request.base_url)) if p["estado"] == estado]), color, cliente, pack, orden)
+        return _respuesta_cola(_cola_impresion([p for p in _pedidos(str(request.base_url)) if p["estado"] == estado]), color, cliente, pack, orden, formato)
 
     @app.get("/api/admin/resumen")
     def resumen_prueba(request: Request):
@@ -1202,12 +1211,12 @@ def cola_impresion(estado: str = "Pendiente", authorization: Optional[str] = Hea
 
 
 @app.get("/api/admin/impresion/3mf")
-def cola_impresion_3mf(color: Optional[str] = None, cliente: Optional[str] = None, pack: Optional[int] = None, orden: str = "antiguos", estado: str = "Pendiente", authorization: Optional[str] = Header(None)):
+def cola_impresion_3mf(color: Optional[str] = None, cliente: Optional[str] = None, pack: Optional[int] = None, orden: str = "antiguos", formato: str = "3mf", estado: str = "Pendiente", authorization: Optional[str] = Header(None)):
     """Zip con los 3MF de las bolas de un color (para imprimirlas juntas) o de una persona."""
     if color is None and cliente is None:
         raise HTTPException(status_code=400, detail="Indica color o cliente")
     try:
-        return _respuesta_cola(_cola_impresion(_pedidos_para_cola(authorization, estado)), color, cliente, pack, orden)
+        return _respuesta_cola(_cola_impresion(_pedidos_para_cola(authorization, estado)), color, cliente, pack, orden, formato)
     except HTTPException:
         raise
     except Exception as e:
