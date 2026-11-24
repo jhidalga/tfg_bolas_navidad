@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin
+Disallow: /carrito
+Disallow: /perfil
+Disallow: /pedidos
+Disallow: /nueva-clave
+
+Sitemap: https://laguna-tollon-pedidos-navidad.up.railway.app/sitemap.xml
