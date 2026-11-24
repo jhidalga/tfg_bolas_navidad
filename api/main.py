@@ -249,8 +249,36 @@ def _cola_impresion(pedidos: list):
             u = p.get("usuarios") or {}
             g["lineas"].append({"id": d.get("id"), "color": d.get("color") or "Sin color", "pedido_id": p["id"], "pedido": str(p["id"])[:8].upper(),
                                 "modelo": d.get("modelo"), "personalizacion": nombre, "cantidad": cant,
-                                "estado": p.get("estado"), "cliente": u.get("nombre"), "curso": u.get("curso")})
+                                "estado": p.get("estado"), "cliente": u.get("nombre"), "curso": u.get("curso"),
+                                "creado": p.get("created_at") or ""})
+    for g in grupos.values():
+        g["packs"] = _packs_de_grupo(g["lineas"])
     return sorted(grupos.values(), key=lambda g: g["color"].lower())
+
+
+TAM_PACK = 5
+
+
+def _packs_de_grupo(lineas: list):
+    """Reparte las bolas de un color en packs de 5 (la ultima lleva las que sobran). Dos ordenes: antiguos y persona."""
+    unidades = []
+    for l in lineas:
+        for _ in range(l.get("cantidad") or 1):
+            unidades.append({"cliente": l.get("cliente"), "curso": l.get("curso"), "pedido": l["pedido"], "pedido_id": l["pedido_id"],
+                             "modelo": l["modelo"], "personalizacion": l["personalizacion"], "creado": l.get("creado") or ""})
+    orden = {
+        "antiguos": sorted(unidades, key=lambda u: (u["creado"], (u["cliente"] or "").lower())),
+        "persona": sorted(unidades, key=lambda u: ((u["cliente"] or "").lower(), u["creado"])),
+    }
+    return {k: [v[i:i + TAM_PACK] for i in range(0, len(v), TAM_PACK)] for k, v in orden.items()}
+
+
+def _zip_pack(unidades: list):
+    items = []
+    for u in unidades:
+        quien = "".join(ch if ch.isalnum() else "_" for ch in (u.get("cliente") or "sin_cliente")).strip("_") or "sin_cliente"
+        items.append((f'{quien}_{u["pedido"]}_{nombre_fichero(u["modelo"], u["personalizacion"], 1)}', u["modelo"], u["personalizacion"]))
+    return zip_lineas(items)
 
 
 def _zip_cola(grupo: dict):
@@ -262,12 +290,25 @@ def _zip_cola(grupo: dict):
     return zip_lineas(items)
 
 
-def _respuesta_cola(grupos: list, color: Optional[str], cliente: Optional[str] = None):
-    """Sin color ni cliente devuelve los grupos. Con color o con cliente devuelve el zip de esas bolas."""
+def _respuesta_cola(grupos: list, color: Optional[str], cliente: Optional[str] = None, pack: Optional[int] = None, orden: str = "antiguos"):
+    """Sin color ni cliente devuelve los grupos. Con color o con cliente devuelve el zip de esas bolas.
+    Con color y pack devuelve el zip de ese pack de 5."""
     if color is None and cliente is None:
         return grupos
     import unicodedata as _ud
     norm = lambda c: _ud.normalize("NFKD", c or "").encode("ascii", "ignore").decode().lower().strip()
+    if pack is not None and color is not None:
+        g = next((g for g in grupos if norm(g["color"]) == norm(color)), None)
+        packs = (g or {}).get("packs", {}).get(orden if orden in ("antiguos", "persona") else "antiguos", [])
+        if not g or pack < 1 or pack > len(packs):
+            raise HTTPException(status_code=404, detail="Ese pack no existe en la cola")
+        try:
+            datos = _zip_pack(packs[pack - 1])
+        except ValueError as e:
+            raise HTTPException(status_code=422, detail=str(e))
+        fichero = "".join(ch if ch.isalnum() else "_" for ch in norm(color)) or "cola"
+        return Response(content=datos, media_type="application/zip",
+                        headers={"Content-Disposition": f'attachment; filename="pack{pack}_{fichero}_3mf.zip"'})
     lineas = [l for g in grupos for l in g["lineas"]
               if (color is None or norm(l["color"]) == norm(color)) and (cliente is None or norm(l["cliente"]) == norm(cliente))]
     if not lineas:
@@ -551,10 +592,10 @@ if MODO_PRUEBA:
         return _cola_impresion([p for p in _pedidos(str(request.base_url)) if p["estado"] == estado])
 
     @app.get("/api/admin/impresion/3mf")
-    def cola_3mf_prueba(request: Request, color: Optional[str] = None, cliente: Optional[str] = None, estado: str = "Pendiente"):
+    def cola_3mf_prueba(request: Request, color: Optional[str] = None, cliente: Optional[str] = None, pack: Optional[int] = None, orden: str = "antiguos", estado: str = "Pendiente"):
         if color is None and cliente is None:
             raise HTTPException(status_code=400, detail="Indica color o cliente")
-        return _respuesta_cola(_cola_impresion([p for p in _pedidos(str(request.base_url)) if p["estado"] == estado]), color, cliente)
+        return _respuesta_cola(_cola_impresion([p for p in _pedidos(str(request.base_url)) if p["estado"] == estado]), color, cliente, pack, orden)
 
     @app.get("/api/admin/resumen")
     def resumen_prueba(request: Request):
@@ -1144,7 +1185,7 @@ def _pedidos_para_cola(authorization: Optional[str], estado: str):
     perfil = cliente.table("usuarios").select("administrador").eq("id", user_id).single().execute()
     if not perfil.data or not perfil.data.get("administrador"):
         raise HTTPException(status_code=403, detail="Solo administradores")
-    return cliente.table("pedidos").select("id, estado, usuarios!user_id(nombre, curso), detalles_pedido(id, modelo, color, personalizacion, cantidad)") \
+    return cliente.table("pedidos").select("id, estado, created_at, usuarios!user_id(nombre, curso), detalles_pedido(id, modelo, color, personalizacion, cantidad)") \
         .eq("estado", estado).execute().data
 
 
@@ -1161,12 +1202,12 @@ def cola_impresion(estado: str = "Pendiente", authorization: Optional[str] = Hea
 
 
 @app.get("/api/admin/impresion/3mf")
-def cola_impresion_3mf(color: Optional[str] = None, cliente: Optional[str] = None, estado: str = "Pendiente", authorization: Optional[str] = Header(None)):
+def cola_impresion_3mf(color: Optional[str] = None, cliente: Optional[str] = None, pack: Optional[int] = None, orden: str = "antiguos", estado: str = "Pendiente", authorization: Optional[str] = Header(None)):
     """Zip con los 3MF de las bolas de un color (para imprimirlas juntas) o de una persona."""
     if color is None and cliente is None:
         raise HTTPException(status_code=400, detail="Indica color o cliente")
     try:
-        return _respuesta_cola(_cola_impresion(_pedidos_para_cola(authorization, estado)), color, cliente)
+        return _respuesta_cola(_cola_impresion(_pedidos_para_cola(authorization, estado)), color, cliente, pack, orden)
     except HTTPException:
         raise
     except Exception as e:

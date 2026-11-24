@@ -18,6 +18,7 @@ export default function ColaImpresion() {
     const [estado, setEstado] = useState('Pendiente');
     const [grupos, setGrupos] = useState<any[]>([]);
     const [vista, setVista] = useState<'color' | 'persona'>('color');
+    const [orden, setOrden] = useState<'antiguos' | 'persona'>('antiguos');
     const [cargando, setCargando] = useState(true);
 
     useEffect(() => {
@@ -64,6 +65,8 @@ export default function ColaImpresion() {
             Toast.show({ type: 'error', text1: 'Error de conexión' });
         }
     };
+
+    const nombreDe = (u: any) => `${u.cliente || 'Sin nombre'} · ${u.modelo} "${u.personalizacion}" · #${u.pedido}`;
 
     // Misma cola vista por persona: cada cliente con todas sus bolas y el color de cada una
     const personas = useMemo(() => {
@@ -132,6 +135,30 @@ export default function ColaImpresion() {
                                 >
                                     <Text style={{ color: '#fff', fontWeight: 'bold' }}>Descargar zip de {g.color}</Text>
                                 </Pressable>
+                            </View>
+
+                            <View style={{ marginTop: 12, padding: 12, borderRadius: 8, backgroundColor: '#f1f5f9' }}>
+                                <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 8 }}>
+                                    <Text style={{ color: '#334155', fontWeight: 'bold' }}>Packs de 5 · orden:</Text>
+                                    {[{ v: 'antiguos', t: 'Más antiguos primero' }, { v: 'persona', t: 'Por persona' }].map((o) => (
+                                        <Pressable key={o.v} onPress={() => setOrden(o.v as 'antiguos' | 'persona')}
+                                            style={{ paddingVertical: 5, paddingHorizontal: 10, borderRadius: 999, backgroundColor: orden === o.v ? '#2563eb' : '#e2e8f0' }}>
+                                            <Text style={{ color: orden === o.v ? '#fff' : '#111827', fontWeight: 'bold', fontSize: 12 }}>{o.t}</Text>
+                                        </Pressable>
+                                    ))}
+                                </View>
+                                {(g.packs?.[orden] || []).map((pk: any[], n: number) => (
+                                    <View key={n} style={{ marginBottom: 8 }}>
+                                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                                            <Text style={{ color: '#111827', fontWeight: 'bold' }}>Pack {n + 1} · {pk.length} {pk.length === 1 ? 'bola' : 'bolas'}</Text>
+                                            <Pressable style={{ backgroundColor: '#16a34a', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 8 }}
+                                                onPress={() => descargar(`color=${encodeURIComponent(g.color)}&pack=${n + 1}&orden=${orden}`, `pack${n + 1}_${g.color}`)}>
+                                                <Text style={{ color: '#fff', fontWeight: 'bold' }}>Descargar pack {n + 1}</Text>
+                                            </Pressable>
+                                        </View>
+                                        {pk.map((u: any, j: number) => <Text key={j} style={{ color: '#475569', fontSize: 13 }}>{nombreDe(u)}</Text>)}
+                                    </View>
+                                ))}
                             </View>
 
                             {g.lineas.map((l: any, i: number) => (
