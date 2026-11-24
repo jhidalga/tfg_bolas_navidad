@@ -818,7 +818,7 @@ def _filas_para_hoja(cliente: str, fecha, detalles: list, pedido_ref: str = "", 
     return {"cliente": cliente, "fecha": f.strftime("%d/%m/%Y %H:%M"), "figuras": figuras, "pedido_ref": pedido_ref, "etiqueta": etiqueta, "estado": estado}
 
 
-def _llamar_hoja(cuerpo: dict) -> None:
+def _llamar_hoja(cuerpo: dict, en_orden: Optional[list] = None) -> None:
     url = os.getenv("SHEET_WEBHOOK_URL")
     secreto = os.getenv("SHEET_SECRET")
     if not url or not secreto:
@@ -837,6 +837,9 @@ def _llamar_hoja(cuerpo: dict) -> None:
         except Exception:
             logging.exception("No se pudo avisar a la hoja")
 
+    if en_orden is not None:
+        en_orden.append(_tarea)
+        return
     import threading
     threading.Thread(target=_tarea, daemon=True).start()
 
@@ -870,6 +873,41 @@ def _etiqueta_pedido(cliente_seguro, ped: dict) -> str:
 
 def _quitar_de_hoja(pedido_ref: str) -> None:
     _llamar_hoja({"accion": "borrar", "pedido_ref": str(pedido_ref)})
+
+
+@app.post("/api/admin/hoja/sincronizar")
+def sincronizar_hoja(authorization: Optional[str] = Header(None)):
+    """Manda a la hoja los pedidos que ya existian (los mas antiguos primero). Los que ya estan solo se actualizan."""
+    token = authorization.replace("Bearer ", "") if authorization else ""
+    try:
+        cliente_seguro = create_client(SUPABASE_URL, SUPABASE_KEY, options=ClientOptions(headers={"Authorization": f"Bearer {token}"}))
+        pedidos = cliente_seguro.table("pedidos")\
+            .select("id, user_id, estado, created_at, usuarios!user_id(nombre, curso, email), detalles_pedido(modelo, precio_unitario, cantidad)")\
+            .order("created_at").execute().data or []
+        from datetime import datetime as _dt
+        contador: dict = {}
+        tareas: list = []
+        for ped in pedidos:
+            clave = ped.get("user_id") or ped.get("id")
+            contador[clave] = contador.get(clave, 0) + 1
+            u = ped.get("usuarios") or {}
+            correo = str(u.get("email") or "").split("@")[0].strip().lower()
+            import re as _re, unicodedata as _ud
+            curso = _re.sub(r"[^a-z0-9]", "", _ud.normalize("NFD", str(u.get("curso") or "")).encode("ascii", "ignore").decode().lower())
+            etiqueta = "-".join([x for x in [correo, curso, str(contador[clave]).zfill(2)] if x]) if correo else "#" + str(ped["id"])[:8].upper()
+            fecha = _dt.fromisoformat(str(ped.get("created_at")).replace("Z", "+00:00")) if ped.get("created_at") else datetime.now(timezone.utc)
+            _llamar_hoja(_filas_para_hoja(u.get("nombre") or "", fecha, ped.get("detalles_pedido") or [], str(ped["id"]), etiqueta, ped.get("estado") or ""), tareas)
+
+        def _todas():
+            for t in tareas:
+                t()
+
+        import threading
+        threading.Thread(target=_todas, daemon=True).start()
+        return {"mensaje": "Enviando a la hoja", "pedidos": len(pedidos)}
+    except Exception:
+        logging.exception("Error interno")
+        raise HTTPException(status_code=500, detail="Ha ocurrido un error en el servidor. Inténtalo de nuevo.")
 
 
 @app.get("/api/admin/pedidos")

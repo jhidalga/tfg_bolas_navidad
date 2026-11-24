@@ -199,6 +199,22 @@ export default function ListaPedidosAdmin() {
      * pedidos actualmente filtrados en la vista. 
      * Gestiona la descarga directa en la web o la interfaz de compartir nativa en móviles.
      */
+    // Manda a la hoja de cálculo los pedidos que ya existían. Los que ya están solo se actualizan.
+    const enviarAlExcel = async () => {
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const respuesta = await fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/admin/hoja/sincronizar`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${session?.access_token}` },
+            });
+            if (!respuesta.ok) throw new Error('fallo');
+            const datos = await respuesta.json();
+            Toast.show({ type: 'success', text1: 'Enviando al Excel', text2: `${plural(datos.pedidos, 'pedido', 'pedidos')}. Tarda unos segundos.` });
+        } catch {
+            Toast.show({ type: 'error', text1: 'No se pudo enviar al Excel' });
+        }
+    };
+
     const exportarCSV = async () => {
         const cabeceras = "Producto,Modelo,Personalización (Nombre),Color,Cantidad,Cliente,Curso,Estado \n";
         
@@ -264,6 +280,9 @@ export default function ListaPedidosAdmin() {
                             </Pressable>
                             <Pressable style={styles.btnExportar} onPress={() => router.push('/admin/incidencias' as any)}>
                                 <Text style={styles.txtBtnExportar}><FontAwesome5 name="user-lock" size={14} color="white" /> Incidencias</Text>
+                            </Pressable>
+                            <Pressable style={styles.btnExportar} onPress={enviarAlExcel}>
+                                <Text style={styles.txtBtnExportar}><FontAwesome5 name="file-excel" size={14} color="white" /> Enviar al Excel</Text>
                             </Pressable>
                             <Pressable style={styles.btnExportar} onPress={exportarCSV}>
                                 <Text style={styles.txtBtnExportar}><Entypo name="export" size={16} color="white" /> Exportar</Text>
