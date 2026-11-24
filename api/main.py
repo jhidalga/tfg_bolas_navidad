@@ -565,6 +565,12 @@ if MODO_PRUEBA:
                 "email": u["nombre"].lower().replace(" ", ".") + "@g.educaand.es", "pedidos": []})["pedidos"].append(p)
         return _agregar_resumen(list(por_persona.values()), _ESTADO.setdefault("pagados", set()))
 
+    @app.patch("/api/admin/pedidos/{pedido_id}/pagado")
+    def pedido_pagado_prueba(pedido_id: str, datos: PagadoUsuario):
+        pagados = _ESTADO.setdefault("pagados", set())
+        (pagados.add if datos.pagado else pagados.discard)(pedido_id)
+        return {"mensaje": "Pago actualizado", "pagado": datos.pagado}
+
     @app.patch("/api/admin/resumen/{usuario_id}/pagado")
     def pagado_prueba(usuario_id: str, datos: PagadoUsuario):
         pagados = _ESTADO.setdefault("pagados", set())
@@ -1549,48 +1555,39 @@ def _codigo_pedido(u: dict, numero: int) -> str:
 
 
 def _agregar_resumen(usuarios, pagados=None):
-    """Una fila por persona con pedidos: curso, nombre, correo, pedidos, bolas, total gastado
+    """Una fila por pedido: curso, nombre, correo, codigo del pedido, bolas, total, pagado
     y, por cada modelo, cuantas bolas pidio y en que estado esta cada una.
     Cada usuario trae sus pedidos con el total, el estado y las lineas con modelo y cantidad."""
     filas = []
     usados = set()
     for u in usuarios:
-        # Los pedidos cancelados no cuentan en el resumen
         todos = sorted((u.get("pedidos") or []), key=lambda p: str(p.get("created_at") or ""))
-        codigos = {}
         for n, p in enumerate(todos, start=1):
-            codigos[p.get("id")] = _codigo_pedido(u, n)
-        pedidos = [p for p in todos if (p.get("estado") or "") != "Cancelado"]
-        if not pedidos:
-            continue
-        ids_visibles = [codigos[p.get("id")] for p in pedidos]
-        bolas = sum(int(d.get("cantidad") or 1) for p in pedidos for d in (p.get("detalles_pedido") or []))
-        total = round(sum(float(p.get("total") or 0) for p in pedidos), 2)
-        if pagados is None:
-            cobrado = round(sum(float(p.get("total") or 0) for p in pedidos if p.get("pagado")), 2)
-            todo_pagado = all(p.get("pagado") for p in pedidos)
-        else:
-            todo_pagado = u.get("id") in pagados
-            cobrado = total if todo_pagado else 0.0
-        modelos = {}
-        for p in pedidos:
+            # Los pedidos cancelados no cuentan en el resumen
+            if (p.get("estado") or "") == "Cancelado":
+                continue
+            codigo = _codigo_pedido(u, n)
+            bolas = sum(int(d.get("cantidad") or 1) for d in (p.get("detalles_pedido") or []))
+            total = round(float(p.get("total") or 0), 2)
+            pagado = bool(p.get("pagado")) if pagados is None else p.get("id") in pagados
+            modelos = {}
+            est = p.get("estado") or "Pendiente"
             for d in (p.get("detalles_pedido") or []):
                 m = _modelo_resumen(d.get("modelo"))
                 usados.add(m)
                 cant = int(d.get("cantidad") or 1)
                 celda = modelos.setdefault(m, {"cantidad": 0, "estados": {}})
                 celda["cantidad"] += cant
-                est = p.get("estado") or "Pendiente"
                 celda["estados"][est] = celda["estados"].get(est, 0) + cant
-        filas.append({"id": u.get("id"), "nombre": u.get("nombre") or "", "email": u.get("email") or "",
-                      "curso": u.get("curso") or "", "profesor": bool(u.get("profesor")), "num_pedidos": len(pedidos), "ids_pedidos": ids_visibles, "bolas": bolas, "total": total,
-                      "pagado": todo_pagado, "cobrado": cobrado, "modelos": modelos})
-    filas.sort(key=lambda f: f["nombre"].lower())
+            filas.append({"id": str(p.get("id")), "usuario_id": u.get("id"), "nombre": u.get("nombre") or "", "email": u.get("email") or "",
+                          "curso": u.get("curso") or "", "profesor": bool(u.get("profesor")), "num_pedidos": 1, "ids_pedidos": [codigo],
+                          "estado": est, "bolas": bolas, "total": total, "pagado": pagado, "cobrado": total if pagado else 0.0, "modelos": modelos})
+    filas.sort(key=lambda f: (f["nombre"].lower(), f["ids_pedidos"][0]))
     columnas = [m for m in _ORDEN_MODELOS if m in usados] + (["Otros"] if "Otros" in usados else [])
     return {
         "filas": filas,
         "modelos": columnas,
-        "totales": {"personas": len(filas), "pedidos": sum(f["num_pedidos"] for f in filas),
+        "totales": {"personas": len({f["email"] or f["nombre"] for f in filas}), "pedidos": len(filas),
                     "bolas": sum(f["bolas"] for f in filas),
                     "total": round(sum(f["cobrado"] for f in filas), 2),
                     "pendiente": round(sum(f["total"] - f["cobrado"] for f in filas), 2)},

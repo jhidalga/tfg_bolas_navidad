@@ -12,7 +12,7 @@ import { DEPARTAMENTOS, TODOS_LOS_CURSOS } from '../../lib/cursos';
 const API_URL = `${process.env.EXPO_PUBLIC_API_URL || ''}/api`;
 
 type CeldaModelo = { cantidad: number; estados: Record<string, number> };
-type Fila = { id: string; nombre: string; email: string; curso: string; num_pedidos: number; ids_pedidos?: string[]; bolas: number; total: number; pagado?: boolean; cobrado?: number; profesor?: boolean; modelos?: Record<string, CeldaModelo> };
+type Fila = { id: string; estado?: string; nombre: string; email: string; curso: string; num_pedidos: number; ids_pedidos?: string[]; bolas: number; total: number; pagado?: boolean; cobrado?: number; profesor?: boolean; modelos?: Record<string, CeldaModelo> };
 
 const ANCHO_MODELO = 105;
 
@@ -29,7 +29,7 @@ const COLUMNAS: { clave: Columna; titulo: string; ancho: number; numero?: boolea
     { clave: 'curso', titulo: 'Curso', ancho: 100 },
     { clave: 'nombre', titulo: 'Nombre', ancho: 160 },
     { clave: 'email', titulo: 'Correo', ancho: 210 },
-    { clave: 'num_pedidos', titulo: 'Pedidos', ancho: 240 },
+    { clave: 'num_pedidos', titulo: 'Pedido', ancho: 230 },
     { clave: 'bolas', titulo: 'Bolas', ancho: 80, numero: true },
     { clave: 'total', titulo: 'Total gastado', ancho: 120, numero: true },
     { clave: 'pagado', titulo: 'Pagado', ancho: 80 },
@@ -77,15 +77,16 @@ export default function ResumenAdmin() {
         const lista = filas.filter(f => (curso === 'Todos' || (!f.profesor && f.curso === curso)) && (depto === 'Todos' || (!!f.profesor && f.curso === depto)) &&
             (!q || f.nombre.toLowerCase().includes(q) || f.email.toLowerCase().includes(q)));
         return [...lista].sort((a, b) => {
-            const x = orden.col === 'pagado' ? Number(!!a.pagado) : a[orden.col], y = orden.col === 'pagado' ? Number(!!b.pagado) : b[orden.col];
+            const val = (f: Fila) => orden.col === 'pagado' ? Number(!!f.pagado) : orden.col === 'num_pedidos' ? (f.ids_pedidos?.[0] || '') : f[orden.col];
+            const x = val(a), y = val(b);
             const r = typeof x === 'number' && typeof y === 'number' ? x - y : String(x).localeCompare(String(y), 'es');
             return orden.asc ? r : -r;
         });
     }, [filas, busqueda, curso, depto, orden]);
 
     const totales = useMemo(() => ({
-        personas: visibles.length,
-        tickets: visibles.reduce((s, f) => s + f.num_pedidos, 0),
+        personas: new Set(visibles.map(f => f.email || f.nombre)).size,
+        tickets: visibles.length,
         bolas: visibles.reduce((s, f) => s + f.bolas, 0),
         total: visibles.reduce((s, f) => s + (f.cobrado ?? (f.pagado ? f.total : 0)), 0),
         pendiente: visibles.reduce((s, f) => s + (f.total - (f.cobrado ?? (f.pagado ? f.total : 0))), 0),
@@ -98,7 +99,7 @@ export default function ResumenAdmin() {
         const volver = () => setFilas(l => l.map(x => x.id === f.id ? { ...x, pagado: !nuevo } : x));
         try {
             const { data: { session } } = await supabase.auth.getSession();
-            const res = await fetch(`${API_URL}/admin/resumen/${f.id}/pagado`, {
+            const res = await fetch(`${API_URL}/admin/pedidos/${f.id}/pagado`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` },
                 body: JSON.stringify({ pagado: nuevo }),
@@ -118,7 +119,7 @@ export default function ResumenAdmin() {
 
     const descargar = () => {
         const esc = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
-        const lineas = [['Curso', 'Nombre', 'Correo', 'Pedidos', 'Bolas', 'Total gastado', 'Pagado', ...modelos].map(esc).join(';')];
+        const lineas = [['Curso', 'Nombre', 'Correo', 'Pedido', 'Bolas', 'Total gastado', 'Pagado', ...modelos].map(esc).join(';')];
         visibles.forEach(f => lineas.push([f.curso, f.nombre, f.email, (f.ids_pedidos?.length ? f.ids_pedidos.join(' ') : f.num_pedidos), f.bolas, f.total.toFixed(2).replace('.', ','), f.pagado ? 'Sí' : 'No', ...modelos.map(m => f.modelos?.[m] ? `${f.modelos[m].cantidad} (${textoEstados(f.modelos[m])})` : '')].map(esc).join(';')));
         lineas.push(['TOTAL COBRADO', `${totales.personas} ${totales.personas === 1 ? 'persona' : 'personas'}`, '', totales.tickets, totales.bolas, totales.total.toFixed(2).replace('.', ','), '', ...modelos.map(m => totales.porModelo[m] || 0)].map(esc).join(';'));
         lineas.push(['PENDIENTE DE COBRAR', '', '', '', '', totales.pendiente.toFixed(2).replace('.', ',')].map(esc).join(';'));
@@ -206,7 +207,7 @@ export default function ResumenAdmin() {
                             <View style={[e.celda, { width: COLUMNAS[0].ancho + COLUMNAS[1].ancho + COLUMNAS[2].ancho }]}>
                                 <Text style={e.pieTexto}>TOTAL COBRADO ({totales.personas} {totales.personas === 1 ? 'persona' : 'personas'})</Text>
                             </View>
-                            <View style={[e.celda, { width: COLUMNAS[3].ancho, alignItems: 'flex-start' }]}><Text style={e.pieTexto}>{totales.tickets}</Text></View>
+                            <View style={[e.celda, { width: COLUMNAS[3].ancho, alignItems: 'flex-start' }]}><Text style={e.pieTexto}>{totales.tickets} {totales.tickets === 1 ? 'pedido' : 'pedidos'}</Text></View>
                             <View style={[e.celda, { width: COLUMNAS[4].ancho, alignItems: 'flex-end' }]}><Text style={e.pieTexto}>{totales.bolas}</Text></View>
                             <View style={[e.celda, { width: COLUMNAS[5].ancho, alignItems: 'flex-end' }]}><Text style={e.pieTexto}>{euros(totales.total)}</Text></View>
                             <View style={[e.celda, { width: COLUMNAS[6].ancho }]} />
