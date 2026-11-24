@@ -801,14 +801,14 @@ def _figura_corta(modelo: str) -> str:
     return (modelo or "Figura").strip() or "Figura"
 
 
-def _filas_para_hoja(cliente: str, fecha, detalles: list, pedido_ref: str = "") -> dict:
+def _filas_para_hoja(cliente: str, fecha, detalles: list, pedido_ref: str = "", etiqueta: str = "") -> dict:
     from zoneinfo import ZoneInfo
     f = fecha.astimezone(ZoneInfo("Europe/Madrid")) if getattr(fecha, "tzinfo", None) else fecha
     figuras = []
     for d in detalles:
         for _ in range(int(d.get("cantidad") or 1)):
             figuras.append({"figura": _figura_corta(d.get("modelo")), "precio": float(d.get("precio_unitario") or 0)})
-    return {"cliente": cliente, "fecha": f.strftime("%d/%m/%Y %H:%M"), "figuras": figuras, "pedido_ref": pedido_ref}
+    return {"cliente": cliente, "fecha": f.strftime("%d/%m/%Y %H:%M"), "figuras": figuras, "pedido_ref": pedido_ref, "etiqueta": etiqueta}
 
 
 def _llamar_hoja(cuerpo: dict) -> None:
@@ -834,8 +834,27 @@ def _llamar_hoja(cuerpo: dict) -> None:
     threading.Thread(target=_tarea, daemon=True).start()
 
 
-def _enviar_a_hoja(cliente: str, fecha, detalles: list, pedido_ref: str = "") -> None:
-    _llamar_hoja(_filas_para_hoja(cliente, fecha, detalles, pedido_ref))
+def _enviar_a_hoja(cliente: str, fecha, detalles: list, pedido_ref: str = "", etiqueta: str = "") -> None:
+    _llamar_hoja(_filas_para_hoja(cliente, fecha, detalles, pedido_ref, etiqueta))
+
+
+def _etiqueta_pedido(cliente_seguro, ped: dict) -> str:
+    """Mismo codigo que se ve en el panel: correo-curso-NN, donde NN es el numero de pedido de esa persona."""
+    import re
+    import unicodedata
+    try:
+        u = cliente_seguro.table("usuarios").select("email, curso").eq("id", ped.get("user_id")).execute().data
+        correo = str((u[0].get("email") if u else "") or "").split("@")[0].strip().lower()
+        curso = unicodedata.normalize("NFD", str((u[0].get("curso") if u else "") or "")).encode("ascii", "ignore").decode().lower()
+        curso = re.sub(r"[^a-z0-9]", "", curso)
+        if not correo:
+            return "#" + str(ped.get("id"))[:8].upper()
+        todos = cliente_seguro.table("pedidos").select("id, created_at").eq("user_id", ped.get("user_id")).order("created_at").execute().data
+        numero = next((i + 1 for i, x in enumerate(todos) if x["id"] == ped.get("id")), None)
+        return "-".join([x for x in [correo, curso, str(numero).zfill(2) if numero else ""] if x])
+    except Exception:
+        logging.exception("No se pudo calcular el codigo del pedido")
+        return ""
 
 
 def _quitar_de_hoja(pedido_ref: str) -> None:
@@ -910,7 +929,7 @@ def cambiar_estado_pedido(pedido_id: str, nuevo_estado: EstadoPedido, authorizat
                 u = cliente_seguro.table("usuarios").select("nombre").eq("id", ped.get("user_id")).execute().data
                 dets = cliente_seguro.table("detalles_pedido").select("modelo, precio_unitario, cantidad").eq("pedido_id", pedido_id).execute().data
                 fecha = datetime.fromisoformat(str(ped.get("created_at")).replace("Z", "+00:00")) if ped.get("created_at") else datetime.now(timezone.utc)
-                _enviar_a_hoja((u[0]["nombre"] if u else ""), fecha, dets, str(pedido_id))
+                _enviar_a_hoja((u[0]["nombre"] if u else ""), fecha, dets, str(pedido_id), _etiqueta_pedido(cliente_seguro, ped))
             elif en_hoja_antes and not en_hoja_ahora:
                 _quitar_de_hoja(pedido_id)
         except Exception:

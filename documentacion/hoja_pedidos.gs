@@ -1,6 +1,6 @@
 // Google Apps Script de la hoja "Hoja de calculo" (Extensiones > Apps Script).
 // Recibe de la web los pedidos Completado o Entregado y anade una fila por figura.
-// Si un pedido se borra o deja de estar completado, quita sus filas (columna I = referencia).
+// Si un pedido se borra o deja de estar completado, quita sus filas (columna I = codigo visible del pedido, columna J = id interno oculto).
 // Antes de publicar: Configuracion del proyecto > Propiedades del script > SECRET = una clave larga.
 
 var HOJA = 'Hoja 1';
@@ -19,13 +19,13 @@ function doPost(e) {
     if (datos.accion === 'borrar') {
       var borradas = 0;
       for (var r = valores.length - 1; r >= 1; r--) {
-        if (datos.pedido_ref && String(valores[r][8] || '') === datos.pedido_ref) { hoja.deleteRow(r + 1); borradas++; }
+        if (datos.pedido_ref && String(valores[r][9] || '') === datos.pedido_ref) { hoja.deleteRow(r + 1); borradas++; }
       }
       return ContentService.createTextOutput('borradas ' + borradas);
     }
     if (datos.pedido_ref) {
       for (var k = 1; k < valores.length; k++) {
-        if (String(valores[k][8] || '') === datos.pedido_ref) return ContentService.createTextOutput('ya existe');
+        if (String(valores[k][9] || '') === datos.pedido_ref) return ContentService.createTextOutput('ya existe');
       }
     }
     // Numero de pedido: el mayor P### que haya + 1
@@ -46,7 +46,7 @@ function doPost(e) {
       var idFigura = letra + ('000' + contadores[letra]).slice(-3);
       var fila = hoja.getLastRow() + 1;
       hoja.getRange(fila, 1, 1, 7).setValues([[idFigura, idPedido, datos.cliente, datos.fecha, fig.figura, fig.precio, '']]);
-      hoja.getRange(fila, 9).setValue(datos.pedido_ref || '');
+      hoja.getRange(fila, 9, 1, 2).setValues([[datos.etiqueta || '', datos.pedido_ref || '']]);
       // Ojo: la hoja esta en espanol, por eso la formula usa ; en vez de ,
       hoja.getRange(fila, 8).setFormula('=IF(ISNUMBER(G' + fila + ');F' + fila + '-G' + fila + ';"")');
     });
@@ -61,22 +61,24 @@ function doPost(e) {
 function darFormato() {
   var hoja = SpreadsheetApp.getActive().getSheetByName(HOJA);
   var filas = 1000;
-  hoja.getRange('I1').setValue('Referencia web');
-  hoja.getRange(1, 1, filas, 9).setFontFamily('Arial').setFontSize(10).setVerticalAlignment('middle').setFontColor('#1f2937').setBackground(null);
-  hoja.getRange('A1:I1').setBackground('#1f2937').setFontColor('#ffffff').setFontWeight('bold').setHorizontalAlignment('center').setFontSize(11);
+  hoja.getRange('I1:J1').setValues([['Pedido web', 'Referencia interna']]);
+  hoja.getRange(1, 1, filas, 10).setFontFamily('Arial').setFontSize(10).setVerticalAlignment('middle').setFontColor('#1f2937').setBackground(null);
+  hoja.getRange('A1:J1').setBackground('#1f2937').setFontColor('#ffffff').setFontWeight('bold').setHorizontalAlignment('center').setFontSize(11);
   hoja.setRowHeight(1, 34);
   hoja.setFrozenRows(1);
   hoja.getRange('A2:B' + filas).setHorizontalAlignment('center');
   hoja.getRange('E2:E' + filas).setHorizontalAlignment('center');
   hoja.getRange('F2:H' + filas).setNumberFormat('#,##0.00 [$€]').setHorizontalAlignment('right');
-  hoja.getRange('I2:I' + filas).setFontColor('#9ca3af').setFontSize(8);
+  hoja.getRange('I2:I' + filas).setHorizontalAlignment('left').setFontSize(9);
+  hoja.getRange('J2:J' + filas).setFontColor('#9ca3af').setFontSize(8);
+  hoja.hideColumns(10);
   hoja.getRange('G2:G' + filas).setFontColor('#b91c1c').setFontWeight('bold').setBackground('#fee2e2');
   hoja.getRange('H2:H' + filas).setFontWeight('bold');
-  [95, 95, 220, 135, 110, 135, 135, 190, 125].forEach(function (w, i) { hoja.setColumnWidth(i + 1, w); });
+  [95, 95, 220, 135, 110, 135, 135, 190, 230, 100].forEach(function (w, i) { hoja.setColumnWidth(i + 1, w); });
   hoja.getBandings().forEach(function (b) { b.remove(); });
   var banda = hoja.getRange(2, 1, filas - 1, 5).applyRowBanding(SpreadsheetApp.BandingTheme.LIGHT_GREY, false, false);
   banda.setFirstRowColor('#ffffff').setSecondRowColor('#f3f4f6');
-  hoja.getRange(1, 1, filas, 9).setBorder(null, null, null, null, null, true, '#e5e7eb', SpreadsheetApp.BorderStyle.SOLID);
+  hoja.getRange(1, 1, filas, 10).setBorder(null, null, null, null, null, true, '#e5e7eb', SpreadsheetApp.BorderStyle.SOLID);
   var rango = [hoja.getRange('H2:H' + filas)];
   hoja.setConditionalFormatRules([
     SpreadsheetApp.newConditionalFormatRule().whenFormulaSatisfied('=AND(ISNUMBER($H2);$H2<0)').setBackground('#fecaca').setFontColor('#991b1b').setRanges(rango).build(),
