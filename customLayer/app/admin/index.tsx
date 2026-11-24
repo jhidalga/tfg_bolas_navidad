@@ -50,6 +50,12 @@ export default function ListaPedidosAdmin() {
 
     useEffect(() => {
         cargarPedidos();
+        // Refresca la lista sola cada 30 segundos para ver pedidos nuevos
+        const temporizador = setInterval(() => {
+            if (typeof document !== 'undefined' && document.hidden) return;
+            cargarPedidos();
+        }, 30000);
+        return () => clearInterval(temporizador);
     }, []);
 
     useEffect(() => {
