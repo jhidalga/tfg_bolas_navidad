@@ -1,6 +1,6 @@
 import { View, Text, Pressable, ScrollView, ActivityIndicator, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { traducirError } from '../../lib/errores';
 import { useEsMovilWeb } from '../../lib/responsive';
@@ -15,11 +15,15 @@ type Fila = {
 };
 type Totales = { figuras: number; precio: number; coste: number; beneficio: number; cobrado: number; por_cobrar: number };
 
-const COLS = [
-    { t: 'Id Figura', w: 90 }, { t: 'Id Pedido', w: 90 }, { t: 'Cliente', w: 190 }, { t: 'Fecha', w: 130 },
-    { t: 'Figura', w: 100 }, { t: 'Precio unitario', w: 120 }, { t: 'Coste unitario', w: 120 },
-    { t: 'Beneficio estimado', w: 140 }, { t: 'Pedido web', w: 210 }, { t: 'Estado', w: 110 }, { t: 'Pagado', w: 80 },
+const COLS: { t: string; w: number; k: keyof Fila }[] = [
+    { t: 'Id Figura', w: 90, k: 'id_figura' }, { t: 'Id Pedido', w: 90, k: 'id_pedido' }, { t: 'Cliente', w: 190, k: 'cliente' },
+    { t: 'Fecha', w: 130, k: 'fecha' }, { t: 'Figura', w: 100, k: 'figura' }, { t: 'Precio unitario', w: 120, k: 'precio' },
+    { t: 'Coste unitario', w: 120, k: 'coste' }, { t: 'Beneficio estimado', w: 140, k: 'beneficio' },
+    { t: 'Pedido web', w: 210, k: 'pedido_web' }, { t: 'Estado', w: 110, k: 'estado' }, { t: 'Pagado', w: 80, k: 'pagado' },
 ];
+
+/** La fecha viene como dd/mm/aaaa hh:mm. Se pasa a aaaammddhhmm para ordenarla bien. */
+const valorFecha = (f: string) => { const m = f.match(/(\d+)\/(\d+)\/(\d+) (\d+):(\d+)/); return m ? `${m[3]}${m[2]}${m[1]}${m[4]}${m[5]}` : f; };
 const ANCHO = COLS.reduce((s, c) => s + c.w, 0);
 
 const colorBeneficio = (f: Fila) =>
@@ -38,6 +42,20 @@ export default function HojaGastos() {
     const [cargando, setCargando] = useState(true);
     const [filas, setFilas] = useState<Fila[]>([]);
     const [totales, setTotales] = useState<Totales | null>(null);
+    const [orden, setOrden] = useState<{ k: keyof Fila | null; asc: boolean }>({ k: null, asc: true });
+
+    const ordenadas = useMemo(() => {
+        if (!orden.k) return filas;
+        const k = orden.k;
+        const val = (f: Fila) => k === 'fecha' ? valorFecha(f.fecha) : k === 'pagado' ? Number(f.pagado) : f[k];
+        return [...filas].sort((a, b) => {
+            const x: any = val(a), y: any = val(b);
+            const r = typeof x === 'number' && typeof y === 'number' ? x - y : String(x).localeCompare(String(y), 'es', { numeric: true });
+            return orden.asc ? r : -r;
+        });
+    }, [filas, orden]);
+
+    const ordenarPor = (k: keyof Fila) => setOrden(o => ({ k, asc: o.k === k ? !o.asc : true }));
 
     const cargar = useCallback(async () => {
         const { data: { session } } = await supabase.auth.getSession();
@@ -87,11 +105,15 @@ export default function HojaGastos() {
                 <ScrollView horizontal style={e.tarjeta}>
                     <View style={{ width: ANCHO }}>
                         <View style={[e.fila, e.cabecera]}>
-                            {COLS.map(c => <View key={c.t} style={[e.celda, { width: c.w }]}><Text style={e.cabTexto}>{c.t}</Text></View>)}
+                            {COLS.map(c => (
+                                <Pressable key={c.t} onPress={() => ordenarPor(c.k)} style={[e.celda, { width: c.w }]} accessibilityLabel={`Ordenar por ${c.t}`}>
+                                    <Text style={e.cabTexto}>{c.t}{orden.k === c.k ? (orden.asc ? ' ▲' : ' ▼') : ''}</Text>
+                                </Pressable>
+                            ))}
                         </View>
                         <ScrollView style={{ maxHeight: movil ? 420 : 520 }}>
                             {filas.length === 0 && <Text style={{ padding: 20, textAlign: 'center', color: '#94a3b8' }}>Todavía no hay pedidos.</Text>}
-                            {filas.map((f, i) => {
+                            {ordenadas.map((f, i) => {
                                 const cb = colorBeneficio(f);
                                 const ce = colorEstado(f.estado);
                                 return (
