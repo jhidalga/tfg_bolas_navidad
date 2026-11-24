@@ -76,12 +76,17 @@ export default function ResumenAdmin() {
         const q = busqueda.trim().toLowerCase();
         const lista = filas.filter(f => (curso === 'Todos' || (!f.profesor && f.curso === curso)) && (depto === 'Todos' || (!!f.profesor && f.curso === depto)) &&
             (!q || f.nombre.toLowerCase().includes(q) || f.email.toLowerCase().includes(q)));
-        return [...lista].sort((a, b) => {
+        const ordenadas = [...lista].sort((a, b) => {
             const val = (f: Fila) => orden.col === 'pagado' ? Number(!!f.pagado) : orden.col === 'num_pedidos' ? (f.ids_pedidos?.[0] || '') : f[orden.col];
             const x = val(a), y = val(b);
             const r = typeof x === 'number' && typeof y === 'number' ? x - y : String(x).localeCompare(String(y), 'es');
             return orden.asc ? r : -r;
         });
+        // Los pedidos de una misma persona van siempre juntos, uno debajo de otro
+        const persona = (f: Fila) => f.email || f.nombre;
+        const grupos = new Map<string, Fila[]>();
+        ordenadas.forEach(f => { const k = persona(f); if (!grupos.has(k)) grupos.set(k, []); grupos.get(k)!.push(f); });
+        return Array.from(grupos.values()).flatMap(g => [...g].sort((a, b) => (a.ids_pedidos?.[0] || '').localeCompare(b.ids_pedidos?.[0] || '', 'es', { numeric: true })));
     }, [filas, busqueda, curso, depto, orden]);
 
     const totales = useMemo(() => ({
@@ -176,11 +181,16 @@ export default function ResumenAdmin() {
                         </View>
                         <ScrollView style={{ maxHeight: movil ? 420 : 520 }}>
                             {visibles.length === 0 && <Text style={{ padding: 20, textAlign: 'center', color: '#94a3b8' }}>No hay pedidos con estos filtros.</Text>}
-                            {visibles.map((f, i) => (
-                                <View key={f.id} style={[e.fila, i % 2 === 1 && { backgroundColor: '#f8fafc' }]}>
-                                    <View style={[e.celda, { width: COLUMNAS[0].ancho }]}><Text style={e.texto}>{f.curso}</Text></View>
-                                    <View style={[e.celda, { width: COLUMNAS[1].ancho }]}><Text style={e.texto}>{f.nombre}</Text></View>
-                                    <View style={[e.celda, { width: COLUMNAS[2].ancho }]}><Text style={e.texto}>{f.email}</Text></View>
+                            {visibles.map((f, i) => {
+                                const clave = f.email || f.nombre;
+                                const repetida = i > 0 && (visibles[i - 1].email || visibles[i - 1].nombre) === clave;
+                                let bloque = 0;
+                                for (let j = 1; j <= i; j++) if ((visibles[j].email || visibles[j].nombre) !== (visibles[j - 1].email || visibles[j - 1].nombre)) bloque++;
+                                return (
+                                <View key={f.id} style={[e.fila, bloque % 2 === 1 && { backgroundColor: '#f8fafc' }, !repetida && i > 0 && { borderTopWidth: 1, borderTopColor: '#cbd5e1' }]}>
+                                    <View style={[e.celda, { width: COLUMNAS[0].ancho }]}><Text style={e.texto}>{repetida ? '' : f.curso}</Text></View>
+                                    <View style={[e.celda, { width: COLUMNAS[1].ancho }]}><Text style={e.texto}>{repetida ? '' : f.nombre}</Text></View>
+                                    <View style={[e.celda, { width: COLUMNAS[2].ancho }]}><Text style={e.texto}>{repetida ? '' : f.email}</Text></View>
                                     <View style={[e.celda, { width: COLUMNAS[3].ancho }]}>{(f.ids_pedidos?.length ? f.ids_pedidos : [String(f.num_pedidos)]).map(id => <Text key={id} style={[e.texto, { fontSize: 12 }]}>{id}</Text>)}</View>
                                     <View style={[e.celda, { width: COLUMNAS[4].ancho, alignItems: 'flex-end' }]}><Text style={e.texto}>{f.bolas}</Text></View>
                                     <View style={[e.celda, { width: COLUMNAS[5].ancho, alignItems: 'flex-end' }]}><Text style={e.texto}>{euros(f.total)}</Text></View>
@@ -201,7 +211,8 @@ export default function ResumenAdmin() {
                                         );
                                     })}
                                 </View>
-                            ))}
+                                );
+                            })}
                         </ScrollView>
                         <View style={[e.fila, e.pie]}>
                             <View style={[e.celda, { width: COLUMNAS[0].ancho + COLUMNAS[1].ancho + COLUMNAS[2].ancho }]}>
