@@ -910,6 +910,48 @@ def sincronizar_hoja(authorization: Optional[str] = Header(None)):
         raise HTTPException(status_code=500, detail="Ha ocurrido un error en el servidor. Inténtalo de nuevo.")
 
 
+def _pagado_en_hoja(cliente, usuario_id: str, pagado: bool) -> None:
+    """Marca o desmarca la casilla Pagado de todos los pedidos de esa persona en la hoja."""
+    try:
+        ids = [str(x["id"]) for x in (cliente.table("pedidos").select("id").eq("user_id", usuario_id).execute().data or [])]
+        if ids:
+            _llamar_hoja({"accion": "pagado", "pedido_refs": ids, "pagado": bool(pagado)})
+    except Exception:
+        logging.exception("No se pudo avisar a la hoja del pago")
+
+
+class PagadoDesdeHoja(BaseModel):
+    secret: str
+    pedido_ref: str
+    pagado: bool
+
+
+@app.post("/api/hoja/pagado")
+def pagado_desde_hoja(datos: PagadoDesdeHoja):
+    """La hoja avisa de que se ha marcado o desmarcado Pagado. Se guarda en la web y se copia a los demas pedidos de esa persona."""
+    import hmac
+    secreto = os.getenv("SHEET_SECRET")
+    if not secreto or not hmac.compare_digest(datos.secret, secreto):
+        raise HTTPException(status_code=401, detail="No autorizado")
+    clave = os.getenv("SUPABASE_SERVICE_KEY")
+    if not clave:
+        raise HTTPException(status_code=503, detail="Falta SUPABASE_SERVICE_KEY")
+    try:
+        admin = create_client(SUPABASE_URL, clave)
+        ped = admin.table("pedidos").select("user_id").eq("id", datos.pedido_ref).execute().data
+        if not ped:
+            raise HTTPException(status_code=404, detail="Pedido no encontrado")
+        usuario_id = ped[0]["user_id"]
+        admin.table("pagos_usuarios").upsert({"user_id": usuario_id, "pagado": datos.pagado}, returning="minimal").execute()
+        _pagado_en_hoja(admin, usuario_id, datos.pagado)
+        return {"mensaje": "Pago actualizado"}
+    except HTTPException:
+        raise
+    except Exception:
+        logging.exception("Error interno")
+        raise HTTPException(status_code=500, detail="Error interno")
+
+
 @app.get("/api/admin/pedidos")
 def obtener_todos_los_pedidos(authorization: Optional[str] = Header(None)):
     token = authorization.replace("Bearer ", "") if authorization else ""
@@ -1533,6 +1575,7 @@ def marcar_pagado(usuario_id: str, datos: PagadoUsuario, authorization: Optional
     try:
         cliente = _exigir_admin(authorization)
         cliente.table("pagos_usuarios").upsert({"user_id": usuario_id, "pagado": datos.pagado}, returning="minimal").execute()
+        _pagado_en_hoja(cliente, usuario_id, datos.pagado)
         return {"mensaje": "Pago actualizado", "pagado": datos.pagado}
     except HTTPException:
         raise

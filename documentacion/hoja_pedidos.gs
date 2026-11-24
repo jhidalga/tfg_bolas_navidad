@@ -93,6 +93,15 @@ function doPost(e) {
       ponerTotales(hoja);
       return ContentService.createTextOutput('borradas ' + borradas);
     }
+    if (datos.accion === 'pagado') {
+      var marcadas = 0;
+      var refs = datos.pedido_refs || [];
+      for (var q = 1; q < valores.length; q++) {
+        if (refs.indexOf(String(valores[q][9] || '')) !== -1) { hoja.getRange(q + 1, 12).setValue(!!datos.pagado); marcadas++; }
+      }
+      ponerTotales(hoja);
+      return ContentService.createTextOutput('pagado ' + marcadas);
+    }
     if (datos.accion === 'estado') {
       var cambiadas = aplicarEstado(hoja, valores, datos.pedido_ref, datos.estado);
       ponerTotales(hoja);
@@ -135,6 +144,22 @@ function doPost(e) {
   } finally {
     lock.releaseLock();
   }
+}
+
+// Cuando se marca o desmarca Pagado en la hoja se avisa a la web. Hace falta un activador instalable:
+// Activadores (reloj) > Anadir activador > alEditar > De la hoja de calculo > Al editar.
+var WEB_PAGADO = 'https://laguna-tollon-pedidos-navidad.up.railway.app/api/hoja/pagado';
+function alEditar(e) {
+  var r = e.range;
+  if (r.getSheet().getName() !== HOJA || r.getColumn() !== 12 || r.getRow() < 2) return;
+  var hoja = r.getSheet();
+  var ref = String(hoja.getRange(r.getRow(), 10).getValue() || '');
+  if (!ref) return;
+  var pagado = hoja.getRange(r.getRow(), 12).getValue() === true;
+  UrlFetchApp.fetch(WEB_PAGADO, {
+    method: 'post', contentType: 'application/json', muteHttpExceptions: true,
+    payload: JSON.stringify({ secret: PropertiesService.getScriptProperties().getProperty('SECRET'), pedido_ref: ref, pagado: pagado })
+  });
 }
 
 // Da estilo a la hoja. Se ejecuta a mano (Ejecutar > darFormato). Las filas nuevas heredan el estilo.
