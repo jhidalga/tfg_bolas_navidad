@@ -1,3 +1,4 @@
+import { temaActual } from '../lib/tema';
 import { View, Text, TextInput, ScrollView, Pressable, ActivityIndicator, Modal } from 'react-native';
 import { traducirError } from '../lib/errores';
 import { styles as estilosEscritorio } from '../styles/registro/registro.styles';
@@ -140,6 +141,7 @@ export default function Registro() {
                     curso: cursoLimpio,
                     profesor: profesor,
                     nombre: nombreLimpio,
+                    tema: temaActual.nombre,
                     apellido1: apellido1Limpio,
                     apellido2: apellido2Limpio
                 }

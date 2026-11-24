@@ -25,12 +25,20 @@ export default function RecuperarPassword() {
             return;
         }
         setCargando(true);
-        const { error } = await supabase.auth.resetPasswordForEmail(limpio, {
-            redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/nueva-clave` : undefined,
-        });
+        let fallo = '';
+        try {
+            const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/auth/recuperar`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: limpio, redirect_to: typeof window !== 'undefined' ? `${window.location.origin}/nueva-clave` : null }),
+            });
+            if (!res.ok) fallo = (await res.json().catch(() => ({}))).detail || 'No se pudo enviar el correo';
+        } catch {
+            fallo = 'Error de conexión';
+        }
         setCargando(false);
-        if (error) {
-            Toast.show({ type: 'error', text1: 'Error', text2: traducirError(error.message) });
+        if (fallo) {
+            Toast.show({ type: 'error', text1: 'Error', text2: traducirError(fallo) });
             return;
         }
         // Mismo mensaje exista o no el correo, para no dar pistas de quien tiene cuenta

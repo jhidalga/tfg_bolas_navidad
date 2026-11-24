@@ -1463,6 +1463,38 @@ def obtener_tema():
         return {"tema": "navidad", "ofertas": True}
 
 
+class RecuperarClave(BaseModel):
+    email: str
+    redirect_to: Optional[str] = None
+
+
+@app.post("/api/auth/recuperar")
+def recuperar_clave(datos: RecuperarClave):
+    """Pide el correo de recuperar contrasena. Antes guarda el tema activo en la cuenta
+    para que el correo salga con el estilo del tema (navidad, san valentin o normal)."""
+    correo = datos.email.strip().lower()
+    if not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", correo):
+        raise HTTPException(status_code=400, detail="Introduce un correo electrónico válido")
+    clave = os.getenv("SUPABASE_SERVICE_KEY")
+    if clave:
+        try:
+            tema = obtener_tema().get("tema", "navidad")
+            admin = create_client(SUPABASE_URL, clave)
+            u = admin.table("usuarios").select("id").ilike("email", correo).execute().data
+            if u:
+                admin.auth.admin.update_user_by_id(u[0]["id"], {"user_metadata": {"tema": tema}})
+        except Exception:
+            logging.exception("No se pudo guardar el tema para el correo")
+    try:
+        opciones = {"redirect_to": datos.redirect_to} if datos.redirect_to else {}
+        supabase.auth.reset_password_for_email(correo, opciones)
+    except Exception as e:
+        logging.exception("No se pudo enviar el correo de recuperacion")
+        raise HTTPException(status_code=400, detail=str(e))
+    return {"mensaje": "Si ese correo tiene cuenta, te hemos enviado un enlace"}
+
+
+
 @app.patch("/api/admin/ofertas")
 def cambiar_ofertas(datos: OfertasWeb, authorization: Optional[str] = Header(None)):
     """Solo administradores: activa o quita las ofertas de toda la tienda."""
