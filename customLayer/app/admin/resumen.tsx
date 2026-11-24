@@ -12,7 +12,7 @@ import { DEPARTAMENTOS, TODOS_LOS_CURSOS } from '../../lib/cursos';
 const API_URL = `${process.env.EXPO_PUBLIC_API_URL || ''}/api`;
 
 type CeldaModelo = { cantidad: number; estados: Record<string, number> };
-type Fila = { id: string; nombre: string; email: string; curso: string; num_pedidos: number; bolas: number; total: number; pagado?: boolean; profesor?: boolean; modelos?: Record<string, CeldaModelo> };
+type Fila = { id: string; nombre: string; email: string; curso: string; num_pedidos: number; bolas: number; total: number; pagado?: boolean; cobrado?: number; profesor?: boolean; modelos?: Record<string, CeldaModelo> };
 
 const ANCHO_MODELO = 105;
 
@@ -87,8 +87,8 @@ export default function ResumenAdmin() {
         personas: visibles.length,
         tickets: visibles.reduce((s, f) => s + f.num_pedidos, 0),
         bolas: visibles.reduce((s, f) => s + f.bolas, 0),
-        total: visibles.reduce((s, f) => s + (f.pagado ? f.total : 0), 0),
-        pendiente: visibles.reduce((s, f) => s + (f.pagado ? 0 : f.total), 0),
+        total: visibles.reduce((s, f) => s + (f.cobrado ?? (f.pagado ? f.total : 0)), 0),
+        pendiente: visibles.reduce((s, f) => s + (f.total - (f.cobrado ?? (f.pagado ? f.total : 0))), 0),
         porModelo: Object.fromEntries(modelos.map(m => [m, visibles.reduce((s, f) => s + (f.modelos?.[m]?.cantidad || 0), 0)])) as Record<string, number>,
     }), [visibles, modelos]);
 

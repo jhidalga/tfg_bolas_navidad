@@ -159,7 +159,7 @@ export default function DetallesPedidoAdmin() {
 
             <View style={{ backgroundColor: tc('#fbf1de'), borderRadius: 12, padding: 14, marginHorizontal: 16, marginBottom: 14 }}>
                 <Text style={{ fontWeight: 'bold', color: tc('#3b1a12'), fontSize: 16 }}>Estado: {datos.pedido.estado}</Text>
-                {datos.pedido.estado === 'Pendiente' ? (
+                {datos.pedido.estado === 'Pendiente' && !datos.pedido.pagado ? (
                     <>
                         <Text style={{ color: tc('#6b4a3a'), marginTop: 6 }}>Puedes anular el pedido mientras esté Pendiente. Cuando se complete ya no se podrá.</Text>
                         <Pressable onPress={() => !anulando && anular()} style={{ backgroundColor: tc('#a52a2a'), paddingVertical: 12, borderRadius: 10, alignItems: 'center', marginTop: 12, opacity: anulando ? 0.6 : 1 }}>
@@ -171,6 +171,7 @@ export default function DetallesPedidoAdmin() {
                         {datos.pedido.estado === 'Completado' ? 'Tu pedido ya está completado e impreso, no se puede anular.'
                             : datos.pedido.estado === 'Entregado' ? 'Tu pedido ya está entregado, no se puede anular.'
                             : datos.pedido.estado === 'Cancelado' ? 'Este pedido está anulado.'
+                            : datos.pedido.pagado ? 'Este pedido ya está pagado, no se puede anular.'
                             : 'Este pedido ya no se puede anular.'}
                     </Text>
                 )}
@@ -204,7 +205,7 @@ export default function DetallesPedidoAdmin() {
                             ) : (
                                 <Text style={styles.txtNormal}>Sin personalizar</Text>
                             )}
-                            {datos.pedido.estado === 'Pendiente' && (
+                            {datos.pedido.estado === 'Pendiente' && !datos.pedido.pagado && (
                                 <Pressable onPress={() => !anulando && quitar(prod)} style={{ alignSelf: 'flex-start', marginTop: 10, borderWidth: 1, borderColor: tc('#a52a2a'), borderRadius: 8, paddingVertical: 6, paddingHorizontal: 12, opacity: anulando ? 0.6 : 1 }}>
                                     <Text style={{ color: tc('#a52a2a'), fontWeight: 'bold', fontSize: 13 }}>{Number(prod.cantidad || 1) > 1 ? 'Quitar 1 unidad' : 'Quitar del pedido'}</Text>
                                 </Pressable>

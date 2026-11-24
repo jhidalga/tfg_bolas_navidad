@@ -882,7 +882,7 @@ def sincronizar_hoja(authorization: Optional[str] = Header(None)):
     try:
         cliente_seguro = create_client(SUPABASE_URL, SUPABASE_KEY, options=ClientOptions(headers={"Authorization": f"Bearer {token}"}))
         pedidos = cliente_seguro.table("pedidos")\
-            .select("id, user_id, estado, created_at, usuarios!user_id(nombre, curso, email), detalles_pedido(modelo, precio_unitario, cantidad)")\
+            .select("id, user_id, estado, pagado, created_at, usuarios!user_id(nombre, curso, email), detalles_pedido(modelo, precio_unitario, cantidad)")\
             .order("created_at").execute().data or []
         from datetime import datetime as _dt
         contador: dict = {}
@@ -899,8 +899,7 @@ def sincronizar_hoja(authorization: Optional[str] = Header(None)):
             _llamar_hoja(_filas_para_hoja(u.get("nombre") or "", fecha, ped.get("detalles_pedido") or [], str(ped["id"]), etiqueta, ped.get("estado") or ""), tareas)
 
         # Despues de mandar los pedidos se copia tambien el Pagado de cada persona
-        pagados = {x["user_id"] for x in (cliente_seguro.table("pagos_usuarios").select("user_id").eq("pagado", True).execute().data or [])}
-        refs_pagados = [str(p["id"]) for p in pedidos if p.get("user_id") in pagados]
+        refs_pagados = [str(p["id"]) for p in pedidos if p.get("pagado")]
         if refs_pagados:
             _llamar_hoja({"accion": "pagado", "pedido_refs": refs_pagados, "pagado": True}, tareas)
 
@@ -919,7 +918,7 @@ def sincronizar_hoja(authorization: Optional[str] = Header(None)):
 def _pagado_en_hoja(cliente, usuario_id: str, pagado: bool) -> None:
     """Marca o desmarca la casilla Pagado de todos los pedidos de esa persona en la hoja."""
     try:
-        ids = [str(x["id"]) for x in (cliente.table("pedidos").select("id").eq("user_id", usuario_id).execute().data or [])]
+        ids = [str(x["id"]) for x in (cliente.table("pedidos").select("id").eq("user_id", usuario_id).neq("estado", "Cancelado").execute().data or [])]
         if ids:
             _llamar_hoja({"accion": "pagado", "pedido_refs": ids, "pagado": bool(pagado)})
     except Exception:
@@ -944,12 +943,9 @@ def pagado_desde_hoja(datos: PagadoDesdeHoja):
         raise HTTPException(status_code=503, detail="Falta SUPABASE_SERVICE_KEY")
     try:
         admin = create_client(SUPABASE_URL, clave)
-        ped = admin.table("pedidos").select("user_id").eq("id", datos.pedido_ref).execute().data
-        if not ped:
+        hecho = admin.table("pedidos").update({"pagado": datos.pagado}).eq("id", datos.pedido_ref).execute().data
+        if not hecho:
             raise HTTPException(status_code=404, detail="Pedido no encontrado")
-        usuario_id = ped[0]["user_id"]
-        admin.table("pagos_usuarios").upsert({"user_id": usuario_id, "pagado": datos.pagado}, returning="minimal").execute()
-        _pagado_en_hoja(admin, usuario_id, datos.pagado)
         return {"mensaje": "Pago actualizado"}
     except HTTPException:
         raise
@@ -1358,10 +1354,12 @@ def anular_mi_pedido(pedido_id: str, authorization: Optional[str] = Header(None)
     try:
         cliente = create_client(SUPABASE_URL, SUPABASE_KEY, options=ClientOptions(headers={"Authorization": f"Bearer {token}"}))
         user_id = cliente.auth.get_user(token).user.id
-        res = cliente.table("pedidos").select("estado, user_id").eq("id", pedido_id).execute()
+        res = cliente.table("pedidos").select("estado, user_id, pagado").eq("id", pedido_id).execute()
         if not res.data or res.data[0].get("user_id") != user_id:
             raise HTTPException(status_code=404, detail="Pedido no encontrado")
         estado = res.data[0].get("estado")
+        if res.data[0].get("pagado") and estado != "Cancelado":
+            raise HTTPException(status_code=409, detail="Este pedido ya está pagado y no se puede anular.")
         if estado != "Pendiente":
             raise HTTPException(status_code=409, detail=_MENSAJE_NO_ANULAR.get(estado, "Este pedido ya no se puede anular."))
         hecho = cliente.rpc("anular_pedido", {"p_id": pedido_id}).execute()
@@ -1384,10 +1382,12 @@ def quitar_bola_de_mi_pedido(pedido_id: str, detalle_id: str, authorization: Opt
     try:
         cliente = create_client(SUPABASE_URL, SUPABASE_KEY, options=ClientOptions(headers={"Authorization": f"Bearer {token}"}))
         user_id = cliente.auth.get_user(token).user.id
-        res = cliente.table("pedidos").select("estado, user_id").eq("id", pedido_id).execute()
+        res = cliente.table("pedidos").select("estado, user_id, pagado").eq("id", pedido_id).execute()
         if not res.data or res.data[0].get("user_id") != user_id:
             raise HTTPException(status_code=404, detail="Pedido no encontrado")
         estado = res.data[0].get("estado")
+        if res.data[0].get("pagado") and estado != "Cancelado":
+            raise HTTPException(status_code=409, detail="Este pedido ya está pagado y no se puede cambiar.")
         if estado != "Pendiente":
             raise HTTPException(status_code=409, detail=_MENSAJE_NO_ANULAR.get(estado, "Este pedido ya no se puede cambiar.").replace("anular", "cambiar"))
         hecho = cliente.rpc("quitar_bola_pedido", {"p_pedido": pedido_id, "p_detalle": detalle_id}).execute()
@@ -1544,7 +1544,6 @@ def _agregar_resumen(usuarios, pagados=None):
     """Una fila por persona con pedidos: curso, nombre, correo, pedidos, bolas, total gastado
     y, por cada modelo, cuantas bolas pidio y en que estado esta cada una.
     Cada usuario trae sus pedidos con el total, el estado y las lineas con modelo y cantidad."""
-    pagados = pagados or set()
     filas = []
     usados = set()
     for u in usuarios:
@@ -1554,6 +1553,12 @@ def _agregar_resumen(usuarios, pagados=None):
             continue
         bolas = sum(int(d.get("cantidad") or 1) for p in pedidos for d in (p.get("detalles_pedido") or []))
         total = round(sum(float(p.get("total") or 0) for p in pedidos), 2)
+        if pagados is None:
+            cobrado = round(sum(float(p.get("total") or 0) for p in pedidos if p.get("pagado")), 2)
+            todo_pagado = all(p.get("pagado") for p in pedidos)
+        else:
+            todo_pagado = u.get("id") in pagados
+            cobrado = total if todo_pagado else 0.0
         modelos = {}
         for p in pedidos:
             for d in (p.get("detalles_pedido") or []):
@@ -1566,7 +1571,7 @@ def _agregar_resumen(usuarios, pagados=None):
                 celda["estados"][est] = celda["estados"].get(est, 0) + cant
         filas.append({"id": u.get("id"), "nombre": u.get("nombre") or "", "email": u.get("email") or "",
                       "curso": u.get("curso") or "", "profesor": bool(u.get("profesor")), "num_pedidos": len(pedidos), "bolas": bolas, "total": total,
-                      "pagado": u.get("id") in pagados, "modelos": modelos})
+                      "pagado": todo_pagado, "cobrado": cobrado, "modelos": modelos})
     filas.sort(key=lambda f: f["nombre"].lower())
     columnas = [m for m in _ORDEN_MODELOS if m in usados] + (["Otros"] if "Otros" in usados else [])
     return {
@@ -1574,8 +1579,8 @@ def _agregar_resumen(usuarios, pagados=None):
         "modelos": columnas,
         "totales": {"personas": len(filas), "pedidos": sum(f["num_pedidos"] for f in filas),
                     "bolas": sum(f["bolas"] for f in filas),
-                    "total": round(sum(f["total"] for f in filas if f["pagado"]), 2),
-                    "pendiente": round(sum(f["total"] for f in filas if not f["pagado"]), 2)},
+                    "total": round(sum(f["cobrado"] for f in filas), 2),
+                    "pendiente": round(sum(f["total"] - f["cobrado"] for f in filas), 2)},
     }
 
 
@@ -1615,10 +1620,8 @@ def hoja_de_gastos(authorization: Optional[str] = Header(None)):
         from zoneinfo import ZoneInfo
         from datetime import datetime as _dt
         pedidos = cliente.table("pedidos")\
-            .select("id, user_id, estado, created_at, usuarios!user_id(nombre, curso, email), detalles_pedido(modelo, precio_unitario, cantidad)")\
+            .select("id, user_id, estado, pagado, created_at, usuarios!user_id(nombre, curso, email), detalles_pedido(modelo, precio_unitario, cantidad)")\
             .order("created_at").execute().data or []
-        pagos = cliente.table("pagos_usuarios").select("user_id").eq("pagado", True).execute().data or []
-        pagados = {x["user_id"] for x in pagos}
         import re as _re, unicodedata as _ud
         contador_usuario: dict = {}
         letras: dict = {}
@@ -1633,7 +1636,7 @@ def hoja_de_gastos(authorization: Optional[str] = Header(None)):
             f = _dt.fromisoformat(str(ped.get("created_at")).replace("Z", "+00:00")) if ped.get("created_at") else None
             fecha = f.astimezone(ZoneInfo("Europe/Madrid")).strftime("%d/%m/%Y %H:%M") if f else ""
             estado = ped.get("estado") or ""
-            pagado = ped.get("user_id") in pagados
+            pagado = bool(ped.get("pagado"))
             for d in ped.get("detalles_pedido") or []:
                 for _ in range(int(d.get("cantidad") or 1)):
                     figura = _figura_corta(d.get("modelo"))
@@ -1665,9 +1668,8 @@ def resumen_admin(authorization: Optional[str] = Header(None)):
     """Tabla resumen para el admin: que persona ha pedido cuantas bolas y cuanto ha gastado."""
     try:
         cliente = _exigir_admin(authorization)
-        usuarios = cliente.table("usuarios").select("id, nombre, email, curso, profesor, pedidos(id, total, estado, detalles_pedido(cantidad, modelo))").execute().data
-        pagos = cliente.table("pagos_usuarios").select("user_id").eq("pagado", True).execute().data
-        return _agregar_resumen(usuarios or [], {x["user_id"] for x in (pagos or [])})
+        usuarios = cliente.table("usuarios").select("id, nombre, email, curso, profesor, pedidos(id, total, estado, pagado, detalles_pedido(cantidad, modelo))").execute().data
+        return _agregar_resumen(usuarios or [])
     except HTTPException:
         raise
     except Exception:
@@ -1677,10 +1679,10 @@ def resumen_admin(authorization: Optional[str] = Header(None)):
 
 @app.patch("/api/admin/resumen/{usuario_id}/pagado")
 def marcar_pagado(usuario_id: str, datos: PagadoUsuario, authorization: Optional[str] = Header(None)):
-    """El admin marca si una persona ya ha pagado. Solo las personas pagadas suman en el total."""
+    """El admin marca si una persona ya ha pagado. Se marcan todos sus pedidos que no estan cancelados."""
     try:
         cliente = _exigir_admin(authorization)
-        cliente.table("pagos_usuarios").upsert({"user_id": usuario_id, "pagado": datos.pagado}, returning="minimal").execute()
+        cliente.table("pedidos").update({"pagado": datos.pagado}).eq("user_id", usuario_id).neq("estado", "Cancelado").execute()
         _pagado_en_hoja(cliente, usuario_id, datos.pagado)
         return {"mensaje": "Pago actualizado", "pagado": datos.pagado}
     except HTTPException:
