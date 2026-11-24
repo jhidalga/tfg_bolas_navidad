@@ -1540,6 +1540,14 @@ def _modelo_resumen(modelo):
     return _NOMBRE_FIGURA.get(figura_para(modelo or ""), "Otros")
 
 
+def _codigo_pedido(u: dict, numero: int) -> str:
+    """Codigo visible de un pedido: correo-curso-NN, igual que en el panel."""
+    import unicodedata
+    correo = str(u.get("email") or "").split("@")[0].strip().lower()
+    curso = re.sub(r"[^a-z0-9]", "", unicodedata.normalize("NFD", str(u.get("curso") or "")).encode("ascii", "ignore").decode().lower())
+    return "-".join([x for x in [correo, curso, str(numero).zfill(2)] if x]) if correo else f"pedido-{numero:02d}"
+
+
 def _agregar_resumen(usuarios, pagados=None):
     """Una fila por persona con pedidos: curso, nombre, correo, pedidos, bolas, total gastado
     y, por cada modelo, cuantas bolas pidio y en que estado esta cada una.
@@ -1548,9 +1556,14 @@ def _agregar_resumen(usuarios, pagados=None):
     usados = set()
     for u in usuarios:
         # Los pedidos cancelados no cuentan en el resumen
-        pedidos = [p for p in (u.get("pedidos") or []) if (p.get("estado") or "") != "Cancelado"]
+        todos = sorted((u.get("pedidos") or []), key=lambda p: str(p.get("created_at") or ""))
+        codigos = {}
+        for n, p in enumerate(todos, start=1):
+            codigos[p.get("id")] = _codigo_pedido(u, n)
+        pedidos = [p for p in todos if (p.get("estado") or "") != "Cancelado"]
         if not pedidos:
             continue
+        ids_visibles = [codigos[p.get("id")] for p in pedidos]
         bolas = sum(int(d.get("cantidad") or 1) for p in pedidos for d in (p.get("detalles_pedido") or []))
         total = round(sum(float(p.get("total") or 0) for p in pedidos), 2)
         if pagados is None:
@@ -1570,7 +1583,7 @@ def _agregar_resumen(usuarios, pagados=None):
                 est = p.get("estado") or "Pendiente"
                 celda["estados"][est] = celda["estados"].get(est, 0) + cant
         filas.append({"id": u.get("id"), "nombre": u.get("nombre") or "", "email": u.get("email") or "",
-                      "curso": u.get("curso") or "", "profesor": bool(u.get("profesor")), "num_pedidos": len(pedidos), "bolas": bolas, "total": total,
+                      "curso": u.get("curso") or "", "profesor": bool(u.get("profesor")), "num_pedidos": len(pedidos), "ids_pedidos": ids_visibles, "bolas": bolas, "total": total,
                       "pagado": todo_pagado, "cobrado": cobrado, "modelos": modelos})
     filas.sort(key=lambda f: f["nombre"].lower())
     columnas = [m for m in _ORDEN_MODELOS if m in usados] + (["Otros"] if "Otros" in usados else [])
@@ -1668,7 +1681,7 @@ def resumen_admin(authorization: Optional[str] = Header(None)):
     """Tabla resumen para el admin: que persona ha pedido cuantas bolas y cuanto ha gastado."""
     try:
         cliente = _exigir_admin(authorization)
-        usuarios = cliente.table("usuarios").select("id, nombre, email, curso, profesor, pedidos(id, total, estado, pagado, detalles_pedido(cantidad, modelo))").execute().data
+        usuarios = cliente.table("usuarios").select("id, nombre, email, curso, profesor, pedidos(id, total, estado, pagado, created_at, detalles_pedido(cantidad, modelo))").execute().data
         return _agregar_resumen(usuarios or [])
     except HTTPException:
         raise
