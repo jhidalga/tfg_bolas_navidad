@@ -1647,7 +1647,7 @@ def hoja_de_gastos(authorization: Optional[str] = Header(None)):
                     filas.append({"id_figura": f"{letra}{letras[letra]:03d}", "id_pedido": f"P{n:03d}", "cliente": u.get("nombre") or "",
                                   "fecha": fecha, "figura": figura, "precio": precio, "coste": coste,
                                   "beneficio": round((precio - coste) if pagado else -coste, 2),
-                                  "pedido_web": etiqueta, "estado": estado, "pagado": pagado, "user_id": ped.get("user_id")})
+                                  "pedido_web": etiqueta, "estado": estado, "pagado": pagado, "user_id": ped.get("user_id"), "pedido_id": str(ped["id"])})
         validas = [x for x in filas if x["estado"] != "Cancelado"]
         totales = {"figuras": len(filas),
                    "precio": round(sum(x["precio"] for x in validas), 2),
@@ -1670,6 +1670,23 @@ def resumen_admin(authorization: Optional[str] = Header(None)):
         cliente = _exigir_admin(authorization)
         usuarios = cliente.table("usuarios").select("id, nombre, email, curso, profesor, pedidos(id, total, estado, pagado, detalles_pedido(cantidad, modelo))").execute().data
         return _agregar_resumen(usuarios or [])
+    except HTTPException:
+        raise
+    except Exception:
+        logging.exception("Error interno")
+        raise HTTPException(status_code=500, detail="Ha ocurrido un error en el servidor. Inténtalo de nuevo.")
+
+
+@app.patch("/api/admin/pedidos/{pedido_id}/pagado")
+def marcar_pedido_pagado(pedido_id: str, datos: PagadoUsuario, authorization: Optional[str] = Header(None)):
+    """El admin marca si un pedido concreto esta pagado. Tambien se marca en el Excel."""
+    try:
+        cliente = _exigir_admin(authorization)
+        hecho = cliente.table("pedidos").update({"pagado": datos.pagado}).eq("id", pedido_id).execute().data
+        if not hecho:
+            raise HTTPException(status_code=404, detail="Pedido no encontrado")
+        _llamar_hoja({"accion": "pagado", "pedido_refs": [str(pedido_id)], "pagado": bool(datos.pagado)})
+        return {"mensaje": "Pago actualizado", "pagado": datos.pagado}
     except HTTPException:
         raise
     except Exception:

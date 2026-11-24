@@ -11,7 +11,7 @@ const API_URL = `${process.env.EXPO_PUBLIC_API_URL || ''}/api`;
 
 type Fila = {
     id_figura: string; id_pedido: string; cliente: string; fecha: string; figura: string;
-    precio: number; coste: number; beneficio: number; pedido_web: string; estado: string; pagado: boolean; user_id: string;
+    precio: number; coste: number; beneficio: number; pedido_web: string; estado: string; pagado: boolean; user_id: string; pedido_id: string;
 };
 type Totales = { figuras: number; precio: number; coste: number; beneficio: number; cobrado: number; por_cobrar: number };
 
@@ -80,10 +80,10 @@ export default function HojaGastos() {
 
     const cambiarPago = async (f: Fila) => {
         const nuevo = !f.pagado;
-        setFilas(l => l.map(x => x.user_id === f.user_id ? { ...x, pagado: nuevo } : x));
+        setFilas(l => l.map(x => x.pedido_id === f.pedido_id ? { ...x, pagado: nuevo } : x));
         try {
             const { data: { session } } = await supabase.auth.getSession();
-            const res = await fetch(`${API_URL}/admin/resumen/${f.user_id}/pagado`, {
+            const res = await fetch(`${API_URL}/admin/pedidos/${f.pedido_id}/pagado`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` },
                 body: JSON.stringify({ pagado: nuevo }),
