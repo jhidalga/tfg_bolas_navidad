@@ -46,11 +46,23 @@ def _leer(datos):
             "content_types": z.read("[Content_Types].xml")}
 
 
-def _base(figs):
-    """Ajustes de proyecto: la impresora H2D con mas filamentos (los demas modelos caben en ella)."""
-    def punt(f):
-        return ("H2D" in str(f["proj"].get("printer_model", "")), len(f["proj"].get("filament_colour", [])))
-    return max(figs, key=punt)
+_BASE = None
+
+
+def _base(figs=None):
+    """Ajustes de proyecto: siempre los de la H2D con 6 filamentos (los del reno), vengan las figuras de la plantilla que vengan.
+    Asi un pack solo de galletas, que venian pensadas para la P1S, tambien sale con la impresora buena."""
+    global _BASE
+    if _BASE is None:
+        import os
+        ruta = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models", "Reindeer.3mf")
+        with zipfile.ZipFile(ruta) as z:
+            ajustes = z.read("Metadata/model_settings.config").decode("utf-8")
+            _BASE = {"plate": re.search(r'<plate>.*?</plate>', ajustes, re.S).group(0),
+                     "proj_bytes": z.read("Metadata/project_settings.config"),
+                     "content_types": z.read("[Content_Types].xml")}
+            _BASE["proj"] = json.loads(_BASE["proj_bytes"])
+    return _BASE
 
 
 def _cama(proj):
