@@ -56,6 +56,13 @@ class ItemCarrito(BaseModel):
     personalizacion: str = Field(max_length=60)
     cantidad: int = Field(1, ge=1, le=50)
 
+class EdicionBola(BaseModel):
+    producto_id: Optional[str] = None
+    modelo: Optional[str] = Field(None, max_length=80)
+    color: Optional[str] = Field(None, max_length=40)
+    personalizacion: Optional[str] = Field(None, max_length=60)
+    cantidad: Optional[int] = Field(None, ge=1, le=50)
+
 class CheckoutPedido(BaseModel):
     total: float
     nota: str = Field("", max_length=200)
@@ -633,6 +640,81 @@ if MODO_PRUEBA:
             {"id": "u1", "nombre": "Admin de prueba", "email": "admin@g.educaand.es", "curso": "2DAM", "profesor": True, "administrador": True, "num_pedidos": 0},
             {"id": "u2", "nombre": "Ana Lopez", "email": "ana@g.educaand.es", "curso": "1DAM", "profesor": False, "administrador": False, "num_pedidos": 1},
         ]
+
+    @app.get("/api/admin/usuarios/{usuario_id}/perfil")
+    def perfil_usuario_prueba(usuario_id: str, request: Request):
+        lista = [u for u in usuarios_prueba() if u["id"] == usuario_id]
+        if not lista:
+            raise HTTPException(status_code=404, detail="Usuario no encontrado")
+        u = lista[0]
+        mios = [p for p in _pedidos(str(request.base_url)) if (p.get("usuarios") or {}).get("email", "").split("@")[0] == u["email"].split("@")[0] or (u["id"] == "u2" and p["id"] == "11111111-aaaa")]
+        salida = []
+        for n, p in enumerate(sorted(mios, key=lambda x: x["created_at"]), start=1):
+            salida.append({"id": p["id"], "codigo": _codigo_pedido(u, n), "estado": p["estado"], "pagado": bool(p.get("pagado")), "total": p["total"],
+                           "nota": p.get("nota"), "creado": p["created_at"], "lineas": p["detalles_pedido"]})
+        return {"usuario": u, "pedidos": salida}
+
+    def _editable_prueba(request: Request, pedido_id: str):
+        for p in _pedidos(str(request.base_url)):
+            if p["id"] == pedido_id:
+                if p.get("pagado") and p["estado"] != "Cancelado":
+                    raise HTTPException(status_code=409, detail="Este pedido ya está pagado y no se puede cambiar.")
+                if p["estado"] != "Pendiente":
+                    raise HTTPException(status_code=409, detail="Solo se pueden cambiar pedidos Pendientes.")
+                return p
+        raise HTTPException(status_code=404, detail="Pedido no encontrado")
+
+    @app.patch("/api/admin/pedidos/{pedido_id}/anular")
+    def anular_admin_prueba(pedido_id: str, request: Request):
+        _editable_prueba(request, pedido_id)["estado"] = "Cancelado"
+        return {"mensaje": "Pedido anulado", "estado": "Cancelado"}
+
+    @app.patch("/api/admin/pedidos/{pedido_id}/detalles/{detalle_id}")
+    def editar_admin_prueba(pedido_id: str, detalle_id: str, datos: EdicionBola, request: Request):
+        p = _editable_prueba(request, pedido_id)
+        d = next((x for x in p["detalles_pedido"] if x["id"] == detalle_id), None)
+        if not d:
+            raise HTTPException(status_code=404, detail="Esa bola no está en el pedido.")
+        cambios = {}
+        if datos.producto_id or datos.modelo or datos.color:
+            prod = next((x for x in _productos_prueba(str(request.base_url)) if x["id"] == (datos.producto_id or d.get("producto_id") or "p1")), None)
+            if not prod:
+                raise HTTPException(status_code=400, detail="Ese producto no existe.")
+            modelo = datos.modelo or d["modelo"]; color = datos.color or d["color"]
+            if modelo not in [m["nombre"] for m in prod["modelos"]]:
+                raise HTTPException(status_code=400, detail="Ese modelo no es de ese producto.")
+            if prod.get("colores") and color not in prod["colores"]:
+                raise HTTPException(status_code=400, detail="Ese color no es de ese producto.")
+            cambios.update({"modelo": modelo, "color": color, "precio_unitario": prod["precio"]})
+        if datos.personalizacion is not None:
+            nombre = re.sub(r"\s+", " ", datos.personalizacion.strip())
+            error = _error_nombre_bola(nombre, True)
+            if error:
+                raise HTTPException(status_code=400, detail=error)
+            cambios["personalizacion"] = nombre
+        if datos.cantidad is not None:
+            cambios["cantidad"] = datos.cantidad
+        if not cambios:
+            raise HTTPException(status_code=400, detail="No hay nada que cambiar.")
+        d.update(cambios)
+        p["total"] = sum(x["precio_unitario"] * (x.get("cantidad") or 1) for x in p["detalles_pedido"])
+        return {"mensaje": "Bola cambiada", "total": p["total"]}
+
+    @app.patch("/api/admin/pedidos/{pedido_id}/detalles/{detalle_id}/quitar")
+    def quitar_admin_prueba(pedido_id: str, detalle_id: str, request: Request):
+        p = _editable_prueba(request, pedido_id)
+        d = next((x for x in p["detalles_pedido"] if x["id"] == detalle_id), None)
+        if not d:
+            raise HTTPException(status_code=404, detail="Esa bola no está en el pedido.")
+        if (d.get("cantidad") or 1) > 1:
+            d["cantidad"] -= 1
+        else:
+            p["detalles_pedido"].remove(d)
+        if not p["detalles_pedido"]:
+            p["estado"] = "Cancelado"; p["total"] = 0
+            return {"mensaje": "Pedido anulado", "estado": "Cancelado", "total": 0}
+        p["total"] = sum(x["precio_unitario"] * (x.get("cantidad") or 1) for x in p["detalles_pedido"])
+        return {"mensaje": "Bola quitada", "estado": "Pendiente", "total": p["total"]}
 
     # --- Incidencias de registro (prueba, en memoria) ---
     _INCIDENCIAS = []
@@ -1371,6 +1453,132 @@ def obtener_usuarios_admin(authorization: Optional[str] = Header(None)):
     except Exception as e:
         logging.exception("Error interno")
         raise HTTPException(status_code=500, detail="Ha ocurrido un error en el servidor. Inténtalo de nuevo.")
+
+
+def _perfil_usuario(cliente, usuario_id: str):
+    """Datos de una persona y todos sus pedidos con el codigo visible, el estado, si estan pagados y sus lineas."""
+    u = cliente.table("usuarios").select("id, nombre, email, curso, profesor, administrador").eq("id", usuario_id).execute().data
+    if not u:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    u = u[0]
+    peds = cliente.table("pedidos").select("id, estado, total, pagado, nota, created_at, detalles_pedido(id, modelo, color, personalizacion, cantidad, precio_unitario)") \
+        .eq("user_id", usuario_id).order("created_at").execute().data or []
+    salida = []
+    for n, p in enumerate(peds, start=1):
+        salida.append({"id": p["id"], "codigo": _codigo_pedido(u, n), "estado": p.get("estado"), "pagado": bool(p.get("pagado")),
+                       "total": p.get("total"), "nota": p.get("nota"), "creado": p.get("created_at"), "lineas": p.get("detalles_pedido") or []})
+    return {"usuario": u, "pedidos": salida}
+
+
+@app.get("/api/admin/usuarios/{usuario_id}/perfil")
+def perfil_usuario_admin(usuario_id: str, authorization: Optional[str] = Header(None)):
+    try:
+        return _perfil_usuario(_exigir_admin(authorization), usuario_id)
+    except HTTPException:
+        raise
+    except Exception:
+        logging.exception("Error interno")
+        raise HTTPException(status_code=500, detail="Ha ocurrido un error en el servidor. Inténtalo de nuevo.")
+
+
+def _comprobar_editable(cliente, pedido_id: str):
+    """El admin solo puede cambiar pedidos Pendientes y sin pagar."""
+    r = cliente.table("pedidos").select("estado, pagado").eq("id", pedido_id).execute().data
+    if not r:
+        raise HTTPException(status_code=404, detail="Pedido no encontrado")
+    if r[0].get("pagado") and r[0].get("estado") != "Cancelado":
+        raise HTTPException(status_code=409, detail="Este pedido ya está pagado y no se puede cambiar.")
+    if r[0].get("estado") != "Pendiente":
+        raise HTTPException(status_code=409, detail="Solo se pueden cambiar pedidos Pendientes.")
+
+
+@app.patch("/api/admin/pedidos/{pedido_id}/anular")
+def anular_pedido_admin(pedido_id: str, authorization: Optional[str] = Header(None)):
+    """El admin anula un pedido Pendiente sin pagar."""
+    try:
+        cliente = _exigir_admin(authorization)
+        _comprobar_editable(cliente, pedido_id)
+        cliente.table("pedidos").update({"estado": "Cancelado"}).eq("id", pedido_id).execute()
+        return {"mensaje": "Pedido anulado", "estado": "Cancelado"}
+    except HTTPException:
+        raise
+    except Exception:
+        logging.exception("Error al anular el pedido")
+        raise HTTPException(status_code=500, detail="No se pudo anular el pedido. Inténtalo de nuevo.")
+
+
+@app.patch("/api/admin/pedidos/{pedido_id}/detalles/{detalle_id}")
+def editar_bola_admin(pedido_id: str, detalle_id: str, datos: EdicionBola, authorization: Optional[str] = Header(None)):
+    """El admin cambia el modelo, el color, el nombre o la cantidad de una linea de un pedido Pendiente sin pagar."""
+    try:
+        cliente = _exigir_admin(authorization)
+        _comprobar_editable(cliente, pedido_id)
+        det = cliente.table("detalles_pedido").select("id, producto_id, modelo, color, personalizacion, cantidad").eq("pedido_id", pedido_id).eq("id", detalle_id).execute().data
+        if not det:
+            raise HTTPException(status_code=404, detail="Esa bola no está en el pedido.")
+        det = det[0]
+        cambios = {}
+        if datos.producto_id or datos.modelo or datos.color:
+            producto_id = datos.producto_id or det.get("producto_id")
+            prod = cliente.table("productos").select("id, precio, colores, oculto, deshabilitado, modelos(nombre)").eq("id", producto_id).execute().data
+            if not prod:
+                raise HTTPException(status_code=400, detail="Ese producto no existe.")
+            prod = prod[0]
+            modelo = datos.modelo or det.get("modelo")
+            color = datos.color or det.get("color")
+            if modelo not in [m.get("nombre") for m in (prod.get("modelos") or [])]:
+                raise HTTPException(status_code=400, detail="Ese modelo no es de ese producto.")
+            if prod.get("colores") and color not in prod["colores"]:
+                raise HTTPException(status_code=400, detail="Ese color no es de ese producto.")
+            cambios.update({"producto_id": producto_id, "modelo": modelo, "color": color, "precio_unitario": float(prod.get("precio") or 0)})
+        if datos.personalizacion is not None:
+            nombre = re.sub(r"\s+", " ", datos.personalizacion.strip())
+            error = _error_nombre_bola(nombre, True)
+            if error:
+                raise HTTPException(status_code=400, detail=error)
+            cambios["personalizacion"] = nombre
+        if datos.cantidad is not None:
+            cambios["cantidad"] = datos.cantidad
+        if not cambios:
+            raise HTTPException(status_code=400, detail="No hay nada que cambiar.")
+        cliente.table("detalles_pedido").update(cambios).eq("id", detalle_id).eq("pedido_id", pedido_id).execute()
+        todas = cliente.table("detalles_pedido").select("precio_unitario, cantidad").eq("pedido_id", pedido_id).execute().data or []
+        total = round(sum(float(d.get("precio_unitario") or 0) * (d.get("cantidad") or 1) for d in todas), 2)
+        cliente.table("pedidos").update({"total": total}).eq("id", pedido_id).execute()
+        return {"mensaje": "Bola cambiada", "total": total}
+    except HTTPException:
+        raise
+    except Exception:
+        logging.exception("Error al editar la bola")
+        raise HTTPException(status_code=500, detail="No se pudo cambiar la bola. Inténtalo de nuevo.")
+
+
+@app.patch("/api/admin/pedidos/{pedido_id}/detalles/{detalle_id}/quitar")
+def quitar_bola_admin(pedido_id: str, detalle_id: str, authorization: Optional[str] = Header(None)):
+    """El admin quita una unidad de una linea de un pedido Pendiente sin pagar. Si era la ultima del pedido, se anula."""
+    try:
+        cliente = _exigir_admin(authorization)
+        _comprobar_editable(cliente, pedido_id)
+        det = cliente.table("detalles_pedido").select("id, cantidad").eq("pedido_id", pedido_id).eq("id", detalle_id).execute().data
+        if not det:
+            raise HTTPException(status_code=404, detail="Esa bola no está en el pedido.")
+        if (det[0].get("cantidad") or 1) > 1:
+            cliente.table("detalles_pedido").update({"cantidad": (det[0].get("cantidad") or 1) - 1}).eq("id", detalle_id).execute()
+        else:
+            cliente.table("detalles_pedido").delete().eq("id", detalle_id).eq("pedido_id", pedido_id).execute()
+        quedan = cliente.table("detalles_pedido").select("precio_unitario, cantidad").eq("pedido_id", pedido_id).execute().data or []
+        if not quedan:
+            cliente.table("pedidos").update({"estado": "Cancelado"}).eq("id", pedido_id).execute()
+            return {"mensaje": "Pedido anulado", "estado": "Cancelado", "total": 0}
+        total = round(sum(float(d.get("precio_unitario") or 0) * (d.get("cantidad") or 1) for d in quedan), 2)
+        cliente.table("pedidos").update({"total": total}).eq("id", pedido_id).execute()
+        return {"mensaje": "Bola quitada", "estado": "Pendiente", "total": total}
+    except HTTPException:
+        raise
+    except Exception:
+        logging.exception("Error al quitar la bola")
+        raise HTTPException(status_code=500, detail="No se pudo quitar la bola. Inténtalo de nuevo.")
+
 
 @app.patch("/api/admin/usuarios/{usuario_id}")
 def actualizar_rol_usuario(usuario_id: str, payload: dict, authorization: Optional[str] = Header(None)):

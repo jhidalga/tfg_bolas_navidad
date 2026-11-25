@@ -1,6 +1,7 @@
 import { View, Text, Pressable, ScrollView, ActivityIndicator, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useState, useEffect, useMemo } from 'react';
+import { useRouter } from 'expo-router';
 import { supabase } from '../../../lib/supabase';
 import { styles as estilosEscritorio } from '../../../styles/adminUsuarios/adminUsuarios.styles';
 import { styles as estilosMovil } from '../../../styles/adminUsuarios/adminUsuarios.styles.movil';
@@ -25,6 +26,7 @@ const API_URL = `${process.env.EXPO_PUBLIC_API_URL || ''}/api`;
  */
 export default function GestorUsuariosAdmin() {
     const styles = useEstilos(estilosEscritorio, estilosMovil);
+    const router = useRouter();
     const { confirmar, dialogo } = useConfirmar();
     const [cargando, setCargando] = useState(true);
     const [usuarios, setUsuarios] = useState<any[]>([]);
@@ -215,12 +217,12 @@ export default function GestorUsuariosAdmin() {
 
                         {usuariosPaginados.map((u) => (
                             <View key={u.id} style={styles.fila}>
-                                <View style={styles.colNombre}>
-                                    <Text style={styles.txtNormal} numberOfLines={1}>{u.nombre || '-'}</Text>
-                                </View>
-                                <View style={styles.colEmail}>
+                                <Pressable style={styles.colNombre} onPress={() => router.push(`/admin/usuarios/${u.id}` as any)} accessibilityLabel={`Abrir el perfil de ${u.nombre || u.email}`}>
+                                    <Text style={[styles.txtNormal, { color: '#1d4ed8', textDecorationLine: 'underline' }]} numberOfLines={1}>{u.nombre || '-'}</Text>
+                                </Pressable>
+                                <Pressable style={styles.colEmail} onPress={() => router.push(`/admin/usuarios/${u.id}` as any)}>
                                     <Text style={styles.txtSecundario} numberOfLines={1}>{u.email}</Text>
-                                </View>
+                                </Pressable>
                                 
                                 <View style={styles.colCurso}>
                                     <View style={styles.badgeAzul}>
