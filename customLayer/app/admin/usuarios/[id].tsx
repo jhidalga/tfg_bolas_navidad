@@ -7,6 +7,7 @@ import { supabase } from '../../../lib/supabase';
 import { euros, plural } from '../../../lib/formato';
 import { useConfirmar } from '../../../componentes/confirmar';
 import { traducirError } from '../../../lib/errores';
+import { temaActual } from '../../../lib/tema';
 
 /** Igual que la tienda: si el modelo se llama Base o Único, la figura es el nombre del producto. */
 const figuraDe = (modelo?: string, producto?: string) =>
@@ -14,6 +15,9 @@ const figuraDe = (modelo?: string, producto?: string) =>
 
 const API_URL = `${process.env.EXPO_PUBLIC_API_URL || ''}/api`;
 const COLOR_ESTADO: Record<string, string> = { Pendiente: '#f59e0b', Completado: '#10b981', Entregado: '#3b82f6', Cancelado: '#ef4444' };
+
+/** Segun el tema activo: adornos navideños, adornos de San Valentín o adornos personalizados. */
+const adornosTema = () => { const m = temaActual.marca; return m.charAt(0).toLowerCase() + m.slice(1); };
 
 /** Texto de una linea para el correo: Reno marron con el nombre "Laura", 2 unidades. */
 const textoLinea = (l: any) => {
@@ -155,17 +159,17 @@ export default function PerfilUsuarioAdmin() {
     const nombrePila = () => String(datos.usuario.nombre || '').split(' ')[0] || '';
     /** Abre la ventana de redactar con el texto ya escrito. La firma la pone el servidor al enviar. */
     const correoGeneral = () => setCorreo({
-        asunto: 'Tus pedidos de adornos navideños',
-        mensaje: `Hola ${nombrePila()}:\n\nTe escribo por tus pedidos de adornos navideños. Quería comprobar contigo que todo está bien.`,
+        asunto: `Tus pedidos de ${adornosTema()}`,
+        mensaje: `Hola ${nombrePila()}:\n\nTe escribo por tus pedidos de ${adornosTema()}. Quería comprobar contigo que todo está bien.`,
     });
     const correoPedido = (p: any) => setCorreo({
-        asunto: `Tu pedido ${p.codigo} de adornos navideños`,
+        asunto: `Tu pedido ${p.codigo} de ${adornosTema()}`,
         mensaje: `Hola ${nombrePila()}:\n\nHemos visto que has hecho el pedido ${p.codigo} con estos adornos:\n${p.lineas.map(textoLinea).join('\n')}\n\nTotal: ${euros(p.total)}.\n\n¿Es correcto o te has equivocado? Si hay que cambiar algo, respóndeme a este correo y lo arreglamos.`,
     });
     /** Contesta a lo ultimo que escribio la persona, dentro del mismo hilo. */
     const responder = () => {
         const ultimoSuyo = [...hilo.correos].reverse().find(c => !c.mio) || hilo.correos[hilo.correos.length - 1];
-        const asunto = String(ultimoSuyo?.asunto || 'Tus pedidos de adornos navideños').replace(/^(re:\s*)+/i, '');
+        const asunto = String(ultimoSuyo?.asunto || `Tus pedidos de ${adornosTema()}`).replace(/^(re:\s*)+/i, '');
         setCorreo({ asunto: `Re: ${asunto}`, mensaje: `Hola ${nombrePila()}:\n\n`, responde_a: ultimoSuyo?.id || undefined });
     };
     const fechaCorreo = (iso: string) => { try { return new Date(iso).toLocaleString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }); } catch { return ''; } };

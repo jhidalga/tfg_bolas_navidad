@@ -1553,11 +1553,11 @@ def obtener_usuarios_admin(authorization: Optional[str] = Header(None)):
 # (contrasena de aplicacion de Gmail). Opcionales: SMTP_HOST (smtp.gmail.com), SMTP_PORT (587), SMTP_FROM.
 _FIRMAS_CORREO = {
     "navidad": {"fondo": "#f3ece4", "cabecera": "#701a1e", "rotulo": "#f5d98b", "barra": "#c8963e", "enlace": "#701a1e",
-                "sello": "IES LAGUNA DE TOLLÓN · 2º DAM", "firma": "Departamento logístico navideño del IES Laguna de Tollón"},
+                "sello": "IES LAGUNA DE TOLLÓN · 2º DAM", "firma": "Departamento logístico navideño del IES Laguna de Tollón", "adornos": "adornos navideños"},
     "sanvalentin": {"fondo": "#fde4ec", "cabecera": "#7a1840", "rotulo": "#ffc2d4", "barra": "#e0568a", "enlace": "#7a1840",
-                    "sello": "IES LAGUNA DE TOLLÓN · ADORNOS DE SAN VALENTÍN", "firma": "Departamento logístico de San Valentín del IES Laguna de Tollón"},
+                    "sello": "IES LAGUNA DE TOLLÓN · ADORNOS DE SAN VALENTÍN", "firma": "Departamento logístico de San Valentín del IES Laguna de Tollón", "adornos": "adornos de San Valentín"},
     "normal": {"fondo": "#f1f5f9", "cabecera": "#1e293b", "rotulo": "#bfdbfe", "barra": "#2563eb", "enlace": "#1e3a8a",
-               "sello": "IES LAGUNA DE TOLLÓN · 2º DAM", "firma": "Departamento logístico del IES Laguna de Tollón"},
+               "sello": "IES LAGUNA DE TOLLÓN · 2º DAM", "firma": "Departamento logístico del IES Laguna de Tollón", "adornos": "adornos personalizados"},
 }
 _LOGO_CORREO = "cid:logo_ies"
 _RUTA_LOGO = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "logo_ies.png")
@@ -1776,7 +1776,7 @@ def _correo_pedido_recibido(cliente, pedido: dict, detalles: list, user_id: str)
         html, texto = _factura(tema, codigo, fecha, detalles, float(pedido.get("total") or 0), str(pedido.get("nota") or ""))
         saludo = f"Hola {nombre.split(' ')[0]}:" if nombre else "Hola:"
         _enviar_correo(u[0]["email"], f"Hemos recibido tu pedido {codigo}",
-                       f"{saludo}\n\nHemos recibido tu pedido. Aquí tienes el resumen.\n\nSi hay algún error en alguna bola, respóndenos a este correo y lo arreglamos.",
+                       f"{saludo}\n\nHemos recibido tu pedido de {(_FIRMAS_CORREO.get(tema) or _FIRMAS_CORREO['navidad'])['adornos']}. Aquí tienes el resumen.\n\nSi hay algún error en alguna bola, respóndenos a este correo y lo arreglamos.",
                        tema, None, html, texto)
     except Exception:
         logging.exception("No se pudo enviar el resumen del pedido")
