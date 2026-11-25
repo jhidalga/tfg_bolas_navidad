@@ -71,6 +71,7 @@ class EdicionBola(BaseModel):
 class CorreoUsuario(BaseModel):
     asunto: str = Field(..., min_length=3, max_length=120)
     mensaje: str = Field(..., min_length=3, max_length=3000)
+    responde_a: Optional[str] = Field(None, max_length=300)
 
 class CheckoutPedido(BaseModel):
     total: float
@@ -667,6 +668,21 @@ if MODO_PRUEBA:
     def estado_correo_prueba():
         cfg = _config_correo()
         return {"configurado": True, "remitente": cfg["remitente"] if cfg else "pedidosldt@gmail.com (prueba)"}
+
+    @app.get("/api/admin/usuarios/{usuario_id}/correos")
+    def correos_usuario_prueba(usuario_id: str):
+        lista = [u for u in usuarios_prueba() if u["id"] == usuario_id]
+        if not lista:
+            raise HTTPException(status_code=404, detail="Usuario no encontrado")
+        enviados = [c for c in _ESTADO.get("correos", []) if c["para"] == lista[0]["email"]]
+        base = []
+        if lista[0]["id"] == "u2":
+            base = [{"id": "<a1@x>", "fecha": "2026-11-24T10:00:00+01:00", "mio": True, "asunto": "Tu pedido ana-1dam-01 de adornos navideños",
+                     "texto": "Hola Ana:\n\nHemos visto que has hecho el pedido con estos adornos:\n- Galleta de jengibre con el nombre \"Ana\"\n\n¿Es correcto o te has equivocado?"},
+                    {"id": "<a2@x>", "fecha": "2026-11-24T17:42:00+01:00", "mio": False, "asunto": "Re: Tu pedido ana-1dam-01 de adornos navideños",
+                     "texto": "Hola, me he equivocado. Quería el reno y no la galleta. ¿Lo podéis cambiar?\n\nGracias"}]
+        extra = [{"id": f"<m{n}@x>", "fecha": f"2026-11-25T09:{n:02d}:00+01:00", "mio": True, "asunto": c["asunto"], "texto": c["mensaje"]} for n, c in enumerate(enviados)]
+        return {"configurado": True, "correos": base + extra}
 
     @app.post("/api/admin/usuarios/{usuario_id}/correo")
     def enviar_correo_prueba(usuario_id: str, datos: CorreoUsuario):
@@ -1523,7 +1539,7 @@ def _correo_html(tema: str, titulo: str, mensaje: str, contacto: str) -> str:
             f'<a href="mailto:{_html.escape(contacto)}" style="color:{c["enlace"]}">{_html.escape(contacto)}</a></p></td></tr></table></div>')
 
 
-def _enviar_correo(para: str, asunto: str, mensaje: str, tema: str = "navidad"):
+def _enviar_correo(para: str, asunto: str, mensaje: str, tema: str = "navidad", responde_a: Optional[str] = None):
     """Manda un correo con firma. Lanza ValueError si faltan las variables y RuntimeError si el servidor de correo falla."""
     cfg = _config_correo()
     if not cfg:
@@ -1536,6 +1552,9 @@ def _enviar_correo(para: str, asunto: str, mensaje: str, tema: str = "navidad"):
     msg["To"] = para
     msg["Reply-To"] = cfg["remitente"]
     msg.set_content(f"{mensaje.strip()}\n\nAtentamente,\n{firma}\n{cfg['remitente']}")
+    if responde_a and re.fullmatch(r"<[^<>\s]{3,280}>", responde_a):
+        msg["In-Reply-To"] = responde_a
+        msg["References"] = responde_a
     msg["Date"] = formatdate(localtime=True)
     msg["Message-ID"] = make_msgid(domain=cfg["remitente"].split("@")[-1])
     msg.add_alternative(_correo_html(tema, asunto, mensaje, cfg["remitente"]), subtype="html")
@@ -1561,6 +1580,101 @@ def _enviar_correo(para: str, asunto: str, mensaje: str, tema: str = "navidad"):
         raise RuntimeError("No se pudo enviar el correo. Revisa la cuenta de correo en Railway.") from e
 
 
+_CITA = re.compile(r"^(>|El .{5,120}(escribi[oó]|ha escrito):?\s*$|On .{5,120}wrote:?\s*$|-{2,}\s*(Mensaje original|Original Message)|De:\s.+|From:\s.+)", re.I)
+
+
+def _sin_citas(texto: str) -> str:
+    """Se queda con lo que escribio la persona y corta el correo citado de abajo."""
+    salida = []
+    for linea in texto.replace("\r", "").split("\n"):
+        if _CITA.match(linea.strip()):
+            break
+        salida.append(linea)
+    return "\n".join(salida).strip()
+
+
+def _texto_correo(m) -> str:
+    cuerpo = m.get_body(preferencelist=("plain", "html"))
+    if cuerpo is None:
+        return ""
+    t = cuerpo.get_content()
+    if cuerpo.get_content_type() == "text/html":
+        t = re.sub(r"(?is)<(script|style).*?</\1>", "", t)
+        t = re.sub(r"(?i)<br\s*/?>|</p>|</div>", "\n", t)
+        t = _html.unescape(re.sub(r"<[^>]+>", "", t))
+    return _sin_citas(re.sub(r"\n{3,}", "\n\n", t))[:2500]
+
+
+def _carpeta_todos(im) -> str:
+    """Gmail llama distinto a la carpeta Todos segun el idioma: se busca por su marca \\All."""
+    tipo, filas = im.list()
+    for f in filas or []:
+        txt = f.decode("utf-8", "ignore") if isinstance(f, bytes) else str(f)
+        m = re.match(r'\((.*?)\)\s+"(.*?)"\s+(.*)$', txt)
+        if m and "\\All" in m.group(1):
+            return m.group(3)
+    return '"[Gmail]/All Mail"'
+
+
+def _leer_correos(con_quien: str, limite: int = 30) -> list:
+    """Correos que hay entre la cuenta de la web y una persona, del mas viejo al mas nuevo."""
+    import imaplib
+    from email import message_from_bytes, policy
+    from email.utils import parseaddr, parsedate_to_datetime
+    cfg = _config_correo()
+    if not cfg:
+        raise ValueError("Falta configurar el correo en Railway (SMTP_USER y SMTP_PASSWORD).")
+    if not re.fullmatch(r"[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+", con_quien):
+        raise ValueError("Dirección no válida")
+    salida = []
+    try:
+        with imaplib.IMAP4_SSL(os.getenv("IMAP_HOST", "imap.gmail.com"), 993, timeout=25) as im:
+            im.login(cfg["usuario"], cfg["clave"])
+            im.select(_carpeta_todos(im), readonly=True)
+            tipo, datos = im.search(None, "OR", "FROM", f'"{con_quien}"', "TO", f'"{con_quien}"')
+            ids = (datos[0] or b"").split()[-limite:]
+            for i in ids:
+                tipo, partes = im.fetch(i, "(BODY.PEEK[])")
+                crudo = next((p[1] for p in partes if isinstance(p, tuple)), None)
+                if not crudo:
+                    continue
+                m = message_from_bytes(crudo, policy=policy.default)
+                de = parseaddr(str(m.get("From", "")))[1].lower()
+                try:
+                    fecha = parsedate_to_datetime(str(m.get("Date"))).isoformat()
+                except Exception:
+                    fecha = ""
+                salida.append({"id": str(m.get("Message-ID", "")).strip(), "fecha": fecha, "mio": de == cfg["remitente"].lower(),
+                               "asunto": str(m.get("Subject", ""))[:200], "texto": _texto_correo(m)})
+    except (OSError, imaplib.IMAP4.error) as e:
+        logging.exception("No se pudo leer el correo")
+        raise RuntimeError("No se pudo leer el correo. Mira que IMAP esté activo en Gmail y la clave en Railway.") from e
+    salida.sort(key=lambda x: x["fecha"])
+    return salida
+
+
+@app.get("/api/admin/usuarios/{usuario_id}/correos")
+def correos_usuario(usuario_id: str, authorization: Optional[str] = Header(None)):
+    """Conversacion por correo con una persona: lo que le mandamos y lo que ha contestado."""
+    try:
+        cliente = _exigir_admin(authorization)
+        u = cliente.table("usuarios").select("email").eq("id", usuario_id).execute().data
+        if not u or not u[0].get("email"):
+            raise HTTPException(status_code=404, detail="Usuario no encontrado")
+        if not _config_correo():
+            return {"configurado": False, "correos": []}
+        return {"configurado": True, "correos": _leer_correos(u[0]["email"].strip().lower())}
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except RuntimeError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+    except Exception:
+        logging.exception("Error interno")
+        raise HTTPException(status_code=500, detail="Ha ocurrido un error en el servidor. Inténtalo de nuevo.")
+
+
 @app.get("/api/admin/correo/estado")
 def estado_correo_admin(authorization: Optional[str] = Header(None)):
     _exigir_admin(authorization)
@@ -1576,7 +1690,7 @@ def enviar_correo_usuario(usuario_id: str, datos: CorreoUsuario, authorization: 
         u = cliente.table("usuarios").select("email, nombre").eq("id", usuario_id).execute().data
         if not u or not u[0].get("email"):
             raise HTTPException(status_code=404, detail="Usuario no encontrado")
-        _enviar_correo(u[0]["email"], datos.asunto.strip(), datos.mensaje, obtener_tema().get("tema", "navidad"))
+        _enviar_correo(u[0]["email"], datos.asunto.strip(), datos.mensaje, obtener_tema().get("tema", "navidad"), datos.responde_a)
         logging.info("Correo enviado a un usuario desde el panel")
         return {"mensaje": "Correo enviado", "para": u[0]["email"]}
     except HTTPException:

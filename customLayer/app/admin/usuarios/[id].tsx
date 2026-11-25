@@ -44,7 +44,8 @@ export default function PerfilUsuarioAdmin() {
     const [error, setError] = useState('');
     const [catalogo, setCatalogo] = useState<any[]>([]);
     const [edit, setEdit] = useState<any>(null);
-    const [correo, setCorreo] = useState<{ asunto: string; mensaje: string } | null>(null);
+    const [correo, setCorreo] = useState<{ asunto: string; mensaje: string; responde_a?: string } | null>(null);
+    const [hilo, setHilo] = useState<{ cargando: boolean; error: string; correos: any[] }>({ cargando: false, error: '', correos: [] });
     const [envio, setEnvio] = useState<{ configurado: boolean; remitente: string | null } | null>(null);
     const [enviando, setEnviando] = useState(false);
     const [guardando, setGuardando] = useState(false);
@@ -70,6 +71,21 @@ export default function PerfilUsuarioAdmin() {
                 .then(r => r.json()).then(setEnvio).catch(() => setEnvio({ configurado: false, remitente: null }));
         });
     }, []);
+    /** Lee la conversacion por correo con esta persona (lo que se le envio y lo que ha contestado). */
+    const cargarCorreos = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+        setHilo(h => ({ ...h, cargando: true, error: '' }));
+        try {
+            const res = await fetch(`${API_URL}/admin/usuarios/${id}/correos`, { headers: { Authorization: `Bearer ${session.access_token}` } });
+            const d = await res.json().catch(() => ({}));
+            if (res.ok) setHilo({ cargando: false, error: '', correos: d.correos || [] });
+            else setHilo({ cargando: false, error: typeof d.detail === 'string' ? d.detail : 'No se pudieron leer los correos.', correos: [] });
+        } catch {
+            setHilo({ cargando: false, error: 'Error de conexión.', correos: [] });
+        }
+    };
+    useEffect(() => { if (envio?.configurado) cargarCorreos(); }, [id, envio?.configurado]);
     useEffect(() => {
         fetch(`${API_URL}/productos`).then(r => r.json()).then(d => Array.isArray(d) && setCatalogo(d.filter((x: any) => !x.deshabilitado))).catch(() => {});
     }, []);
@@ -141,6 +157,13 @@ export default function PerfilUsuarioAdmin() {
         asunto: `Tu pedido ${p.codigo} de adornos navideños`,
         mensaje: `Hola ${nombrePila()}:\n\nHemos visto que has hecho el pedido ${p.codigo} con estos adornos:\n${p.lineas.map(textoLinea).join('\n')}\n\nTotal: ${euros(p.total)}.\n\n¿Es correcto o te has equivocado? Si hay que cambiar algo, respóndeme a este correo y lo arreglamos.`,
     });
+    /** Contesta a lo ultimo que escribio la persona, dentro del mismo hilo. */
+    const responder = () => {
+        const ultimoSuyo = [...hilo.correos].reverse().find(c => !c.mio) || hilo.correos[hilo.correos.length - 1];
+        const asunto = String(ultimoSuyo?.asunto || 'Tus pedidos de adornos navideños').replace(/^(re:\s*)+/i, '');
+        setCorreo({ asunto: `Re: ${asunto}`, mensaje: `Hola ${nombrePila()}:\n\n`, responde_a: ultimoSuyo?.id || undefined });
+    };
+    const fechaCorreo = (iso: string) => { try { return new Date(iso).toLocaleString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }); } catch { return ''; } };
     const enviarCorreo = async () => {
         if (!correo) return;
         const { data: { session } } = await supabase.auth.getSession();
@@ -149,9 +172,9 @@ export default function PerfilUsuarioAdmin() {
             const res = await fetch(`${API_URL}/admin/usuarios/${id}/correo`, {
                 method: 'POST',
                 headers: { Authorization: `Bearer ${session?.access_token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ asunto: correo.asunto.trim(), mensaje: correo.mensaje.trim() }),
+                body: JSON.stringify({ asunto: correo.asunto.trim(), mensaje: correo.mensaje.trim(), responde_a: correo.responde_a || null }),
             });
-            if (res.ok) { Toast.show({ type: 'success', text1: 'Correo enviado', text2: datos.usuario.email }); setCorreo(null); return; }
+            if (res.ok) { Toast.show({ type: 'success', text1: 'Correo enviado', text2: datos.usuario.email }); setCorreo(null); setTimeout(cargarCorreos, 2500); return; }
             const e = await res.json().catch(() => ({}));
             Toast.show({ type: 'error', text1: 'No se pudo enviar', text2: typeof e.detail === 'string' ? e.detail : 'Revisa el asunto y el mensaje.' });
         } catch {
@@ -223,6 +246,31 @@ export default function PerfilUsuarioAdmin() {
                         <Ionicons name="mail" size={16} color="#fff" /><Text style={{ color: '#fff', fontWeight: 'bold' }}>Enviar un correo</Text>
                     </Pressable>
                 </View>
+
+                {envio?.configurado ? (
+                    <View style={{ marginTop: 22 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                            <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#0f172a' }}>Correos</Text>
+                            <Pressable onPress={cargarCorreos} disabled={hilo.cargando} accessibilityLabel="Actualizar correos" style={{ flexDirection: 'row', alignItems: 'center', gap: 6, opacity: hilo.cargando ? 0.5 : 1 }}>
+                                <Ionicons name="refresh" size={16} color="#475569" /><Text style={{ color: '#475569', fontWeight: '600' }}>{hilo.cargando ? 'Leyendo...' : 'Actualizar'}</Text>
+                            </Pressable>
+                        </View>
+                        {hilo.error ? <Text style={{ color: '#b91c1c', marginBottom: 8 }}>{hilo.error}</Text> : null}
+                        {!hilo.error && !hilo.cargando && hilo.correos.length === 0 ? <Text style={{ color: '#64748b' }}>Todavía no habéis intercambiado correos.</Text> : null}
+                        {hilo.correos.map((c: any, i: number) => (
+                            <View key={c.id || i} style={{ alignSelf: c.mio ? 'flex-end' : 'flex-start', maxWidth: '88%', backgroundColor: c.mio ? '#dbeafe' : '#fff', borderColor: c.mio ? '#93c5fd' : '#e2e8f0', borderWidth: 1, borderRadius: 14, padding: 12, marginBottom: 8 }}>
+                                <Text style={{ fontSize: 12, color: '#64748b', marginBottom: 4 }}>{c.mio ? 'Tú' : (u.nombre || 'Usuario')} · {fechaCorreo(c.fecha)}</Text>
+                                <Text style={{ fontWeight: 'bold', color: '#0f172a', marginBottom: 4 }}>{c.asunto}</Text>
+                                <Text style={{ color: '#1e293b' }}>{c.texto || '(sin texto)'}</Text>
+                            </View>
+                        ))}
+                        {hilo.correos.length > 0 ? (
+                            <Pressable style={[boton('#2563eb'), { alignSelf: 'flex-start', marginTop: 4, flexDirection: 'row', alignItems: 'center', gap: 8 }]} onPress={responder}>
+                                <Ionicons name="return-down-back" size={16} color="#fff" /><Text style={{ color: '#fff', fontWeight: 'bold' }}>Responder</Text>
+                            </Pressable>
+                        ) : null}
+                    </View>
+                ) : null}
 
                 <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#0f172a', marginTop: 22, marginBottom: 10 }}>Pedidos</Text>
                 {datos.pedidos.length === 0 ? <Text style={{ color: '#64748b' }}>Todavía no ha hecho ningún pedido.</Text> : null}
