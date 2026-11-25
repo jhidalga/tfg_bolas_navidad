@@ -1542,6 +1542,7 @@ def _enviar_correo(para: str, asunto: str, mensaje: str, tema: str = "navidad"):
                 srv.login(cfg["usuario"], cfg["clave"]); srv.send_message(msg)
         else:
             with smtplib.SMTP(cfg["host"], cfg["port"], timeout=20) as srv:
+                srv.ehlo()
                 if srv.has_extn("starttls"):
                     srv.starttls(context=ssl.create_default_context()); srv.ehlo()
                 if srv.has_extn("auth"):
