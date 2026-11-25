@@ -164,6 +164,7 @@ export default function PerfilUsuarioAdmin() {
         const asunto = String(ultimoSuyo?.asunto || 'Tus pedidos de adornos navideños').replace(/^(re:\s*)+/i, '');
         setCorreo({ asunto: `Re: ${asunto}`, mensaje: `Hola ${nombrePila()}:\n\n`, responde_a: ultimoSuyo?.id || undefined });
     };
+    const fechaCorreo = (iso: string) => { try { return new Date(iso).toLocaleString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }); } catch { return ''; } };
     const horaCorreo = (iso: string) => { try { return new Date(iso).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }); } catch { return ''; } };
     const diaCorreo = (iso: string) => {
         try {
@@ -269,30 +270,16 @@ export default function PerfilUsuarioAdmin() {
                         {hilo.error ? <Text style={{ color: '#b91c1c', marginBottom: 8 }}>{hilo.error}</Text> : null}
                         {!hilo.error && !hilo.cargando && hilo.correos.length === 0 ? <Text style={{ color: '#64748b' }}>Todavía no habéis intercambiado correos.</Text> : null}
                         {hilo.correos.length > 0 ? (
-                            <View style={{ backgroundColor: '#eae6df', borderRadius: 14, borderWidth: 1, borderColor: '#e2e8f0', overflow: 'hidden' }}>
-                                <ScrollView ref={scrollHilo} style={{ maxHeight: 480 }} contentContainerStyle={{ padding: 12 }} nestedScrollEnabled
-                                    onContentSizeChange={() => scrollHilo.current?.scrollToEnd({ animated: false })}>
-                                    {hilo.correos.map((c: any, i: number) => {
-                                        const anterior = hilo.correos[i - 1];
-                                        const nuevoDia = !anterior || diaCorreo(anterior.fecha) !== diaCorreo(c.fecha) || new Date(c.fecha).toDateString() !== new Date(anterior.fecha).toDateString();
-                                        const nuevoAsunto = !anterior || String(anterior.asunto).replace(/^(re:\s*)+/i, '') !== String(c.asunto).replace(/^(re:\s*)+/i, '');
-                                        return (
-                                            <View key={c.id || i}>
-                                                {nuevoDia ? (
-                                                    <Text style={{ alignSelf: 'center', backgroundColor: '#fff', color: '#475569', fontSize: 12, fontWeight: '600', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 8, marginVertical: 8 }}>{diaCorreo(c.fecha)}</Text>
-                                                ) : null}
-                                                {nuevoAsunto ? (
-                                                    <Text style={{ alignSelf: 'center', color: '#64748b', fontSize: 11, marginBottom: 6, textAlign: 'center' }}>{String(c.asunto).replace(/^(re:\s*)+/i, '')}</Text>
-                                                ) : null}
-                                                <View style={{ alignSelf: c.mio ? 'flex-end' : 'flex-start', maxWidth: '82%', backgroundColor: c.mio ? '#d9fdd3' : '#fff', borderRadius: 12, borderTopRightRadius: c.mio ? 2 : 12, borderTopLeftRadius: c.mio ? 12 : 2, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 6 }}>
-                                                    <Text style={{ color: '#111b21' }}>{textoBurbuja(c)}</Text>
-                                                    <Text style={{ alignSelf: 'flex-end', fontSize: 11, color: '#667781', marginTop: 4 }}>{horaCorreo(c.fecha)}</Text>
-                                                </View>
-                                            </View>
-                                        );
-                                    })}
-                                </ScrollView>
-                            </View>
+                            <ScrollView ref={scrollHilo} style={{ maxHeight: 520 }} nestedScrollEnabled
+                                onContentSizeChange={() => scrollHilo.current?.scrollToEnd({ animated: false })}>
+                                {hilo.correos.map((c: any, i: number) => (
+                                    <View key={c.id || i} style={{ alignSelf: c.mio ? 'flex-end' : 'flex-start', maxWidth: '88%', backgroundColor: c.mio ? '#dbeafe' : '#fff', borderColor: c.mio ? '#93c5fd' : '#e2e8f0', borderWidth: 1, borderRadius: 14, padding: 12, marginBottom: 8 }}>
+                                        <Text style={{ fontSize: 12, color: '#64748b', marginBottom: 4 }}>{c.mio ? 'Tú' : (u.nombre || 'Usuario')} · {fechaCorreo(c.fecha)}</Text>
+                                        <Text style={{ fontWeight: 'bold', color: '#0f172a', marginBottom: 4 }}>{c.asunto}</Text>
+                                        <Text style={{ color: '#1e293b' }}>{c.texto || '(sin texto)'}</Text>
+                                    </View>
+                                ))}
+                            </ScrollView>
                         ) : null}
                         {hilo.correos.length > 0 ? (
                             <Pressable style={[boton('#2563eb'), { alignSelf: 'flex-start', marginTop: 10, flexDirection: 'row', alignItems: 'center', gap: 8 }]} onPress={responder}>
