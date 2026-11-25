@@ -180,7 +180,8 @@ export default function DetallesPedidoAdmin() {
             <Text style={[styles.subtitulo, t.sub]}>Productos:</Text>
             
             {datos.productos && datos.productos.map((prod: any, index: number) => {
-                const modeloAsociado = prod.productos?.modelos?.find((m: any) => m.nombre === prod.modelo);
+                const modelosProd = prod.productos?.modelos || [];
+                const modeloAsociado = modelosProd.find((m: any) => m.nombre === prod.modelo) || modelosProd.find((m: any) => /^(base|unico|único)$/i.test(String(m.nombre || '').trim())) || (modelosProd.length === 1 ? modelosProd[0] : undefined);
                 const imagenUri = modeloAsociado?.imagen;
 
                 return (
