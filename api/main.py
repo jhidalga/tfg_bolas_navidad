@@ -1,4 +1,9 @@
 import os
+import html as _html
+import smtplib
+import ssl
+from email.message import EmailMessage
+from email.utils import formataddr
 import logging
 import re
 import time
@@ -62,6 +67,10 @@ class EdicionBola(BaseModel):
     color: Optional[str] = Field(None, max_length=40)
     personalizacion: Optional[str] = Field(None, max_length=60)
     cantidad: Optional[int] = Field(None, ge=1, le=50)
+
+class CorreoUsuario(BaseModel):
+    asunto: str = Field(..., min_length=3, max_length=120)
+    mensaje: str = Field(..., min_length=3, max_length=3000)
 
 class CheckoutPedido(BaseModel):
     total: float
@@ -653,6 +662,25 @@ if MODO_PRUEBA:
             salida.append({"id": p["id"], "codigo": _codigo_pedido(u, n), "estado": p["estado"], "pagado": bool(p.get("pagado")), "total": p["total"],
                            "nota": p.get("nota"), "creado": p["created_at"], "lineas": p["detalles_pedido"]})
         return {"usuario": u, "pedidos": salida}
+
+    @app.get("/api/admin/correo/estado")
+    def estado_correo_prueba():
+        cfg = _config_correo()
+        return {"configurado": True, "remitente": cfg["remitente"] if cfg else "pedidosldt@gmail.com (prueba)"}
+
+    @app.post("/api/admin/usuarios/{usuario_id}/correo")
+    def enviar_correo_prueba(usuario_id: str, datos: CorreoUsuario):
+        lista = [u for u in usuarios_prueba() if u["id"] == usuario_id]
+        if not lista:
+            raise HTTPException(status_code=404, detail="Usuario no encontrado")
+        if _config_correo():
+            try:
+                _enviar_correo(lista[0]["email"], datos.asunto.strip(), datos.mensaje, "navidad")
+            except RuntimeError as e:
+                raise HTTPException(status_code=502, detail=str(e))
+        else:
+            _ESTADO.setdefault("correos", []).append({"para": lista[0]["email"], "asunto": datos.asunto, "mensaje": datos.mensaje})
+        return {"mensaje": "Correo enviado", "para": lista[0]["email"]}
 
     def _editable_prueba(request: Request, pedido_id: str):
         for p in _pedidos(str(request.base_url)):
@@ -1451,6 +1479,104 @@ def obtener_usuarios_admin(authorization: Optional[str] = Header(None)):
         return usuarios_procesados
 
     except Exception as e:
+        logging.exception("Error interno")
+        raise HTTPException(status_code=500, detail="Ha ocurrido un error en el servidor. Inténtalo de nuevo.")
+
+
+# ---------- Correos a los usuarios desde la web ----------
+# Se envian con la cuenta de correo de las variables de Railway: SMTP_USER y SMTP_PASSWORD
+# (contrasena de aplicacion de Gmail). Opcionales: SMTP_HOST (smtp.gmail.com), SMTP_PORT (587), SMTP_FROM.
+_FIRMAS_CORREO = {
+    "navidad": {"fondo": "#f3ece4", "cabecera": "#701a1e", "rotulo": "#f5d98b", "barra": "#c8963e", "enlace": "#701a1e",
+                "sello": "IES LAGUNA DE TOLLÓN · 2º DAM", "firma": "Departamento logístico navideño del IES Laguna de Tollón"},
+    "sanvalentin": {"fondo": "#fde4ec", "cabecera": "#7a1840", "rotulo": "#ffc2d4", "barra": "#e0568a", "enlace": "#7a1840",
+                    "sello": "IES LAGUNA DE TOLLÓN · ADORNOS DE SAN VALENTÍN", "firma": "Departamento logístico de San Valentín del IES Laguna de Tollón"},
+    "normal": {"fondo": "#f1f5f9", "cabecera": "#1e293b", "rotulo": "#bfdbfe", "barra": "#2563eb", "enlace": "#1e3a8a",
+               "sello": "IES LAGUNA DE TOLLÓN · 2º DAM", "firma": "Departamento logístico del IES Laguna de Tollón"},
+}
+_LOGO_CORREO = "https://laguna-tollon-pedidos-navidad.up.railway.app/logo_ies.png"
+
+
+def _config_correo():
+    usuario = os.getenv("SMTP_USER", "").strip()
+    clave = os.getenv("SMTP_PASSWORD", "").strip()
+    if not usuario or not clave:
+        return None
+    return {"host": os.getenv("SMTP_HOST", "smtp.gmail.com"), "port": int(os.getenv("SMTP_PORT", "587") or 587),
+            "usuario": usuario, "clave": clave, "remitente": os.getenv("SMTP_FROM", usuario).strip() or usuario}
+
+
+def _correo_html(tema: str, titulo: str, mensaje: str, contacto: str) -> str:
+    """Correo con el estilo del tema activo y la firma del departamento. El texto va escapado."""
+    c = _FIRMAS_CORREO.get(tema) or _FIRMAS_CORREO["navidad"]
+    parrafos = "".join(f'<p style="margin:0 0 14px">{_html.escape(x).replace(chr(10), "<br>")}</p>' for x in re.split(r"\n\s*\n", mensaje.strip()) if x.strip())
+    return (f'<div style="background:{c["fondo"]};padding:24px 12px;font-family:Arial,Helvetica,sans-serif">'
+            f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:14px;overflow:hidden">'
+            f'<tr><td style="background:{c["cabecera"]};padding:30px 24px;text-align:center"><div style="color:{c["rotulo"]};font-size:12px;letter-spacing:3px">{_html.escape(c["sello"])}</div>'
+            f'<div style="color:#ffffff;font-size:24px;font-weight:bold;margin-top:10px">{_html.escape(titulo)}</div></td></tr>'
+            f'<tr><td style="height:5px;background:{c["barra"]};font-size:0;line-height:0">&nbsp;</td></tr>'
+            f'<tr><td style="padding:30px 30px 16px;color:#1f2937;font-size:16px;line-height:1.6">{parrafos}</td></tr>'
+            f'<tr><td style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:20px 30px;text-align:center">'
+            f'<img src="{_LOGO_CORREO}" alt="IES Laguna de Tollón" width="170" style="display:block;margin:0 auto 10px">'
+            f'<p style="margin:0;color:#6b7280;font-size:13px;line-height:1.5">Atentamente,<br>{_html.escape(c["firma"])}<br>'
+            f'<a href="mailto:{_html.escape(contacto)}" style="color:{c["enlace"]}">{_html.escape(contacto)}</a></p></td></tr></table></div>')
+
+
+def _enviar_correo(para: str, asunto: str, mensaje: str, tema: str = "navidad"):
+    """Manda un correo con firma. Lanza ValueError si faltan las variables y RuntimeError si el servidor de correo falla."""
+    cfg = _config_correo()
+    if not cfg:
+        raise ValueError("Falta configurar el correo en Railway (SMTP_USER y SMTP_PASSWORD).")
+    asunto = re.sub(r"\s+", " ", asunto).strip()
+    firma = (_FIRMAS_CORREO.get(tema) or _FIRMAS_CORREO["navidad"])["firma"]
+    msg = EmailMessage()
+    msg["Subject"] = asunto
+    msg["From"] = formataddr((firma, cfg["remitente"]))
+    msg["To"] = para
+    msg["Reply-To"] = cfg["remitente"]
+    msg.set_content(f"{mensaje.strip()}\n\nAtentamente,\n{firma}\n{cfg['remitente']}")
+    msg.add_alternative(_correo_html(tema, asunto, mensaje, cfg["remitente"]), subtype="html")
+    try:
+        if cfg["port"] == 465:
+            with smtplib.SMTP_SSL(cfg["host"], cfg["port"], timeout=20, context=ssl.create_default_context()) as srv:
+                srv.login(cfg["usuario"], cfg["clave"]); srv.send_message(msg)
+        else:
+            with smtplib.SMTP(cfg["host"], cfg["port"], timeout=20) as srv:
+                if srv.has_extn("starttls"):
+                    srv.starttls(context=ssl.create_default_context()); srv.ehlo()
+                if srv.has_extn("auth"):
+                    srv.login(cfg["usuario"], cfg["clave"])
+                srv.send_message(msg)
+    except Exception as e:
+        logging.exception("No se pudo enviar el correo")
+        raise RuntimeError("No se pudo enviar el correo. Revisa la cuenta de correo en Railway.") from e
+
+
+@app.get("/api/admin/correo/estado")
+def estado_correo_admin(authorization: Optional[str] = Header(None)):
+    _exigir_admin(authorization)
+    cfg = _config_correo()
+    return {"configurado": bool(cfg), "remitente": cfg["remitente"] if cfg else None}
+
+
+@app.post("/api/admin/usuarios/{usuario_id}/correo")
+def enviar_correo_usuario(usuario_id: str, datos: CorreoUsuario, authorization: Optional[str] = Header(None)):
+    """El admin escribe a una persona. El destinatario sale siempre de la base de datos, nunca de lo que mande la web."""
+    try:
+        cliente = _exigir_admin(authorization)
+        u = cliente.table("usuarios").select("email, nombre").eq("id", usuario_id).execute().data
+        if not u or not u[0].get("email"):
+            raise HTTPException(status_code=404, detail="Usuario no encontrado")
+        _enviar_correo(u[0]["email"], datos.asunto.strip(), datos.mensaje, obtener_tema().get("tema", "navidad"))
+        logging.info("Correo enviado a un usuario desde el panel")
+        return {"mensaje": "Correo enviado", "para": u[0]["email"]}
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except RuntimeError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+    except Exception:
         logging.exception("Error interno")
         raise HTTPException(status_code=500, detail="Ha ocurrido un error en el servidor. Inténtalo de nuevo.")
 

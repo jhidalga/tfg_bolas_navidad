@@ -1,4 +1,4 @@
-import { View, Text, Pressable, ScrollView, ActivityIndicator, Platform, Linking, TextInput, Image } from 'react-native';
+import { View, Text, Pressable, ScrollView, ActivityIndicator, Platform, Linking, TextInput, Image, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -44,6 +44,9 @@ export default function PerfilUsuarioAdmin() {
     const [error, setError] = useState('');
     const [catalogo, setCatalogo] = useState<any[]>([]);
     const [edit, setEdit] = useState<any>(null);
+    const [correo, setCorreo] = useState<{ asunto: string; mensaje: string } | null>(null);
+    const [envio, setEnvio] = useState<{ configurado: boolean; remitente: string | null } | null>(null);
+    const [enviando, setEnviando] = useState(false);
     const [guardando, setGuardando] = useState(false);
 
     const cargar = async () => {
@@ -60,6 +63,13 @@ export default function PerfilUsuarioAdmin() {
         }
     };
     useEffect(() => { cargar(); }, [id]);
+    useEffect(() => {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            if (!session) return;
+            fetch(`${API_URL}/admin/correo/estado`, { headers: { Authorization: `Bearer ${session.access_token}` } })
+                .then(r => r.json()).then(setEnvio).catch(() => setEnvio({ configurado: false, remitente: null }));
+        });
+    }, []);
     useEffect(() => {
         fetch(`${API_URL}/productos`).then(r => r.json()).then(d => Array.isArray(d) && setCatalogo(d.filter((x: any) => !x.deshabilitado))).catch(() => {});
     }, []);
@@ -121,17 +131,34 @@ export default function PerfilUsuarioAdmin() {
             cambiar(`/admin/pedidos/${p.id}/detalles/${l.id}/quitar`, 'Bola quitada');
     };
 
-    const correoGeneral = () => {
-        const u = datos.usuario;
-        abrirCorreo(u.email, 'Tus pedidos de adornos navideños',
-            `Hola ${String(u.nombre || '').split(' ')[0] || ''}:\n\nTe escribo por tus pedidos de adornos navideños. Quería comprobar contigo que todo está bien.${FIRMA}`);
-    };
-    const correoPedido = (p: any) => {
-        const u = datos.usuario;
-        const cuerpo = `Hola ${String(u.nombre || '').split(' ')[0] || ''}:\n\n` +
-            `Hemos visto que has hecho el pedido ${p.codigo} con estos adornos:\n${p.lineas.map(textoLinea).join('\n')}\n\n` +
-            `Total: ${euros(p.total)}.\n\n¿Es correcto o te has equivocado? Si hay que cambiar algo, respóndeme a este correo y lo arreglamos.${FIRMA}`;
-        abrirCorreo(u.email, `Tu pedido ${p.codigo} de adornos navideños`, cuerpo);
+    const nombrePila = () => String(datos.usuario.nombre || '').split(' ')[0] || '';
+    /** Abre la ventana de redactar con el texto ya escrito. La firma la pone el servidor al enviar. */
+    const correoGeneral = () => setCorreo({
+        asunto: 'Tus pedidos de adornos navideños',
+        mensaje: `Hola ${nombrePila()}:\n\nTe escribo por tus pedidos de adornos navideños. Quería comprobar contigo que todo está bien.`,
+    });
+    const correoPedido = (p: any) => setCorreo({
+        asunto: `Tu pedido ${p.codigo} de adornos navideños`,
+        mensaje: `Hola ${nombrePila()}:\n\nHemos visto que has hecho el pedido ${p.codigo} con estos adornos:\n${p.lineas.map(textoLinea).join('\n')}\n\nTotal: ${euros(p.total)}.\n\n¿Es correcto o te has equivocado? Si hay que cambiar algo, respóndeme a este correo y lo arreglamos.`,
+    });
+    const enviarCorreo = async () => {
+        if (!correo) return;
+        const { data: { session } } = await supabase.auth.getSession();
+        setEnviando(true);
+        try {
+            const res = await fetch(`${API_URL}/admin/usuarios/${id}/correo`, {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${session?.access_token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ asunto: correo.asunto.trim(), mensaje: correo.mensaje.trim() }),
+            });
+            if (res.ok) { Toast.show({ type: 'success', text1: 'Correo enviado', text2: datos.usuario.email }); setCorreo(null); return; }
+            const e = await res.json().catch(() => ({}));
+            Toast.show({ type: 'error', text1: 'No se pudo enviar', text2: typeof e.detail === 'string' ? e.detail : 'Revisa el asunto y el mensaje.' });
+        } catch {
+            Toast.show({ type: 'error', text1: 'Error de conexión' });
+        } finally {
+            setEnviando(false);
+        }
     };
 
     if (cargando) return <ActivityIndicator size="large" color="#3b82f6" style={{ marginTop: 50 }} />;
@@ -144,6 +171,40 @@ export default function PerfilUsuarioAdmin() {
     return (
         <ScrollView style={{ flex: 1, backgroundColor: '#f8fafc' }} contentContainerStyle={{ padding: 20, alignItems: 'center' }}>
             {dialogo}
+            <Modal visible={!!correo} transparent animationType="fade" onRequestClose={() => !enviando && setCorreo(null)}>
+                <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 16 }}>
+                    <ScrollView style={{ width: '100%', maxWidth: 560, maxHeight: '95%' }} contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}>
+                        <View style={{ backgroundColor: '#fff', borderRadius: 14, padding: 18 }}>
+                            <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#0f172a', marginBottom: 12 }}>Enviar un correo</Text>
+                            <Text style={{ fontWeight: 'bold', color: '#334155', marginBottom: 4 }}>Para</Text>
+                            <Text style={{ color: '#1e293b', backgroundColor: '#f1f5f9', borderRadius: 8, padding: 10 }}>{datos.usuario.nombre} · {datos.usuario.email}</Text>
+                            <Text style={{ fontWeight: 'bold', color: '#334155', marginTop: 12, marginBottom: 4 }}>Asunto</Text>
+                            <TextInput value={correo?.asunto || ''} onChangeText={(v) => setCorreo({ ...(correo as any), asunto: v })} maxLength={120}
+                                style={{ borderWidth: 1, borderColor: '#cbd5e1', borderRadius: 8, padding: 10, color: '#111827' }} />
+                            <Text style={{ fontWeight: 'bold', color: '#334155', marginTop: 12, marginBottom: 4 }}>Mensaje</Text>
+                            <TextInput value={correo?.mensaje || ''} onChangeText={(v) => setCorreo({ ...(correo as any), mensaje: v })} multiline maxLength={3000}
+                                style={{ borderWidth: 1, borderColor: '#cbd5e1', borderRadius: 8, padding: 10, color: '#111827', minHeight: 220, textAlignVertical: 'top' }} />
+                            <Text style={{ color: '#64748b', fontSize: 12, marginTop: 8 }}>
+                                {envio?.configurado
+                                    ? `Sale desde ${envio.remitente} con el diseño de la web y la firma del departamento. Si responde, te llega a ese correo.`
+                                    : 'El envío desde la web aún no está configurado en Railway. Mientras tanto puedes abrir el correo en Gmail.'}
+                            </Text>
+                            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 14 }}>
+                                {envio?.configurado ? (
+                                    <Pressable disabled={enviando} style={[boton('#16a34a'), enviando && { opacity: 0.6 }]} onPress={enviarCorreo}>
+                                        <Text style={{ color: '#fff', fontWeight: 'bold' }}>{enviando ? 'Enviando...' : 'Enviar'}</Text>
+                                    </Pressable>
+                                ) : (
+                                    <Pressable style={boton('#2563eb')} onPress={() => correo && abrirCorreo(datos.usuario.email, correo.asunto, correo.mensaje + FIRMA)}>
+                                        <Text style={{ color: '#fff', fontWeight: 'bold' }}>Abrir en Gmail</Text>
+                                    </Pressable>
+                                )}
+                                <Pressable disabled={enviando} style={boton('#64748b')} onPress={() => setCorreo(null)}><Text style={{ color: '#fff', fontWeight: 'bold' }}>Cancelar</Text></Pressable>
+                            </View>
+                        </View>
+                    </ScrollView>
+                </View>
+            </Modal>
             <View style={{ width: '100%', maxWidth: 900 }}>
                 <Pressable onPress={() => router.back()} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 14 }}>
                     <Ionicons name="arrow-back" size={18} color="#475569" /><Text style={{ color: '#475569', fontWeight: '600' }}>Volver</Text>
