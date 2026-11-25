@@ -15,6 +15,7 @@ import Toast from 'react-native-toast-message';
 import { euros, fechaCorta, plural } from '../../lib/formato';
 import { useConfirmar } from '../../componentes/confirmar';
 import Tutorial from '../../componentes/tutorial';
+import { traducirError } from '../../lib/errores';
 
 /**
  * Pantalla principal del panel de administración para la gestión de pedidos.
@@ -36,6 +37,8 @@ export default function ListaPedidosAdmin() {
         { label: 'Entregado', value: 'Entregado' },
         { label: 'Cancelado', value: 'Cancelado' }
     ]);
+
+    const [filtroPago, setFiltroPago] = useState<'todos' | 'pagados' | 'sin_pagar'>('todos');
 
     const [openCurso, setOpenCurso] = useState(false);
     const [filtroCurso, setFiltroCurso] = useState<string[]>([]);
@@ -119,6 +122,29 @@ export default function ListaPedidosAdmin() {
         }
     };
 
+    // Marca o desmarca un pedido como pagado. Se ve al momento y vuelve atrás si falla.
+    const cambiarPago = async (pedido: any) => {
+        const nuevo = !pedido.pagado;
+        const poner = (v: boolean) => setPedidos(prev => prev.map(p => p.id === pedido.id ? { ...p, pagado: v } : p));
+        poner(nuevo);
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL || ''}/api/admin/pedidos/${pedido.id}/pagado`, {
+                method: 'PATCH',
+                headers: { 'Authorization': `Bearer ${session?.access_token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pagado: nuevo })
+            });
+            if (!res.ok) {
+                const d = await res.json().catch(() => ({}));
+                poner(!nuevo);
+                Toast.show({ type: 'error', text1: traducirError(d.detail, 'No se pudo guardar el pago') });
+            }
+        } catch {
+            poner(!nuevo);
+            Toast.show({ type: 'error', text1: 'Error de conexión' });
+        }
+    };
+
     /**
      * Alterna la selección de un pedido para su eliminación múltiple (batch delete).
      * * @param id - Identificador del pedido a seleccionar o deseleccionar.
@@ -176,9 +202,10 @@ export default function ListaPedidosAdmin() {
             const coincideEstado = filtroEstado.length === 0 || filtroEstado.includes(pedido.estado);
             const cursoUsuario = pedido.usuarios?.curso || "Desconocido";
             const coincideCurso = filtroCurso.length === 0 || filtroCurso.includes(cursoUsuario);
-            return coincideEstado && coincideCurso;
+            const coincidePago = filtroPago === 'todos' || (filtroPago === 'pagados' ? !!pedido.pagado : !pedido.pagado);
+            return coincideEstado && coincideCurso && coincidePago;
         });
-    }, [pedidos, filtroEstado, filtroCurso]);
+    }, [pedidos, filtroEstado, filtroCurso, filtroPago]);
 
     const totalPaginas = Math.ceil(pedidosFiltrados.length / itemsPorPagina);
     const pedidosPaginados = pedidosFiltrados.slice(
@@ -355,6 +382,18 @@ export default function ListaPedidosAdmin() {
                     />
                 </View>
             </View>
+            <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center', flexWrap: 'wrap', paddingHorizontal: 16, paddingBottom: 8 }}>
+                <Text style={{ color: '#64748b', fontWeight: 'bold' }}>Pago:</Text>
+                {[{ v: 'todos', t: 'Todos' }, { v: 'pagados', t: 'Pagados' }, { v: 'sin_pagar', t: 'Sin pagar' }].map((o) => (
+                    <Pressable
+                        key={o.v}
+                        onPress={() => { setFiltroPago(o.v as 'todos' | 'pagados' | 'sin_pagar'); setPaginaActual(1); }}
+                        style={{ paddingVertical: 6, paddingHorizontal: 12, borderRadius: 999, backgroundColor: filtroPago === o.v ? '#16a34a' : '#e5e7eb' }}
+                    >
+                        <Text style={{ color: filtroPago === o.v ? '#fff' : '#111827', fontWeight: 'bold' }}>{o.t}</Text>
+                    </Pressable>
+                ))}
+            </View>
             <ScrollView contentContainerStyle={styles.scrollContent}>
                 {pedidosFiltrados.length === 0 ? (
                     <View style={styles.estadoVacio}>
@@ -405,6 +444,7 @@ export default function ListaPedidosAdmin() {
                                                 <Text style={styles.txtDato}><FontAwesome5 name="book" size={14} color="black" /> {pedido.usuarios?.curso || "Desconocido"}</Text>
                                             </View>
                                             <Text style={styles.precioTotal}>{euros(pedido.total)}</Text>
+                                            <Text style={{ alignSelf: 'flex-start', marginTop: 4, backgroundColor: pedido.pagado ? '#dcfce7' : '#fee2e2', color: pedido.pagado ? '#166534' : '#991b1b', paddingHorizontal: 10, paddingVertical: 2, borderRadius: 999, fontWeight: 'bold', fontSize: 12 }}>{pedido.pagado ? 'Pagado' : 'Sin pagar'}</Text>
                                             {pedido.nota ? (
                                                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6 }} accessibilityLabel="Pedido con nota">
                                                     <Ionicons name="chatbubble-ellipses" size={16} color="#b45309" />
@@ -413,6 +453,14 @@ export default function ListaPedidosAdmin() {
                                             ) : null}
                                         </Pressable>
                                         <View style={styles.tarjetaAcciones}>
+                                            <Pressable
+                                                accessibilityRole="checkbox"
+                                                accessibilityState={{ checked: !!pedido.pagado }}
+                                                style={[styles.btnCambiarEstado, pedido.pagado ? { backgroundColor: '#16a34a', borderColor: '#16a34a' } : null]}
+                                                onPress={() => cambiarPago(pedido)}
+                                            >
+                                                <Text style={[styles.txtCambiarEstado, pedido.pagado ? { color: '#fff' } : null]}>{pedido.pagado ? '✓ Pagado' : 'Marcar pagado'}</Text>
+                                            </Pressable>
                                             {['Pendiente', 'Completado', 'Entregado', 'Cancelado'].map(est => (
                                                 <Pressable
                                                     key={est}

@@ -658,6 +658,9 @@ if MODO_PRUEBA:
     def pedido_pagado_prueba(pedido_id: str, datos: PagadoUsuario):
         pagados = _ESTADO.setdefault("pagados", set())
         (pagados.add if datos.pagado else pagados.discard)(pedido_id)
+        for p in _ESTADO.get("pedidos", []):
+            if p["id"] == pedido_id:
+                p["pagado"] = datos.pagado
         return {"mensaje": "Pago actualizado", "pagado": datos.pagado}
 
     @app.patch("/api/admin/resumen/{usuario_id}/pagado")
@@ -2338,9 +2341,10 @@ def marcar_pedido_pagado(pedido_id: str, datos: PagadoUsuario, authorization: Op
     """El admin marca si un pedido concreto esta pagado. Tambien se marca en el Excel."""
     try:
         cliente = _exigir_admin(authorization)
-        hecho = cliente.table("pedidos").update({"pagado": datos.pagado}).eq("id", pedido_id).execute().data
-        if not hecho:
+        existe = cliente.table("pedidos").select("id").eq("id", pedido_id).execute().data
+        if not existe:
             raise HTTPException(status_code=404, detail="Pedido no encontrado")
+        _escribir(_cliente_servicio(cliente).table("pedidos").update({"pagado": datos.pagado}).eq("id", pedido_id), "No se pudo guardar el pago")
         _llamar_hoja({"accion": "pagado", "pedido_refs": [str(pedido_id)], "pagado": bool(datos.pagado)})
         return {"mensaje": "Pago actualizado", "pagado": datos.pagado}
     except HTTPException:
