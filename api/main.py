@@ -2359,7 +2359,7 @@ def marcar_pagado(usuario_id: str, datos: PagadoUsuario, authorization: Optional
     """El admin marca si una persona ya ha pagado. Se marcan todos sus pedidos que no estan cancelados."""
     try:
         cliente = _exigir_admin(authorization)
-        cliente.table("pedidos").update({"pagado": datos.pagado}).eq("user_id", usuario_id).neq("estado", "Cancelado").execute()
+        _escribir(_cliente_servicio(cliente).table("pedidos").update({"pagado": datos.pagado}).eq("user_id", usuario_id).neq("estado", "Cancelado"), "No se pudo guardar el pago")
         _pagado_en_hoja(cliente, usuario_id, datos.pagado)
         return {"mensaje": "Pago actualizado", "pagado": datos.pagado}
     except HTTPException:
