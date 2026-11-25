@@ -3,7 +3,7 @@ import html as _html
 import smtplib
 import ssl
 from email.message import EmailMessage
-from email.utils import formataddr
+from email.utils import formataddr, formatdate, make_msgid
 import logging
 import re
 import time
@@ -1494,7 +1494,8 @@ _FIRMAS_CORREO = {
     "normal": {"fondo": "#f1f5f9", "cabecera": "#1e293b", "rotulo": "#bfdbfe", "barra": "#2563eb", "enlace": "#1e3a8a",
                "sello": "IES LAGUNA DE TOLLÓN · 2º DAM", "firma": "Departamento logístico del IES Laguna de Tollón"},
 }
-_LOGO_CORREO = "https://laguna-tollon-pedidos-navidad.up.railway.app/logo_ies.png"
+_LOGO_CORREO = "cid:logo_ies"
+_RUTA_LOGO = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "logo_ies.png")
 
 
 def _config_correo():
@@ -1535,7 +1536,14 @@ def _enviar_correo(para: str, asunto: str, mensaje: str, tema: str = "navidad"):
     msg["To"] = para
     msg["Reply-To"] = cfg["remitente"]
     msg.set_content(f"{mensaje.strip()}\n\nAtentamente,\n{firma}\n{cfg['remitente']}")
+    msg["Date"] = formatdate(localtime=True)
+    msg["Message-ID"] = make_msgid(domain=cfg["remitente"].split("@")[-1])
     msg.add_alternative(_correo_html(tema, asunto, mensaje, cfg["remitente"]), subtype="html")
+    try:
+        with open(_RUTA_LOGO, "rb") as f:
+            msg.get_payload()[1].add_related(f.read(), "image", "png", cid="<logo_ies>", disposition="inline", filename="logo_ies.png")
+    except OSError:
+        logging.warning("No se encontró el logo para el correo")
     try:
         if cfg["port"] == 465:
             with smtplib.SMTP_SSL(cfg["host"], cfg["port"], timeout=20, context=ssl.create_default_context()) as srv:
