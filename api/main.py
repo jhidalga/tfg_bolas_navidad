@@ -1644,7 +1644,7 @@ def _leer_correos(con_quien: str, limite: int = 30) -> list:
                 m = message_from_bytes(crudo, policy=policy.default)
                 de = parseaddr(str(m.get("From", "")))[1].lower()
                 try:
-                    fecha = parsedate_to_datetime(str(m.get("Date"))).isoformat()
+                    fecha = parsedate_to_datetime(str(m.get("Date"))).astimezone(timezone.utc).isoformat()
                 except Exception:
                     fecha = ""
                 salida.append({"id": str(m.get("Message-ID", "")).strip(), "fecha": fecha, "mio": de == cfg["remitente"].lower(),

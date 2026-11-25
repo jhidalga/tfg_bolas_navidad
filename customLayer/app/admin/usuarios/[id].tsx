@@ -1,7 +1,7 @@
 import { View, Text, Pressable, ScrollView, ActivityIndicator, Platform, Linking, TextInput, Image, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Toast from 'react-native-toast-message';
 import { supabase } from '../../../lib/supabase';
 import { euros, plural } from '../../../lib/formato';
@@ -45,6 +45,7 @@ export default function PerfilUsuarioAdmin() {
     const [catalogo, setCatalogo] = useState<any[]>([]);
     const [edit, setEdit] = useState<any>(null);
     const [correo, setCorreo] = useState<{ asunto: string; mensaje: string; responde_a?: string } | null>(null);
+    const scrollHilo = useRef<ScrollView>(null);
     const [hilo, setHilo] = useState<{ cargando: boolean; error: string; correos: any[] }>({ cargando: false, error: '', correos: [] });
     const [envio, setEnvio] = useState<{ configurado: boolean; remitente: string | null } | null>(null);
     const [enviando, setEnviando] = useState(false);
@@ -79,7 +80,7 @@ export default function PerfilUsuarioAdmin() {
         try {
             const res = await fetch(`${API_URL}/admin/usuarios/${id}/correos`, { headers: { Authorization: `Bearer ${session.access_token}` } });
             const d = await res.json().catch(() => ({}));
-            if (res.ok) setHilo({ cargando: false, error: '', correos: d.correos || [] });
+            if (res.ok) setHilo({ cargando: false, error: '', correos: [...(d.correos || [])].sort((a: any, b: any) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime()) });
             else setHilo({ cargando: false, error: typeof d.detail === 'string' ? d.detail : 'No se pudieron leer los correos.', correos: [] });
         } catch {
             setHilo({ cargando: false, error: 'Error de conexión.', correos: [] });
@@ -163,7 +164,17 @@ export default function PerfilUsuarioAdmin() {
         const asunto = String(ultimoSuyo?.asunto || 'Tus pedidos de adornos navideños').replace(/^(re:\s*)+/i, '');
         setCorreo({ asunto: `Re: ${asunto}`, mensaje: `Hola ${nombrePila()}:\n\n`, responde_a: ultimoSuyo?.id || undefined });
     };
-    const fechaCorreo = (iso: string) => { try { return new Date(iso).toLocaleString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }); } catch { return ''; } };
+    const horaCorreo = (iso: string) => { try { return new Date(iso).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }); } catch { return ''; } };
+    const diaCorreo = (iso: string) => {
+        try {
+            const d = new Date(iso), hoy = new Date(), ayer = new Date(); ayer.setDate(hoy.getDate() - 1);
+            if (d.toDateString() === hoy.toDateString()) return 'Hoy';
+            if (d.toDateString() === ayer.toDateString()) return 'Ayer';
+            return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' });
+        } catch { return ''; }
+    };
+    /** En las burbujas propias se quita la firma, que ya la ve quien recibe el correo. */
+    const textoBurbuja = (c: any) => { const t = String(c.texto || ''); return (c.mio ? t.split(/\n\s*Atentamente,/)[0] : t).trim() || '(sin texto)'; };
     const enviarCorreo = async () => {
         if (!correo) return;
         const { data: { session } } = await supabase.auth.getSession();
@@ -257,15 +268,34 @@ export default function PerfilUsuarioAdmin() {
                         </View>
                         {hilo.error ? <Text style={{ color: '#b91c1c', marginBottom: 8 }}>{hilo.error}</Text> : null}
                         {!hilo.error && !hilo.cargando && hilo.correos.length === 0 ? <Text style={{ color: '#64748b' }}>Todavía no habéis intercambiado correos.</Text> : null}
-                        {hilo.correos.map((c: any, i: number) => (
-                            <View key={c.id || i} style={{ alignSelf: c.mio ? 'flex-end' : 'flex-start', maxWidth: '88%', backgroundColor: c.mio ? '#dbeafe' : '#fff', borderColor: c.mio ? '#93c5fd' : '#e2e8f0', borderWidth: 1, borderRadius: 14, padding: 12, marginBottom: 8 }}>
-                                <Text style={{ fontSize: 12, color: '#64748b', marginBottom: 4 }}>{c.mio ? 'Tú' : (u.nombre || 'Usuario')} · {fechaCorreo(c.fecha)}</Text>
-                                <Text style={{ fontWeight: 'bold', color: '#0f172a', marginBottom: 4 }}>{c.asunto}</Text>
-                                <Text style={{ color: '#1e293b' }}>{c.texto || '(sin texto)'}</Text>
-                            </View>
-                        ))}
                         {hilo.correos.length > 0 ? (
-                            <Pressable style={[boton('#2563eb'), { alignSelf: 'flex-start', marginTop: 4, flexDirection: 'row', alignItems: 'center', gap: 8 }]} onPress={responder}>
+                            <View style={{ backgroundColor: '#eae6df', borderRadius: 14, borderWidth: 1, borderColor: '#e2e8f0', overflow: 'hidden' }}>
+                                <ScrollView ref={scrollHilo} style={{ maxHeight: 480 }} contentContainerStyle={{ padding: 12 }} nestedScrollEnabled
+                                    onContentSizeChange={() => scrollHilo.current?.scrollToEnd({ animated: false })}>
+                                    {hilo.correos.map((c: any, i: number) => {
+                                        const anterior = hilo.correos[i - 1];
+                                        const nuevoDia = !anterior || diaCorreo(anterior.fecha) !== diaCorreo(c.fecha) || new Date(c.fecha).toDateString() !== new Date(anterior.fecha).toDateString();
+                                        const nuevoAsunto = !anterior || String(anterior.asunto).replace(/^(re:\s*)+/i, '') !== String(c.asunto).replace(/^(re:\s*)+/i, '');
+                                        return (
+                                            <View key={c.id || i}>
+                                                {nuevoDia ? (
+                                                    <Text style={{ alignSelf: 'center', backgroundColor: '#fff', color: '#475569', fontSize: 12, fontWeight: '600', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 8, marginVertical: 8 }}>{diaCorreo(c.fecha)}</Text>
+                                                ) : null}
+                                                {nuevoAsunto ? (
+                                                    <Text style={{ alignSelf: 'center', color: '#64748b', fontSize: 11, marginBottom: 6, textAlign: 'center' }}>{String(c.asunto).replace(/^(re:\s*)+/i, '')}</Text>
+                                                ) : null}
+                                                <View style={{ alignSelf: c.mio ? 'flex-end' : 'flex-start', maxWidth: '82%', backgroundColor: c.mio ? '#d9fdd3' : '#fff', borderRadius: 12, borderTopRightRadius: c.mio ? 2 : 12, borderTopLeftRadius: c.mio ? 12 : 2, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 6 }}>
+                                                    <Text style={{ color: '#111b21' }}>{textoBurbuja(c)}</Text>
+                                                    <Text style={{ alignSelf: 'flex-end', fontSize: 11, color: '#667781', marginTop: 4 }}>{horaCorreo(c.fecha)}</Text>
+                                                </View>
+                                            </View>
+                                        );
+                                    })}
+                                </ScrollView>
+                            </View>
+                        ) : null}
+                        {hilo.correos.length > 0 ? (
+                            <Pressable style={[boton('#2563eb'), { alignSelf: 'flex-start', marginTop: 10, flexDirection: 'row', alignItems: 'center', gap: 8 }]} onPress={responder}>
                                 <Ionicons name="return-down-back" size={16} color="#fff" /><Text style={{ color: '#fff', fontWeight: 'bold' }}>Responder</Text>
                             </Pressable>
                         ) : null}
