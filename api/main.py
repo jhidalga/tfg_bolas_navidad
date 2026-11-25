@@ -1585,9 +1585,12 @@ _CITA = re.compile(r"^(>|El .{5,120}(escribi[oó]|ha escrito):?\s*$|On .{5,120}w
 
 def _sin_citas(texto: str) -> str:
     """Se queda con lo que escribio la persona y corta el correo citado de abajo."""
+    lineas = texto.replace("\r", "").split("\n")
     salida = []
-    for linea in texto.replace("\r", "").split("\n"):
-        if _CITA.match(linea.strip()):
+    for i, linea in enumerate(lineas):
+        # Gmail parte "El ... escribio:" en dos lineas: se prueba tambien la linea unida con la siguiente
+        unida = (linea.strip() + " " + (lineas[i + 1].strip() if i + 1 < len(lineas) else "")).strip()
+        if _CITA.match(linea.strip()) or _CITA.match(unida):
             break
         salida.append(linea)
     return "\n".join(salida).strip()
