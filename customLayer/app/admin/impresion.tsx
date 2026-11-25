@@ -15,7 +15,7 @@ import { supabase } from '../../lib/supabase';
 export default function ColaImpresion() {
     const router = useRouter();
     const API = process.env.EXPO_PUBLIC_API_URL || '';
-    const [estado, setEstado] = useState('Pendiente');
+    const estado = 'Pendiente';   // los pedidos Completados no salen en la cola
     const [pago, setPago] = useState<'todos' | 'pagados' | 'sin_pagar'>('todos');
     const [grupos, setGrupos] = useState<any[]>([]);
     const [vista, setVista] = useState<'color' | 'persona'>('color');
@@ -117,20 +117,8 @@ export default function ColaImpresion() {
 
             <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#111827' }}>Cola de impresión</Text>
             <Text style={{ color: '#64748b', marginTop: 4, marginBottom: 14 }}>
-                Las bolas con nombre, agrupadas por color. Imprime juntas las del mismo color.
+                Las bolas con nombre que faltan por imprimir, agrupadas por color. Los pedidos Completados no salen aquí.
             </Text>
-
-            <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16 }}>
-                {['Pendiente', 'Completado'].map((e) => (
-                    <Pressable
-                        key={e}
-                        onPress={() => setEstado(e)}
-                        style={{ paddingVertical: 8, paddingHorizontal: 14, borderRadius: 999, backgroundColor: estado === e ? '#111827' : '#e5e7eb' }}
-                    >
-                        <Text style={{ color: estado === e ? '#fff' : '#111827', fontWeight: 'bold' }}>{e}</Text>
-                    </Pressable>
-                ))}
-            </View>
 
             <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16, alignItems: 'center', flexWrap: 'wrap' }}>
                 <Text style={{ color: '#64748b', fontWeight: 'bold' }}>Pago:</Text>

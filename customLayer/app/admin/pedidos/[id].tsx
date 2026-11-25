@@ -187,19 +187,19 @@ export default function DetallesPedidoAdmin() {
 
                             {prod.personalizacion && prod.personalizacion !== 'Sin texto' ? (
                                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 10, flexWrap: 'wrap' }}>
-                                    <Text style={styles.txtNormalSecundario}>Hechas: <Text style={styles.txtBold}>{Math.min(prod.hechas || 0, prod.cantidad || 1)} de {prod.cantidad || 1}</Text></Text>
-                                    <Pressable accessibilityLabel="Quitar una hecha" onPress={() => cambiarHechas(prod, (prod.hechas || 0) - 1)}
-                                        style={{ borderWidth: 1, borderColor: '#cbd5e1', borderRadius: 8, paddingVertical: 4, paddingHorizontal: 12 }}>
-                                        <Text style={{ fontWeight: 'bold', color: '#334155' }}>−</Text>
+                                    <Pressable
+                                        onPress={() => cambiarHechas(prod, (prod.hechas || 0) >= (prod.cantidad || 1) ? 0 : (prod.cantidad || 1))}
+                                        accessibilityRole="checkbox"
+                                        accessibilityState={{ checked: (prod.hechas || 0) >= (prod.cantidad || 1) }}
+                                        accessibilityLabel="Bola hecha"
+                                        style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
+                                    >
+                                        <Ionicons name={(prod.hechas || 0) >= (prod.cantidad || 1) ? 'checkbox' : 'square-outline'} size={26}
+                                            color={(prod.hechas || 0) >= (prod.cantidad || 1) ? '#15803d' : '#94a3b8'} />
+                                        <Text style={styles.txtNormalSecundario}>Hecha</Text>
                                     </Pressable>
-                                    <Pressable accessibilityLabel="Marcar una más como hecha" onPress={() => cambiarHechas(prod, (prod.hechas || 0) + 1)}
-                                        style={{ borderWidth: 1, borderColor: '#16a34a', borderRadius: 8, paddingVertical: 4, paddingHorizontal: 12 }}>
-                                        <Text style={{ fontWeight: 'bold', color: '#15803d' }}>+</Text>
-                                    </Pressable>
-                                    {(prod.hechas || 0) < (prod.cantidad || 1) && (prod.cantidad || 1) > 1 ? (
-                                        <Pressable onPress={() => cambiarHechas(prod, prod.cantidad || 1)}>
-                                            <Text style={{ color: '#15803d', fontWeight: 'bold', textDecorationLine: 'underline' }}>Todas</Text>
-                                        </Pressable>
+                                    {(prod.hechas || 0) > 0 && (prod.hechas || 0) < (prod.cantidad || 1) ? (
+                                        <Text style={styles.txtNormalSecundario}>{prod.hechas} de {prod.cantidad}</Text>
                                     ) : null}
                                 </View>
                             ) : null}
