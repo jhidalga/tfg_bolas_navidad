@@ -16,6 +16,7 @@ export default function ColaImpresion() {
     const router = useRouter();
     const API = process.env.EXPO_PUBLIC_API_URL || '';
     const [estado, setEstado] = useState('Pendiente');
+    const [pago, setPago] = useState<'todos' | 'pagados' | 'sin_pagar'>('todos');
     const [grupos, setGrupos] = useState<any[]>([]);
     const [vista, setVista] = useState<'color' | 'persona'>('color');
     const [orden, setOrden] = useState<'antiguos' | 'persona'>('antiguos');
@@ -26,7 +27,7 @@ export default function ColaImpresion() {
             setCargando(true);
             try {
                 const { data: { session } } = await supabase.auth.getSession();
-                const res = await fetch(`${API}/api/admin/impresion?estado=${encodeURIComponent(estado)}`, {
+                const res = await fetch(`${API}/api/admin/impresion?estado=${encodeURIComponent(estado)}&pago=${pago}`, {
                     headers: { 'Authorization': `Bearer ${session?.access_token}` }
                 });
                 setGrupos(res.ok ? await res.json() : []);
@@ -37,7 +38,7 @@ export default function ColaImpresion() {
             }
         };
         cargar();
-    }, [estado]);
+    }, [estado, pago]);
 
     const descargar = async (consulta: string, nombreZip: string, ext: string = 'zip') => {
         if (Platform.OS !== 'web') {
@@ -46,7 +47,7 @@ export default function ColaImpresion() {
         }
         try {
             const { data: { session } } = await supabase.auth.getSession();
-            const res = await fetch(`${API}/api/admin/impresion/3mf?${consulta}&estado=${encodeURIComponent(estado)}`, {
+            const res = await fetch(`${API}/api/admin/impresion/3mf?${consulta}&estado=${encodeURIComponent(estado)}&pago=${pago}`, {
                 headers: { 'Authorization': `Bearer ${session?.access_token}` }
             });
             if (!res.ok) {
@@ -105,6 +106,19 @@ export default function ColaImpresion() {
                 ))}
             </View>
 
+            <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+                <Text style={{ color: '#64748b', fontWeight: 'bold' }}>Pago:</Text>
+                {[{ v: 'todos', t: 'Todos' }, { v: 'pagados', t: 'Pagados' }, { v: 'sin_pagar', t: 'Sin pagar' }].map((o) => (
+                    <Pressable
+                        key={o.v}
+                        onPress={() => setPago(o.v as 'todos' | 'pagados' | 'sin_pagar')}
+                        style={{ paddingVertical: 8, paddingHorizontal: 14, borderRadius: 999, backgroundColor: pago === o.v ? '#16a34a' : '#e5e7eb' }}
+                    >
+                        <Text style={{ color: pago === o.v ? '#fff' : '#111827', fontWeight: 'bold' }}>{o.t}</Text>
+                    </Pressable>
+                ))}
+            </View>
+
             <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16, alignItems: 'center' }}>
                 <Text style={{ color: '#64748b', fontWeight: 'bold' }}>Agrupar por:</Text>
                 {[{ v: 'color', t: 'Color' }, { v: 'persona', t: 'Persona' }].map((o) => (
@@ -121,7 +135,7 @@ export default function ColaImpresion() {
             {cargando ? (
                 <ActivityIndicator size="large" color="#3b82f6" style={{ marginTop: 30 }} />
             ) : grupos.length === 0 ? (
-                <Text style={{ color: '#64748b', marginTop: 20 }}>No hay bolas con nombre en pedidos {estado.toLowerCase()}s.</Text>
+                <Text style={{ color: '#64748b', marginTop: 20 }}>No hay bolas con nombre en pedidos {estado.toLowerCase()}s{pago === 'pagados' ? ' pagados' : pago === 'sin_pagar' ? ' sin pagar' : ''}.</Text>
             ) : (
                 <>
                     <Text style={{ color: '#334155', marginBottom: 10 }}>{totalBolas} bolas en {grupos.length} colores</Text>
@@ -139,7 +153,7 @@ export default function ColaImpresion() {
 
                             <View style={{ marginTop: 12, padding: 12, borderRadius: 8, backgroundColor: '#f1f5f9' }}>
                                 <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 8 }}>
-                                    <Text style={{ color: '#334155', fontWeight: 'bold' }}>Packs de 5 · orden:</Text>
+                                    <Text style={{ color: '#334155', fontWeight: 'bold' }}>Packs de 6 · orden:</Text>
                                     {[{ v: 'antiguos', t: 'Más antiguos primero' }, { v: 'persona', t: 'Por persona' }].map((o) => (
                                         <Pressable key={o.v} onPress={() => setOrden(o.v as 'antiguos' | 'persona')}
                                             style={{ paddingVertical: 5, paddingHorizontal: 10, borderRadius: 999, backgroundColor: orden === o.v ? '#2563eb' : '#e2e8f0' }}>

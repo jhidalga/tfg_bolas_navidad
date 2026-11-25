@@ -50,18 +50,35 @@ _BASE = None
 
 
 def _base(figs=None):
-    """Ajustes de proyecto: siempre los de la H2D con 6 filamentos (los del reno), vengan las figuras de la plantilla que vengan.
-    Asi un pack solo de galletas, que venian pensadas para la P1S, tambien sale con la impresora buena."""
+    """Ajustes de proyecto: los del reno (6 filamentos) pasados a una sola boquilla y con los datos de la Bambu Lab A1.
+    Asi todos los packs salen con la A1 de cama 256x256, vengan las figuras de la plantilla que vengan."""
     global _BASE
     if _BASE is None:
         import os
-        ruta = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models", "Reindeer.3mf")
-        with zipfile.ZipFile(ruta) as z:
+        carpeta = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models")
+        with zipfile.ZipFile(os.path.join(carpeta, "Reindeer.3mf")) as z:
             ajustes = z.read("Metadata/model_settings.config").decode("utf-8")
-            _BASE = {"plate": re.search(r'<plate>.*?</plate>', ajustes, re.S).group(0),
-                     "proj_bytes": z.read("Metadata/project_settings.config"),
-                     "content_types": z.read("[Content_Types].xml")}
-            _BASE["proj"] = json.loads(_BASE["proj_bytes"])
+            proj = json.loads(z.read("Metadata/project_settings.config"))
+            content_types = z.read("[Content_Types].xml")
+        with open(os.path.join(carpeta, "A1_maquina.json"), encoding="utf-8") as f:
+            a1 = json.load(f)
+        # la H2D tiene dos boquillas: nos quedamos con una sola
+        for k, v in list(proj.items()):
+            if isinstance(v, list) and len(v) == 2 and k in a1 and isinstance(a1[k], list) and len(a1[k]) == 1:
+                proj[k] = v[:1]
+        for k in ("default_nozzle_volume_type", "extruder_colour", "extruder_offset", "extruder_type", "extruder_variant_list",
+                  "flush_multiplier", "grab_length", "machine_min_extruding_rate", "machine_min_travel_rate", "max_layer_height",
+                  "min_layer_height", "nozzle_diameter", "nozzle_volume_type", "wipe_tower_x", "wipe_tower_y"):
+            if isinstance(proj.get(k), list) and len(proj[k]) > 1:
+                proj[k] = proj[k][:1]
+        proj.update(a1)
+        proj["physical_extruder_map"] = ["0"]
+        proj["filament_map"] = ["1"] * len(proj["filament_colour"])
+        plate = re.search(r'<plate>.*?</plate>', ajustes, re.S).group(0)
+        n_fil = len(proj["filament_colour"])
+        plate = re.sub(r'(<metadata key="filament_maps" value=")[^"]*"', lambda m: m.group(1) + " ".join(["1"] * n_fil) + '"', plate)
+        _BASE = {"plate": plate, "proj": proj, "content_types": content_types}
+        _BASE["proj_bytes"] = json.dumps(proj).encode("utf-8")
     return _BASE
 
 
@@ -70,29 +87,67 @@ def _cama(proj):
         pts = [p.split("x") for p in proj["printable_area"]]
         return max(float(a) for a, _ in pts), max(float(b) for _, b in pts)
     except Exception:
-        return 350.0, 320.0
+        return 256.0, 256.0
 
 
-def _centros(n, ancho, alto):
-    """3 columnas y 2 filas. La segunda fila (si hay menos de 3) va centrada."""
-    cw = ancho / 3
-    y1, y2 = alto * 0.17, alto * 0.55   # arriba queda libre el hueco de la torre de purga
+def _caja(f):
+    """Caja (xmin, xmax, ymin, ymax) que ocupa la figura en la cama, sin contar donde la pongamos."""
+    bloques = {}
+    for ruta, txt in f["mallas"].items():
+        for m in re.finditer(r'<object id="(\d+)"[^>]*>(.*?)</object>', txt, re.S):
+            bloques[(ruta, m.group(1))] = m.group(2)
+    xs, ys = [], []
+    for m in re.finditer(r'<component p:path="([^"]+)" objectid="(\d+)"[^>]*?transform="([^"]+)"', f["bloque"]):
+        t = [float(v) for v in m.group(3).split()]
+        cuerpo = bloques.get((m.group(1), m.group(2)))
+        if cuerpo is None or len(t) != 12:
+            continue
+        for v in re.finditer(r'<vertex x="([^"]+)" y="([^"]+)"', cuerpo):
+            x, y = float(v.group(1)), float(v.group(2))
+            xs.append(t[0] * x + t[3] * y + t[9])
+            ys.append(t[1] * x + t[4] * y + t[10])
+    if not xs:
+        return -40.0, 40.0, -45.0, 45.0
+    return min(xs), max(xs), min(ys), max(ys)
+
+
+TORRE = (40.0, 40.0)   # ancho y fondo que dejamos libres para la torre de purga
+
+
+def _centros(cajas, ancho, alto):
+    """Hasta 6 figuras: 3 columnas y 2 filas. Cada columna es igual de ancha y cada fila tan alta como su figura mas alta.
+    La torre de purga va al fondo, en el hueco que queda detras de las dos filas. La fila de delante deja libre el borde de la A1."""
+    margen_x, margen_frente, hueco = 6.0, 14.0, 5.0
+    n = len(cajas)
     fila1 = min(n, 3)
-    fila2 = n - fila1
-    res = [(cw * (i + 0.5), y1) for i in range(fila1)]
-    off = (3 - fila2) * cw / 2
-    res += [(off + cw * (i + 0.5), y2) for i in range(fila2)]
-    return res
+    filas = [list(range(0, fila1)), list(range(fila1, n))]
+    anchos = [c[1] - c[0] for c in cajas]
+    altos = [c[3] - c[2] for c in cajas]
+    cw = (ancho - 2 * margen_x) / 3
+    y = margen_frente
+    res = [None] * n
+    for fila in filas:
+        if not fila:
+            continue
+        alto_fila = max(altos[i] for i in fila)
+        off = (3 - len(fila)) * cw / 2
+        for k, i in enumerate(fila):
+            cx = margen_x + off + cw * (k + 0.5)
+            cy = y + alto_fila / 2
+            # el origen de la figura no esta en el centro de su caja: lo corregimos
+            res[i] = (cx - (cajas[i][0] + cajas[i][1]) / 2, cy - (cajas[i][2] + cajas[i][3]) / 2)
+        y += alto_fila + hueco
+    return res, y
 
 
 def unir_3mf(lista):
-    """lista: bytes de 3MF (1 a 5) -> bytes de un 3MF con todas las figuras en una cama."""
+    """lista: bytes de 3MF (1 a 6) -> bytes de un 3MF con todas las figuras en una cama."""
     if not lista:
         raise ValueError("No hay figuras que juntar")
     figs = [_leer(d) for d in lista]
     base = _base(figs)
     ancho, alto = _cama(base["proj"])
-    centros = _centros(len(figs), ancho, alto)
+    centros, y_torre = _centros([_caja(f) for f in figs], ancho, alto)
 
     recursos, items, ajustes_obj, instancias, assemble, cortes = [], [], [], [], [], []
     mallas_nuevas = []   # bloques <object> de todas las figuras con ids unicos
@@ -164,8 +219,8 @@ def unir_3mf(lista):
         for ruta, datos in ficheros.items():
             z.writestr(ruta, datos)
         proj = dict(base["proj"])
-        proj["wipe_tower_x"] = [str(round(ancho / 2 - 30))] * len(proj.get("wipe_tower_x", ["0", "0"]))
-        proj["wipe_tower_y"] = [str(round(alto * 0.75))] * len(proj.get("wipe_tower_y", ["0", "0"]))
+        proj["wipe_tower_x"] = [str(round(ancho / 2 - TORRE[0] / 2))]
+        proj["wipe_tower_y"] = [str(round(min(y_torre + 2, alto - TORRE[1] - 4)))]
         z.writestr("Metadata/project_settings.config", json.dumps(proj, indent=4, ensure_ascii=False))
         z.writestr("Metadata/model_settings.config", ajustes)
         z.writestr("Metadata/cut_information.xml", '<?xml version="1.0" encoding="utf-8"?>\n<objects>\n' + "\n".join(cortes) + "\n</objects>\n")

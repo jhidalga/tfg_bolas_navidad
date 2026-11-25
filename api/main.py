@@ -249,6 +249,15 @@ def _respuesta_3mf_pedido(pedido_id: str, detalles: list, detalle: Optional[str]
                     headers={"Content-Disposition": f'attachment; filename="pedido_{pedido_id}_3mf.zip"'})
 
 
+def _filtrar_pago(pedidos: list, pago: str):
+    """pago: todos, pagados o sin_pagar."""
+    if pago == "pagados":
+        return [p for p in pedidos if p.get("pagado")]
+    if pago == "sin_pagar":
+        return [p for p in pedidos if not p.get("pagado")]
+    return pedidos
+
+
 def _cola_impresion(pedidos: list):
     """Agrupa por color las bolas con nombre de los pedidos dados. Sirve para imprimir varias a la vez."""
     import re as _re
@@ -275,11 +284,11 @@ def _cola_impresion(pedidos: list):
     return sorted(grupos.values(), key=lambda g: g["color"].lower())
 
 
-TAM_PACK = 5
+TAM_PACK = 6
 
 
 def _packs_de_grupo(lineas: list):
-    """Reparte las bolas de un color en packs de 5 (la ultima lleva las que sobran). Dos ordenes: antiguos y persona."""
+    """Reparte las bolas de un color en packs de 6 (la ultima lleva las que sobran). Dos ordenes: antiguos y persona."""
     unidades = []
     for l in lineas:
         for _ in range(l.get("cantidad") or 1):
@@ -316,7 +325,7 @@ def _zip_cola(grupo: dict):
 
 def _respuesta_cola(grupos: list, color: Optional[str], cliente: Optional[str] = None, pack: Optional[int] = None, orden: str = "antiguos", formato: str = "3mf"):
     """Sin color ni cliente devuelve los grupos. Con color o con cliente devuelve el zip de esas bolas.
-    Con color y pack devuelve el zip de ese pack de 5."""
+    Con color y pack devuelve el zip de ese pack de 6."""
     if color is None and cliente is None:
         return grupos
     import unicodedata as _ud
@@ -627,14 +636,14 @@ if MODO_PRUEBA:
         return {"mensaje": "Pedido procesado correctamente", "pedido_id": pedido["id"]}
 
     @app.get("/api/admin/impresion")
-    def cola_prueba(request: Request, estado: str = "Pendiente"):
-        return _cola_impresion([p for p in _pedidos(str(request.base_url)) if p["estado"] == estado])
+    def cola_prueba(request: Request, estado: str = "Pendiente", pago: str = "todos"):
+        return _cola_impresion(_filtrar_pago([p for p in _pedidos(str(request.base_url)) if p["estado"] == estado], pago))
 
     @app.get("/api/admin/impresion/3mf")
-    def cola_3mf_prueba(request: Request, color: Optional[str] = None, cliente: Optional[str] = None, pack: Optional[int] = None, orden: str = "antiguos", formato: str = "3mf", estado: str = "Pendiente"):
+    def cola_3mf_prueba(request: Request, color: Optional[str] = None, cliente: Optional[str] = None, pack: Optional[int] = None, orden: str = "antiguos", formato: str = "3mf", estado: str = "Pendiente", pago: str = "todos"):
         if color is None and cliente is None:
             raise HTTPException(status_code=400, detail="Indica color o cliente")
-        return _respuesta_cola(_cola_impresion([p for p in _pedidos(str(request.base_url)) if p["estado"] == estado]), color, cliente, pack, orden, formato)
+        return _respuesta_cola(_cola_impresion(_filtrar_pago([p for p in _pedidos(str(request.base_url)) if p["estado"] == estado], pago)), color, cliente, pack, orden, formato)
 
     @app.get("/api/admin/resumen")
     def resumen_prueba(request: Request):
@@ -1360,7 +1369,7 @@ def descargar_3mf_pedido(pedido_id: str, detalle: Optional[str] = None, authoriz
         logging.exception("Error interno")
         raise HTTPException(status_code=500, detail="Ha ocurrido un error en el servidor. Inténtalo de nuevo.")
 
-def _pedidos_para_cola(authorization: Optional[str], estado: str):
+def _pedidos_para_cola(authorization: Optional[str], estado: str, pago: str = "todos"):
     if not authorization:
         raise HTTPException(status_code=401, detail="No autorizado")
     token = authorization.replace("Bearer ", "")
@@ -1369,15 +1378,16 @@ def _pedidos_para_cola(authorization: Optional[str], estado: str):
     perfil = cliente.table("usuarios").select("administrador").eq("id", user_id).single().execute()
     if not perfil.data or not perfil.data.get("administrador"):
         raise HTTPException(status_code=403, detail="Solo administradores")
-    return cliente.table("pedidos").select("id, estado, created_at, usuarios!user_id(nombre, curso), detalles_pedido(id, modelo, color, personalizacion, cantidad)") \
+    datos = cliente.table("pedidos").select("id, estado, pagado, created_at, usuarios!user_id(nombre, curso), detalles_pedido(id, modelo, color, personalizacion, cantidad)") \
         .eq("estado", estado).execute().data
+    return _filtrar_pago(datos, pago)
 
 
 @app.get("/api/admin/impresion")
-def cola_impresion(estado: str = "Pendiente", authorization: Optional[str] = Header(None)):
+def cola_impresion(estado: str = "Pendiente", pago: str = "todos", authorization: Optional[str] = Header(None)):
     """Bolas con nombre de los pedidos en ese estado, agrupadas por color."""
     try:
-        return _cola_impresion(_pedidos_para_cola(authorization, estado))
+        return _cola_impresion(_pedidos_para_cola(authorization, estado, pago))
     except HTTPException:
         raise
     except Exception as e:
@@ -1386,12 +1396,12 @@ def cola_impresion(estado: str = "Pendiente", authorization: Optional[str] = Hea
 
 
 @app.get("/api/admin/impresion/3mf")
-def cola_impresion_3mf(color: Optional[str] = None, cliente: Optional[str] = None, pack: Optional[int] = None, orden: str = "antiguos", formato: str = "3mf", estado: str = "Pendiente", authorization: Optional[str] = Header(None)):
+def cola_impresion_3mf(color: Optional[str] = None, cliente: Optional[str] = None, pack: Optional[int] = None, orden: str = "antiguos", formato: str = "3mf", estado: str = "Pendiente", pago: str = "todos", authorization: Optional[str] = Header(None)):
     """Zip con los 3MF de las bolas de un color (para imprimirlas juntas) o de una persona."""
     if color is None and cliente is None:
         raise HTTPException(status_code=400, detail="Indica color o cliente")
     try:
-        return _respuesta_cola(_cola_impresion(_pedidos_para_cola(authorization, estado)), color, cliente, pack, orden, formato)
+        return _respuesta_cola(_cola_impresion(_pedidos_para_cola(authorization, estado, pago)), color, cliente, pack, orden, formato)
     except HTTPException:
         raise
     except Exception as e:
