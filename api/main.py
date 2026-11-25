@@ -1742,6 +1742,21 @@ def perfil_usuario_admin(usuario_id: str, authorization: Optional[str] = Header(
         raise HTTPException(status_code=500, detail="Ha ocurrido un error en el servidor. Inténtalo de nuevo.")
 
 
+def _cliente_servicio(cliente_admin):
+    """Cliente con la clave de servicio para escribir (las reglas de la base de datos no dejan al admin cambiar lineas ajenas)."""
+    clave = os.getenv("SUPABASE_SERVICE_KEY")
+    return create_client(SUPABASE_URL, clave) if clave else cliente_admin
+
+
+def _escribir(consulta, error: str):
+    """Ejecuta un update o delete y avisa si no ha tocado ninguna fila, en vez de dar por bueno un cambio que no se hizo."""
+    r = consulta.execute()
+    if not r.data:
+        logging.error("La base de datos no cambio ninguna fila: %s", error)
+        raise HTTPException(status_code=500, detail=error)
+    return r
+
+
 def _comprobar_editable(cliente, pedido_id: str):
     """El admin solo puede cambiar pedidos Pendientes y sin pagar."""
     r = cliente.table("pedidos").select("estado, pagado").eq("id", pedido_id).execute().data
@@ -1759,7 +1774,7 @@ def anular_pedido_admin(pedido_id: str, authorization: Optional[str] = Header(No
     try:
         cliente = _exigir_admin(authorization)
         _comprobar_editable(cliente, pedido_id)
-        cliente.table("pedidos").update({"estado": "Cancelado"}).eq("id", pedido_id).execute()
+        _escribir(_cliente_servicio(cliente).table("pedidos").update({"estado": "Cancelado"}).eq("id", pedido_id), "No se pudo anular el pedido. Inténtalo de nuevo.")
         return {"mensaje": "Pedido anulado", "estado": "Cancelado"}
     except HTTPException:
         raise
@@ -1802,10 +1817,11 @@ def editar_bola_admin(pedido_id: str, detalle_id: str, datos: EdicionBola, autho
             cambios["cantidad"] = datos.cantidad
         if not cambios:
             raise HTTPException(status_code=400, detail="No hay nada que cambiar.")
-        cliente.table("detalles_pedido").update(cambios).eq("id", detalle_id).eq("pedido_id", pedido_id).execute()
-        todas = cliente.table("detalles_pedido").select("precio_unitario, cantidad").eq("pedido_id", pedido_id).execute().data or []
+        escritor = _cliente_servicio(cliente)
+        _escribir(escritor.table("detalles_pedido").update(cambios).eq("id", detalle_id).eq("pedido_id", pedido_id), "No se pudo guardar el cambio. Inténtalo de nuevo.")
+        todas = escritor.table("detalles_pedido").select("precio_unitario, cantidad").eq("pedido_id", pedido_id).execute().data or []
         total = round(sum(float(d.get("precio_unitario") or 0) * (d.get("cantidad") or 1) for d in todas), 2)
-        cliente.table("pedidos").update({"total": total}).eq("id", pedido_id).execute()
+        escritor.table("pedidos").update({"total": total}).eq("id", pedido_id).execute()
         return {"mensaje": "Bola cambiada", "total": total}
     except HTTPException:
         raise
@@ -1823,16 +1839,18 @@ def quitar_bola_admin(pedido_id: str, detalle_id: str, authorization: Optional[s
         det = cliente.table("detalles_pedido").select("id, cantidad").eq("pedido_id", pedido_id).eq("id", detalle_id).execute().data
         if not det:
             raise HTTPException(status_code=404, detail="Esa bola no está en el pedido.")
+        escritor = _cliente_servicio(cliente)
+        msg_error = "No se pudo quitar la bola. Inténtalo de nuevo."
         if (det[0].get("cantidad") or 1) > 1:
-            cliente.table("detalles_pedido").update({"cantidad": (det[0].get("cantidad") or 1) - 1}).eq("id", detalle_id).execute()
+            _escribir(escritor.table("detalles_pedido").update({"cantidad": (det[0].get("cantidad") or 1) - 1}).eq("id", detalle_id), msg_error)
         else:
-            cliente.table("detalles_pedido").delete().eq("id", detalle_id).eq("pedido_id", pedido_id).execute()
-        quedan = cliente.table("detalles_pedido").select("precio_unitario, cantidad").eq("pedido_id", pedido_id).execute().data or []
+            _escribir(escritor.table("detalles_pedido").delete().eq("id", detalle_id).eq("pedido_id", pedido_id), msg_error)
+        quedan = escritor.table("detalles_pedido").select("precio_unitario, cantidad").eq("pedido_id", pedido_id).execute().data or []
         if not quedan:
-            cliente.table("pedidos").update({"estado": "Cancelado"}).eq("id", pedido_id).execute()
+            escritor.table("pedidos").update({"estado": "Cancelado"}).eq("id", pedido_id).execute()
             return {"mensaje": "Pedido anulado", "estado": "Cancelado", "total": 0}
         total = round(sum(float(d.get("precio_unitario") or 0) * (d.get("cantidad") or 1) for d in quedan), 2)
-        cliente.table("pedidos").update({"total": total}).eq("id", pedido_id).execute()
+        escritor.table("pedidos").update({"total": total}).eq("id", pedido_id).execute()
         return {"mensaje": "Bola quitada", "estado": "Pendiente", "total": total}
     except HTTPException:
         raise
