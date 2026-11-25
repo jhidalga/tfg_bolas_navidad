@@ -1043,6 +1043,30 @@ def _estado_en_hoja(pedido_ref: str, estado: str) -> None:
     _llamar_hoja({"accion": "estado", "pedido_ref": str(pedido_ref), "estado": estado})
 
 
+def _refrescar_hoja(cliente, pedido_id: str, estado: Optional[str] = None) -> None:
+    """Deja la hoja al dia despues de modificar un pedido: borra sus filas y las vuelve a escribir, en ese orden."""
+    try:
+        ped = cliente.table("pedidos").select("id, user_id, estado, created_at").eq("id", pedido_id).execute().data
+        if not ped:
+            return
+        ped = ped[0]
+        estado = estado or ped.get("estado") or "Pendiente"
+        if estado == "Cancelado":
+            _estado_en_hoja(str(pedido_id), "Cancelado")
+            return
+        u = cliente.table("usuarios").select("nombre").eq("id", ped.get("user_id")).execute().data
+        dets = cliente.table("detalles_pedido").select("modelo, precio_unitario, cantidad").eq("pedido_id", pedido_id).execute().data or []
+        fecha = datetime.fromisoformat(str(ped.get("created_at")).replace("Z", "+00:00")) if ped.get("created_at") else datetime.now(timezone.utc)
+        tareas: list = []
+        _llamar_hoja({"accion": "borrar", "pedido_ref": str(pedido_id)}, tareas)
+        _llamar_hoja(_filas_para_hoja((u[0]["nombre"] if u else ""), fecha, dets, str(pedido_id), _etiqueta_pedido(cliente, ped), estado), tareas)
+        if tareas:
+            import threading
+            threading.Thread(target=lambda: [t() for t in tareas], daemon=True).start()
+    except Exception:
+        logging.exception("No se pudo actualizar la hoja")
+
+
 def _etiqueta_pedido(cliente_seguro, ped: dict) -> str:
     """Mismo codigo que se ve en el panel: correo-curso-NN, donde NN es el numero de pedido de esa persona."""
     import re
@@ -1775,6 +1799,7 @@ def anular_pedido_admin(pedido_id: str, authorization: Optional[str] = Header(No
         cliente = _exigir_admin(authorization)
         _comprobar_editable(cliente, pedido_id)
         _escribir(_cliente_servicio(cliente).table("pedidos").update({"estado": "Cancelado"}).eq("id", pedido_id), "No se pudo anular el pedido. Inténtalo de nuevo.")
+        _estado_en_hoja(str(pedido_id), "Cancelado")
         return {"mensaje": "Pedido anulado", "estado": "Cancelado"}
     except HTTPException:
         raise
@@ -1822,6 +1847,7 @@ def editar_bola_admin(pedido_id: str, detalle_id: str, datos: EdicionBola, autho
         todas = escritor.table("detalles_pedido").select("precio_unitario, cantidad").eq("pedido_id", pedido_id).execute().data or []
         total = round(sum(float(d.get("precio_unitario") or 0) * (d.get("cantidad") or 1) for d in todas), 2)
         escritor.table("pedidos").update({"total": total}).eq("id", pedido_id).execute()
+        _refrescar_hoja(escritor, pedido_id)
         return {"mensaje": "Bola cambiada", "total": total}
     except HTTPException:
         raise
@@ -1848,9 +1874,11 @@ def quitar_bola_admin(pedido_id: str, detalle_id: str, authorization: Optional[s
         quedan = escritor.table("detalles_pedido").select("precio_unitario, cantidad").eq("pedido_id", pedido_id).execute().data or []
         if not quedan:
             escritor.table("pedidos").update({"estado": "Cancelado"}).eq("id", pedido_id).execute()
+            _estado_en_hoja(str(pedido_id), "Cancelado")
             return {"mensaje": "Pedido anulado", "estado": "Cancelado", "total": 0}
         total = round(sum(float(d.get("precio_unitario") or 0) * (d.get("cantidad") or 1) for d in quedan), 2)
         escritor.table("pedidos").update({"total": total}).eq("id", pedido_id).execute()
+        _refrescar_hoja(escritor, pedido_id)
         return {"mensaje": "Bola quitada", "estado": "Pendiente", "total": total}
     except HTTPException:
         raise
