@@ -8,6 +8,10 @@ import { euros, plural } from '../../../lib/formato';
 import { useConfirmar } from '../../../componentes/confirmar';
 import { traducirError } from '../../../lib/errores';
 
+/** Igual que la tienda: si el modelo se llama Base o Único, la figura es el nombre del producto. */
+const figuraDe = (modelo?: string, producto?: string) =>
+    !modelo || /^(base|unico|único)$/i.test(modelo.trim()) ? (producto || modelo || '') : modelo;
+
 const API_URL = `${process.env.EXPO_PUBLIC_API_URL || ''}/api`;
 const COLOR_ESTADO: Record<string, string> = { Pendiente: '#f59e0b', Completado: '#10b981', Entregado: '#3b82f6', Cancelado: '#ef4444' };
 
@@ -93,14 +97,14 @@ export default function PerfilUsuarioAdmin() {
 
     /** Empieza a editar una linea con sus valores actuales. */
     const editar = (p: any, l: any) => {
-        const prod = catalogo.find(x => x.id === l.producto_id) || catalogo.find(x => (x.modelos || []).some((m: any) => m.nombre === l.modelo));
+        const prod = catalogo.find(x => x.id === l.producto_id) || catalogo.find(x => (x.modelos || []).some((m: any) => figuraDe(m.nombre, x.nombre) === l.modelo));
         setEdit({ pedido: p.id, linea: l.id, producto: prod?.id || l.producto_id, modelo: l.modelo, color: l.color,
                   nombre: l.personalizacion && l.personalizacion !== 'Sin texto' ? l.personalizacion : '', cantidad: l.cantidad || 1 });
     };
     /** Elegir una figura cambia tambien el producto y, si hace falta, el color. */
     const elegirModelo = (prod: any, m: any) => {
         const colores: string[] = prod.colores || [];
-        setEdit((e: any) => ({ ...e, producto: prod.id, modelo: m.nombre, color: colores.length && !colores.includes(e.color) ? colores[0] : e.color }));
+        setEdit((e: any) => ({ ...e, producto: prod.id, modelo: figuraDe(m.nombre, prod.nombre), color: colores.length && !colores.includes(e.color) ? colores[0] : e.color }));
     };
     const guardarEdicion = async () => {
         if (!edit) return;
@@ -334,8 +338,8 @@ export default function PerfilUsuarioAdmin() {
                                                     <Text style={{ fontWeight: 'bold', color: '#334155', marginBottom: 6 }}>Figura</Text>
                                                     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
                                                         {catalogo.flatMap(prod => (prod.modelos || []).map((m: any) => (
-                                                            <Pressable key={`${prod.id}-${m.nombre}`} style={chip(edit.producto === prod.id && edit.modelo === m.nombre)} onPress={() => elegirModelo(prod, m)}>
-                                                                <Text style={{ color: edit.producto === prod.id && edit.modelo === m.nombre ? '#fff' : '#111827', fontWeight: 'bold', fontSize: 12 }}>{m.nombre}</Text>
+                                                            <Pressable key={`${prod.id}-${m.nombre}`} style={chip(edit.producto === prod.id && edit.modelo === figuraDe(m.nombre, prod.nombre))} onPress={() => elegirModelo(prod, m)}>
+                                                                <Text style={{ color: edit.producto === prod.id && edit.modelo === figuraDe(m.nombre, prod.nombre) ? '#fff' : '#111827', fontWeight: 'bold', fontSize: 12 }}>{figuraDe(m.nombre, prod.nombre)}</Text>
                                                             </Pressable>
                                                         )))}
                                                     </View>

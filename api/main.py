@@ -364,7 +364,8 @@ if MODO_PRUEBA:
 
     def _productos_prueba(base: str):
         def mod(i, nombre):
-            return {"id": f"m{i}-{_MODELOS[nombre]}", "nombre": nombre, "imagen": f"{base}api/prueba/img/{_MODELOS[nombre]}.png"}
+            img = _MODELOS.get(nombre, "Gingerbread")
+            return {"id": f"m{i}-{img}", "nombre": nombre, "imagen": f"{base}api/prueba/img/{img}.png"}
         def prod(pid, nombre, desc, modelos, colores):
             return {"id": pid, "nombre": nombre, "descripcion": desc, "precio": 1.0, "precio_personalizacion": 0.0,
                     "deshabilitado": False, "oculto": False, "personalizable": True, "colores": colores,
@@ -374,6 +375,8 @@ if MODO_PRUEBA:
                  ["Galleta de Jengibre", "Oso de navidad", "Reno de Navidad"], ["Marr\u00f3n"]),
             prod("p2", "Bola de Navidad Estrella", "Bola de navidad con forma de estrella y nombre personalizado", ["Estrella"], ["Dorado"]),
             prod("p3", "Bola de Navidad \u00c1rbol", "Bola de navidad con forma de \u00e1rbol y nombre personalizado", ["Arbol de Navidad"], ["Verde"]),
+            prod("p4", "Galleta de jengibre", "Como en producci\u00f3n: el modelo se llama Base", ["Base"], ["Marr\u00f3n"]),
+            prod("p5", "Reno", "Como en producci\u00f3n: el modelo se llama Base", ["Base"], ["Marr\u00f3n"]),
         ]
 
     @app.get("/api/prueba/img/{figura}.png")
@@ -725,7 +728,7 @@ if MODO_PRUEBA:
             if not prod:
                 raise HTTPException(status_code=400, detail="Ese producto no existe.")
             modelo = datos.modelo or d["modelo"]; color = datos.color or d["color"]
-            if modelo not in [m["nombre"] for m in prod["modelos"]]:
+            if modelo not in [_figura_modelo(prod["nombre"], m["nombre"]) for m in prod["modelos"]]:
                 raise HTTPException(status_code=400, detail="Ese modelo no es de ese producto.")
             if prod.get("colores") and color not in prod["colores"]:
                 raise HTTPException(status_code=400, detail="Ese color no es de ese producto.")
@@ -980,6 +983,12 @@ def realizar_pedido(checkout: CheckoutPedido, authorization: Optional[str] = Hea
 _ESTADOS_PARA_HOJA = ("Completado", "Entregado")
 _FIGURAS_CORTAS = [("galleta", "Galleta"), ("oso", "Oso"), ("reno", "Reno"), ("estrella", "Estrella"),
                    ("arbol", "Árbol"), ("árbol", "Árbol"), ("saco", "Saco"), ("pudin", "Pudin"), ("calcet", "Calcetín")]
+
+
+def _figura_modelo(producto: Optional[str], modelo: Optional[str]) -> str:
+    """Nombre de figura que guarda el pedido: si el modelo se llama Base o Unico, es el nombre del producto (igual que en la tienda)."""
+    m = (modelo or "").strip()
+    return (producto or m) if not m or re.fullmatch(r"(?i)base|unico|único", m) else m
 
 
 def _figura_corta(modelo: str) -> str:
@@ -1713,7 +1722,7 @@ def _perfil_usuario(cliente, usuario_id: str):
     if not u:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
     u = u[0]
-    peds = cliente.table("pedidos").select("id, estado, total, pagado, nota, created_at, detalles_pedido(id, modelo, color, personalizacion, cantidad, precio_unitario)") \
+    peds = cliente.table("pedidos").select("id, estado, total, pagado, nota, created_at, detalles_pedido(id, producto_id, modelo, color, personalizacion, cantidad, precio_unitario)") \
         .eq("user_id", usuario_id).order("created_at").execute().data or []
     salida = []
     for n, p in enumerate(peds, start=1):
@@ -1772,13 +1781,13 @@ def editar_bola_admin(pedido_id: str, detalle_id: str, datos: EdicionBola, autho
         cambios = {}
         if datos.producto_id or datos.modelo or datos.color:
             producto_id = datos.producto_id or det.get("producto_id")
-            prod = cliente.table("productos").select("id, precio, colores, oculto, deshabilitado, modelos(nombre)").eq("id", producto_id).execute().data
+            prod = cliente.table("productos").select("id, nombre, precio, colores, oculto, deshabilitado, modelos(nombre)").eq("id", producto_id).execute().data
             if not prod:
                 raise HTTPException(status_code=400, detail="Ese producto no existe.")
             prod = prod[0]
             modelo = datos.modelo or det.get("modelo")
             color = datos.color or det.get("color")
-            if modelo not in [m.get("nombre") for m in (prod.get("modelos") or [])]:
+            if modelo not in [_figura_modelo(prod.get("nombre"), m.get("nombre")) for m in (prod.get("modelos") or [])]:
                 raise HTTPException(status_code=400, detail="Ese modelo no es de ese producto.")
             if prod.get("colores") and color not in prod["colores"]:
                 raise HTTPException(status_code=400, detail="Ese color no es de ese producto.")
