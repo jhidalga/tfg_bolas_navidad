@@ -312,8 +312,12 @@ def _faltan(d: dict, solo_faltan: bool) -> int:
     return max(0, cant - min(d.get("hechas") or 0, cant)) if solo_faltan else cant
 
 
+_ETIQUETA_COLA = {"Gingerbread.3mf": "Galleta de jengibre", "Reindeer.3mf": "Reno", "Bear.3mf": "Oso", "ChristmasTree.3mf": "Árbol de Navidad",
+                  "Star.3mf": "Estrella", "SantaSack.3mf": "Saco de Papa Noel", "Stocking.3mf": "Calcetín", "XmasPud.3mf": "Pudin de Navidad"}
+
+
 def _cola_impresion(pedidos: list, solo_faltan: bool = True):
-    """Agrupa por color las bolas con nombre de los pedidos dados. Sirve para imprimir varias a la vez.
+    """Agrupa por figura las bolas con nombre de los pedidos dados (renos con renos, galletas con galletas). Sirve para imprimir varias a la vez.
     Las bolas ya hechas no salen (solo_faltan) para que los packs cuenten solo lo pendiente."""
     import re as _re
     import unicodedata as _ud
@@ -328,8 +332,9 @@ def _cola_impresion(pedidos: list, solo_faltan: bool = True):
             cant = _faltan(d, solo_faltan)
             if cant <= 0:
                 continue
-            k = clave(d.get("color"))
-            g = grupos.setdefault(k, {"color": d.get("color") or "Sin color", "bolas": 0, "lineas": []})
+            fichero = figura_para(d.get("modelo") or "")
+            k = fichero or clave(d.get("modelo"))
+            g = grupos.setdefault(k, {"color": _ETIQUETA_COLA.get(fichero) or (d.get("modelo") or "Sin figura"), "bolas": 0, "lineas": []})
             g["bolas"] += cant
             u = p.get("usuarios") or {}
             g["lineas"].append({"id": d.get("id"), "color": d.get("color") or "Sin color", "pedido_id": p["id"], "pedido": str(p["id"])[:8].upper(),
@@ -350,7 +355,7 @@ def _packs_de_grupo(lineas: list):
     for l in lineas:
         for _ in range(l.get("cantidad") or 1):
             unidades.append({"detalle_id": l.get("id"), "cliente": l.get("cliente"), "curso": l.get("curso"), "pedido": l["pedido"], "pedido_id": l["pedido_id"],
-                             "modelo": l["modelo"], "personalizacion": l["personalizacion"], "creado": l.get("creado") or ""})
+                             "modelo": l["modelo"], "color": l.get("color"), "personalizacion": l["personalizacion"], "creado": l.get("creado") or ""})
     orden = {
         "antiguos": sorted(unidades, key=lambda u: (u["creado"], (u["cliente"] or "").lower())),
         "persona": sorted(unidades, key=lambda u: ((u["cliente"] or "").lower(), u["creado"])),

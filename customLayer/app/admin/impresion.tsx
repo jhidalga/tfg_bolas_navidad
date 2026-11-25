@@ -93,7 +93,7 @@ export default function ColaImpresion() {
     const idsDeLinea = (l: any) => Array(l.cantidad || 1).fill(l.id);
     const enPendiente = estado === 'Pendiente';
 
-    const nombreDe = (u: any) => `${u.cliente || 'Sin nombre'} · ${u.modelo} "${u.personalizacion}" · #${u.pedido}`;
+    const nombreDe = (u: any) => `${u.cliente || 'Sin nombre'} · "${u.personalizacion}" · ${u.color || ''} · #${u.pedido}`;
 
     // Misma cola vista por persona: cada cliente con todas sus bolas y el color de cada una
     const personas = useMemo(() => {
@@ -117,7 +117,7 @@ export default function ColaImpresion() {
 
             <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#111827' }}>Cola de impresión</Text>
             <Text style={{ color: '#64748b', marginTop: 4, marginBottom: 14 }}>
-                Las bolas con nombre que faltan por imprimir, agrupadas por color. Los pedidos Completados no salen aquí.
+                Las bolas con nombre que faltan por imprimir, agrupadas por figura. Los pedidos Completados no salen aquí.
             </Text>
 
             <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -135,7 +135,7 @@ export default function ColaImpresion() {
 
             <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16, alignItems: 'center' }}>
                 <Text style={{ color: '#64748b', fontWeight: 'bold' }}>Agrupar por:</Text>
-                {[{ v: 'color', t: 'Color' }, { v: 'persona', t: 'Persona' }].map((o) => (
+                {[{ v: 'color', t: 'Figura' }, { v: 'persona', t: 'Persona' }].map((o) => (
                     <Pressable
                         key={o.v}
                         onPress={() => setVista(o.v as 'color' | 'persona')}
@@ -152,7 +152,7 @@ export default function ColaImpresion() {
                 <Text style={{ color: '#64748b', marginTop: 20 }}>No hay bolas con nombre en pedidos {estado.toLowerCase()}s{pago === 'pagados' ? ' pagados' : pago === 'sin_pagar' ? ' sin pagar' : ''}.</Text>
             ) : (
                 <>
-                    <Text style={{ color: '#334155', marginBottom: 10 }}>{totalBolas} bolas en {grupos.length} colores</Text>
+                    <Text style={{ color: '#334155', marginBottom: 10 }}>{totalBolas} bolas en {grupos.length} {grupos.length === 1 ? 'figura' : 'figuras'}</Text>
                     {vista === 'color' ? grupos.map((g) => (
                         <View key={g.color} style={{ backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: '#e5e7eb' }}>
                             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
@@ -217,7 +217,7 @@ export default function ColaImpresion() {
                                     </Text>
                                     <Pressable onPress={() => router.push(`/admin/pedidos/${l.pedido_id}` as any)}>
                                         <Text style={{ color: '#475569' }}>
-                                            {l.modelo} · nombre "{l.personalizacion}"{l.cantidad > 1 ? ` ×${l.cantidad}` : ''} · pedido #{l.pedido}
+                                            nombre "{l.personalizacion}"{l.cantidad > 1 ? ` ×${l.cantidad}` : ''} · {l.color} · pedido #{l.pedido}
                                         </Text>
                                     </Pressable>
                                     {enPendiente ? (
