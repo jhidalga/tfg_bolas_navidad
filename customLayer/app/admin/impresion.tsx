@@ -21,6 +21,7 @@ export default function ColaImpresion() {
     const [vista, setVista] = useState<'color' | 'persona'>('color');
     const [orden, setOrden] = useState<'antiguos' | 'persona'>('antiguos');
     const [cargando, setCargando] = useState(true);
+    const [version, setVersion] = useState(0);
 
     useEffect(() => {
         const cargar = async () => {
@@ -38,7 +39,7 @@ export default function ColaImpresion() {
             }
         };
         cargar();
-    }, [estado, pago]);
+    }, [estado, pago, version]);
 
     const descargar = async (consulta: string, nombreZip: string, ext: string = 'zip') => {
         if (Platform.OS !== 'web') {
@@ -66,6 +67,31 @@ export default function ColaImpresion() {
             Toast.show({ type: 'error', text1: 'Error de conexión' });
         }
     };
+
+    // Marca bolas como hechas: se manda el id de la linea una vez por cada bola. Las hechas salen de la cola.
+    const marcarHechas = async (detalles: string[]) => {
+        if (detalles.length === 0) return;
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const res = await fetch(`${API}/api/admin/impresion/hechas`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
+                body: JSON.stringify({ detalles }),
+            });
+            const d = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                Toast.show({ type: 'error', text1: traducirError(d.detail, 'No se pudo marcar como hecha') });
+                return;
+            }
+            Toast.show({ type: 'success', text1: detalles.length === 1 ? 'Bola marcada como hecha' : `${detalles.length} bolas marcadas como hechas`,
+                text2: d.pedidos_completados ? `${d.pedidos_completados === 1 ? 'Un pedido pasa' : d.pedidos_completados + ' pedidos pasan'} a Completado` : undefined });
+            setVersion(v => v + 1);
+        } catch (e) {
+            Toast.show({ type: 'error', text1: 'Error de conexión' });
+        }
+    };
+    const idsDeLinea = (l: any) => Array(l.cantidad || 1).fill(l.id);
+    const enPendiente = estado === 'Pendiente';
 
     const nombreDe = (u: any) => `${u.cliente || 'Sin nombre'} · ${u.modelo} "${u.personalizacion}" · #${u.pedido}`;
 
@@ -174,9 +200,24 @@ export default function ColaImpresion() {
                                                     onPress={() => descargar(`color=${encodeURIComponent(g.color)}&pack=${n + 1}&orden=${orden}&formato=zip`, `pack${n + 1}_${g.color}`)}>
                                                     <Text style={{ color: '#111827', fontWeight: 'bold' }}>Zip</Text>
                                                 </Pressable>
+                                                {enPendiente ? (
+                                                    <Pressable style={{ backgroundColor: '#fff', borderColor: '#16a34a', borderWidth: 1, paddingVertical: 6, paddingHorizontal: 10, borderRadius: 8 }}
+                                                        onPress={() => marcarHechas(pk.map((u: any) => u.detalle_id))}>
+                                                        <Text style={{ color: '#15803d', fontWeight: 'bold' }}>Marcar pack hecho</Text>
+                                                    </Pressable>
+                                                ) : null}
                                             </View>
                                         </View>
-                                        {pk.map((u: any, j: number) => <Text key={j} style={{ color: '#475569', fontSize: 13 }}>{nombreDe(u)}</Text>)}
+                                        {pk.map((u: any, j: number) => (
+                                            <View key={j} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 2 }}>
+                                                {enPendiente ? (
+                                                    <Pressable onPress={() => marcarHechas([u.detalle_id])} accessibilityRole="checkbox" accessibilityState={{ checked: false }} accessibilityLabel={`Marcar hecha ${u.personalizacion}`} hitSlop={8}>
+                                                        <Ionicons name="square-outline" size={20} color="#94a3b8" />
+                                                    </Pressable>
+                                                ) : null}
+                                                <Text style={{ color: '#475569', fontSize: 13, flexShrink: 1 }}>{nombreDe(u)}</Text>
+                                            </View>
+                                        ))}
                                     </View>
                                 ))}
                             </View>
@@ -191,6 +232,12 @@ export default function ColaImpresion() {
                                             {l.modelo} · nombre "{l.personalizacion}"{l.cantidad > 1 ? ` ×${l.cantidad}` : ''} · pedido #{l.pedido}
                                         </Text>
                                     </Pressable>
+                                    {enPendiente ? (
+                                        <Pressable style={{ alignSelf: 'flex-start', marginTop: 6, borderColor: '#16a34a', borderWidth: 1, paddingVertical: 4, paddingHorizontal: 10, borderRadius: 8 }}
+                                            onPress={() => marcarHechas(idsDeLinea(l))}>
+                                            <Text style={{ color: '#15803d', fontWeight: 'bold', fontSize: 12 }}>{l.cantidad > 1 ? `Marcar las ${l.cantidad} como hechas` : 'Marcar como hecha'}</Text>
+                                        </Pressable>
+                                    ) : null}
                                 </View>
                             ))}
                         </View>
@@ -216,6 +263,12 @@ export default function ColaImpresion() {
                                         </Text>
                                         <Text style={{ color: '#475569' }}>Color {l.color} · pedido #{l.pedido}</Text>
                                     </Pressable>
+                                    {enPendiente ? (
+                                        <Pressable style={{ alignSelf: 'flex-start', marginTop: 6, borderColor: '#16a34a', borderWidth: 1, paddingVertical: 4, paddingHorizontal: 10, borderRadius: 8 }}
+                                            onPress={() => marcarHechas(idsDeLinea(l))}>
+                                            <Text style={{ color: '#15803d', fontWeight: 'bold', fontSize: 12 }}>{l.cantidad > 1 ? `Marcar las ${l.cantidad} como hechas` : 'Marcar como hecha'}</Text>
+                                        </Pressable>
+                                    ) : null}
                                 </View>
                             ))}
                         </View>

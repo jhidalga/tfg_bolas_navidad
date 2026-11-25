@@ -40,8 +40,8 @@ const FIRMA = '\n\nUn saludo,\nDpto. Informática, 2º DAM\nIES Laguna de Tolló
 
 /**
  * Perfil de una persona para el administrador: sus datos, todos sus pedidos con el codigo
- * visible y un boton para escribirle un correo ya preparado. Los pedidos Pendientes sin pagar
- * se pueden anular o se les puede quitar una bola. Los pagados quedan protegidos.
+ * visible y un boton para escribirle un correo ya preparado. El admin puede modificar, quitar o añadir bolas
+ * en cualquier pedido, este pagado o no. Anular un pedido entero solo se puede si esta Pendiente y sin pagar.
  */
 export default function PerfilUsuarioAdmin() {
     const { id } = useLocalSearchParams();
@@ -110,26 +110,88 @@ export default function PerfilUsuarioAdmin() {
         const colores: string[] = prod.colores || [];
         setEdit((e: any) => ({ ...e, producto: prod.id, modelo: figuraDe(m.nombre, prod.nombre), color: colores.length && !colores.includes(e.color) ? colores[0] : e.color }));
     };
+    /** En un pedido pagado, cambiar bolas cambia el total y la hoja de gastos: se pide confirmar. */
+    const avisarSiPagado = async (pedidoId: string) => {
+        const p = datos?.pedidos?.find((x: any) => x.id === pedidoId);
+        if (!p?.pagado) return true;
+        return await confirmar(`El pedido ${p.codigo} ya está pagado. Si cambias bolas cambia el total y la hoja de gastos, pero sigue marcado como pagado. ¿Seguir?`, 'Seguir');
+    };
+    /** Empieza a añadir una bola nueva a un pedido. */
+    const nuevaBola = (p: any) => {
+        const prod = catalogo[0];
+        if (!prod) { Toast.show({ type: 'error', text1: 'Todavía no se ha cargado el catálogo' }); return; }
+        const m = (prod.modelos || [])[0];
+        setEdit({ pedido: p.id, linea: 'nueva', producto: prod.id, modelo: m ? figuraDe(m.nombre, prod.nombre) : '', color: (prod.colores || [])[0] || '', nombre: '', cantidad: 1 });
+    };
     const guardarEdicion = async () => {
         if (!edit) return;
         const palabras = edit.nombre.trim().split(/\s+/).filter(Boolean).length;
         if (!palabras) { Toast.show({ type: 'error', text1: 'Escribe el nombre de la bola' }); return; }
         if (palabras > 3) { Toast.show({ type: 'error', text1: 'El nombre puede tener como máximo 3 palabras' }); return; }
+        if (!(await avisarSiPagado(edit.pedido))) return;
         const { data: { session } } = await supabase.auth.getSession();
         setGuardando(true);
+        const nueva = edit.linea === 'nueva';
         try {
-            const res = await fetch(`${API_URL}/admin/pedidos/${edit.pedido}/detalles/${edit.linea}`, {
-                method: 'PATCH',
+            const res = await fetch(nueva ? `${API_URL}/admin/pedidos/${edit.pedido}/bolas` : `${API_URL}/admin/pedidos/${edit.pedido}/detalles/${edit.linea}`, {
+                method: nueva ? 'POST' : 'PATCH',
                 headers: { Authorization: `Bearer ${session?.access_token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ producto_id: edit.producto, modelo: edit.modelo, color: edit.color, personalizacion: edit.nombre.trim(), cantidad: edit.cantidad }),
             });
-            if (res.ok) { Toast.show({ type: 'success', text1: 'Bola cambiada' }); setEdit(null); await cargar(); }
-            else { const e = await res.json().catch(() => ({})); Toast.show({ type: 'error', text1: traducirError(e.detail, 'No se pudo cambiar la bola') }); }
+            if (res.ok) { Toast.show({ type: 'success', text1: nueva ? 'Bola añadida' : 'Bola cambiada' }); setEdit(null); await cargar(); }
+            else { const e = await res.json().catch(() => ({})); Toast.show({ type: 'error', text1: traducirError(e.detail, nueva ? 'No se pudo añadir la bola' : 'No se pudo cambiar la bola') }); }
         } catch {
             Toast.show({ type: 'error', text1: 'Error de conexión' });
         } finally {
             setGuardando(false);
         }
+    };
+
+    /** Panel para cambiar una bola o añadir una nueva a un pedido. */
+    const panelBola = () => {
+                                            const prodActual = catalogo.find(x => x.id === edit.producto);
+                                            const chip = (activo: boolean) => ({ paddingVertical: 6, paddingHorizontal: 12, borderRadius: 999, backgroundColor: activo ? '#2563eb' : '#e2e8f0' });
+                                            return (
+                                                <View style={{ backgroundColor: '#f8fafc', borderRadius: 10, padding: 12, marginTop: 8, borderWidth: 1, borderColor: '#e2e8f0' }}>
+                                                    <Text style={{ fontWeight: 'bold', color: '#334155', marginBottom: 6 }}>Figura</Text>
+                                                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                                                        {catalogo.flatMap(prod => (prod.modelos || []).map((m: any) => (
+                                                            <Pressable key={`${prod.id}-${m.nombre}`} style={chip(edit.producto === prod.id && edit.modelo === figuraDe(m.nombre, prod.nombre))} onPress={() => elegirModelo(prod, m)}>
+                                                                <Text style={{ color: edit.producto === prod.id && edit.modelo === figuraDe(m.nombre, prod.nombre) ? '#fff' : '#111827', fontWeight: 'bold', fontSize: 12 }}>{figuraDe(m.nombre, prod.nombre)}</Text>
+                                                            </Pressable>
+                                                        )))}
+                                                    </View>
+                                                    {(prodActual?.colores || []).length > 1 ? (
+                                                        <>
+                                                            <Text style={{ fontWeight: 'bold', color: '#334155', marginTop: 10, marginBottom: 6 }}>Color</Text>
+                                                            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                                                                {prodActual.colores.map((c: string) => (
+                                                                    <Pressable key={c} style={chip(edit.color === c)} onPress={() => setEdit({ ...edit, color: c })}>
+                                                                        <Text style={{ color: edit.color === c ? '#fff' : '#111827', fontWeight: 'bold', fontSize: 12 }}>{c}</Text>
+                                                                    </Pressable>
+                                                                ))}
+                                                            </View>
+                                                        </>
+                                                    ) : null}
+                                                    <Text style={{ fontWeight: 'bold', color: '#334155', marginTop: 10, marginBottom: 6 }}>Nombre de la bola</Text>
+                                                    <TextInput value={edit.nombre} onChangeText={(v) => setEdit({ ...edit, nombre: v })} maxLength={60} placeholder="Máximo 3 palabras"
+                                                        style={{ backgroundColor: '#fff', borderWidth: 1, borderColor: '#cbd5e1', borderRadius: 8, padding: 10, color: '#111827' }} />
+                                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 10 }}>
+                                                        <Text style={{ fontWeight: 'bold', color: '#334155' }}>Cantidad</Text>
+                                                        <Pressable style={chip(false)} onPress={() => setEdit({ ...edit, cantidad: Math.max(1, edit.cantidad - 1) })}><Text style={{ fontWeight: 'bold' }}>−</Text></Pressable>
+                                                        <Text style={{ fontWeight: 'bold', color: '#111827' }}>{edit.cantidad}</Text>
+                                                        <Pressable style={chip(false)} onPress={() => setEdit({ ...edit, cantidad: Math.min(50, edit.cantidad + 1) })}><Text style={{ fontWeight: 'bold' }}>+</Text></Pressable>
+                                                    </View>
+                                                    {edit.nombre.trim() ? (
+                                                        <Image source={{ uri: `${process.env.EXPO_PUBLIC_API_URL || ''}/api/preview?modelo=${encodeURIComponent(edit.modelo)}&nombre=${encodeURIComponent(edit.nombre.trim())}` }}
+                                                            style={{ width: 160, height: 160, backgroundColor: '#fff', borderRadius: 8, marginTop: 10 }} resizeMode="contain" />
+                                                    ) : null}
+                                                    <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
+                                                        <Pressable disabled={guardando} style={boton('#16a34a')} onPress={guardarEdicion}><Text style={{ color: '#fff', fontWeight: 'bold' }}>{guardando ? 'Guardando...' : edit.linea === 'nueva' ? 'Añadir bola' : 'Guardar cambios'}</Text></Pressable>
+                                                        <Pressable style={boton('#64748b')} onPress={() => setEdit(null)}><Text style={{ color: '#fff', fontWeight: 'bold' }}>Cancelar</Text></Pressable>
+                                                    </View>
+                                                </View>
+                                            );
     };
 
     /** Llama a un PATCH del admin y recarga el perfil. */
@@ -152,7 +214,8 @@ export default function PerfilUsuarioAdmin() {
     const quitar = async (p: any, l: any) => {
         const n = l.cantidad || 1;
         const aviso = (p.lineas.length === 1 && n === 1) ? ' Era la única bola, así que el pedido se anula.' : '';
-        if (await confirmar(`¿Quitar una bola ${l.modelo} de ${p.codigo}?${aviso}`, 'Quitar bola', true))
+        const pagado = p.pagado ? ' El pedido está pagado: cambia el total y la hoja de gastos, pero sigue marcado como pagado.' : '';
+        if (await confirmar(`¿Quitar una bola ${l.modelo} de ${p.codigo}?${aviso}${pagado}`, 'Quitar bola', true))
             cambiar(`/admin/pedidos/${p.id}/detalles/${l.id}/quitar`, 'Bola quitada');
     };
 
@@ -301,7 +364,8 @@ export default function PerfilUsuarioAdmin() {
                 {datos.pedidos.length === 0 ? <Text style={{ color: '#64748b' }}>Todavía no ha hecho ningún pedido.</Text> : null}
 
                 {datos.pedidos.map((p: any) => {
-                    const editable = p.estado === 'Pendiente' && !p.pagado;
+                    const editable = p.estado !== 'Cancelado';
+                    const anulable = p.estado === 'Pendiente' && !p.pagado;
                     return (
                         <View key={p.id} style={{ backgroundColor: '#fff', borderRadius: 14, padding: 16, borderWidth: 1, borderColor: '#e2e8f0', marginBottom: 12, opacity: p.estado === 'Cancelado' ? 0.65 : 1 }}>
                             <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8, justifyContent: 'space-between' }}>
@@ -334,51 +398,7 @@ export default function PerfilUsuarioAdmin() {
                                                 </View>
                                             ) : null}
                                         </View>
-                                        {edit?.linea === l.id ? (() => {
-                                            const prodActual = catalogo.find(x => x.id === edit.producto);
-                                            const chip = (activo: boolean) => ({ paddingVertical: 6, paddingHorizontal: 12, borderRadius: 999, backgroundColor: activo ? '#2563eb' : '#e2e8f0' });
-                                            return (
-                                                <View style={{ backgroundColor: '#f8fafc', borderRadius: 10, padding: 12, marginTop: 8, borderWidth: 1, borderColor: '#e2e8f0' }}>
-                                                    <Text style={{ fontWeight: 'bold', color: '#334155', marginBottom: 6 }}>Figura</Text>
-                                                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-                                                        {catalogo.flatMap(prod => (prod.modelos || []).map((m: any) => (
-                                                            <Pressable key={`${prod.id}-${m.nombre}`} style={chip(edit.producto === prod.id && edit.modelo === figuraDe(m.nombre, prod.nombre))} onPress={() => elegirModelo(prod, m)}>
-                                                                <Text style={{ color: edit.producto === prod.id && edit.modelo === figuraDe(m.nombre, prod.nombre) ? '#fff' : '#111827', fontWeight: 'bold', fontSize: 12 }}>{figuraDe(m.nombre, prod.nombre)}</Text>
-                                                            </Pressable>
-                                                        )))}
-                                                    </View>
-                                                    {(prodActual?.colores || []).length > 1 ? (
-                                                        <>
-                                                            <Text style={{ fontWeight: 'bold', color: '#334155', marginTop: 10, marginBottom: 6 }}>Color</Text>
-                                                            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-                                                                {prodActual.colores.map((c: string) => (
-                                                                    <Pressable key={c} style={chip(edit.color === c)} onPress={() => setEdit({ ...edit, color: c })}>
-                                                                        <Text style={{ color: edit.color === c ? '#fff' : '#111827', fontWeight: 'bold', fontSize: 12 }}>{c}</Text>
-                                                                    </Pressable>
-                                                                ))}
-                                                            </View>
-                                                        </>
-                                                    ) : null}
-                                                    <Text style={{ fontWeight: 'bold', color: '#334155', marginTop: 10, marginBottom: 6 }}>Nombre de la bola</Text>
-                                                    <TextInput value={edit.nombre} onChangeText={(v) => setEdit({ ...edit, nombre: v })} maxLength={60} placeholder="Máximo 3 palabras"
-                                                        style={{ backgroundColor: '#fff', borderWidth: 1, borderColor: '#cbd5e1', borderRadius: 8, padding: 10, color: '#111827' }} />
-                                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 10 }}>
-                                                        <Text style={{ fontWeight: 'bold', color: '#334155' }}>Cantidad</Text>
-                                                        <Pressable style={chip(false)} onPress={() => setEdit({ ...edit, cantidad: Math.max(1, edit.cantidad - 1) })}><Text style={{ fontWeight: 'bold' }}>−</Text></Pressable>
-                                                        <Text style={{ fontWeight: 'bold', color: '#111827' }}>{edit.cantidad}</Text>
-                                                        <Pressable style={chip(false)} onPress={() => setEdit({ ...edit, cantidad: Math.min(50, edit.cantidad + 1) })}><Text style={{ fontWeight: 'bold' }}>+</Text></Pressable>
-                                                    </View>
-                                                    {edit.nombre.trim() ? (
-                                                        <Image source={{ uri: `${process.env.EXPO_PUBLIC_API_URL || ''}/api/preview?modelo=${encodeURIComponent(edit.modelo)}&nombre=${encodeURIComponent(edit.nombre.trim())}` }}
-                                                            style={{ width: 160, height: 160, backgroundColor: '#fff', borderRadius: 8, marginTop: 10 }} resizeMode="contain" />
-                                                    ) : null}
-                                                    <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
-                                                        <Pressable disabled={guardando} style={boton('#16a34a')} onPress={guardarEdicion}><Text style={{ color: '#fff', fontWeight: 'bold' }}>{guardando ? 'Guardando...' : 'Guardar cambios'}</Text></Pressable>
-                                                        <Pressable style={boton('#64748b')} onPress={() => setEdit(null)}><Text style={{ color: '#fff', fontWeight: 'bold' }}>Cancelar</Text></Pressable>
-                                                    </View>
-                                                </View>
-                                            );
-                                        })() : null}
+                                        {edit?.linea === l.id ? panelBola() : null}
                                     </View>
                                 ))}
                             </View>
@@ -386,10 +406,12 @@ export default function PerfilUsuarioAdmin() {
                             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
                                 <Pressable style={boton('#111827')} onPress={() => router.push(`/admin/pedidos/${p.id}` as any)}><Text style={{ color: '#fff', fontWeight: 'bold' }}>Ver pedido</Text></Pressable>
                                 <Pressable style={boton('#2563eb')} onPress={() => correoPedido(p)}><Text style={{ color: '#fff', fontWeight: 'bold' }}>Preguntar por este pedido</Text></Pressable>
-                                {editable ? <Pressable style={boton('#dc2626')} onPress={() => anular(p)}><Text style={{ color: '#fff', fontWeight: 'bold' }}>Anular pedido</Text></Pressable> : null}
+                                {editable ? <Pressable style={boton('#16a34a')} onPress={() => (edit?.linea === 'nueva' && edit.pedido === p.id ? setEdit(null) : nuevaBola(p))}><Text style={{ color: '#fff', fontWeight: 'bold' }}>{edit?.linea === 'nueva' && edit.pedido === p.id ? 'Cerrar' : 'Añadir bola'}</Text></Pressable> : null}
+                                {anulable ? <Pressable style={boton('#dc2626')} onPress={() => anular(p)}><Text style={{ color: '#fff', fontWeight: 'bold' }}>Anular pedido</Text></Pressable> : null}
                             </View>
-                            {!editable && p.estado !== 'Cancelado' ? (
-                                <Text style={{ color: '#64748b', fontSize: 12, marginTop: 8 }}>{p.pagado ? 'Está pagado, no se puede cambiar.' : 'Ya no está Pendiente, no se puede cambiar.'}</Text>
+                            {edit?.linea === 'nueva' && edit.pedido === p.id ? panelBola() : null}
+                            {editable && !anulable ? (
+                                <Text style={{ color: '#64748b', fontSize: 12, marginTop: 8 }}>{p.pagado ? 'Está pagado: puedes cambiar bolas, pero para anularlo entero no tiene que estar pagado.' : 'Puedes cambiar bolas. Para anularlo entero tiene que estar Pendiente.'}</Text>
                             ) : null}
                         </View>
                     );

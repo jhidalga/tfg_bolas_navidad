@@ -56,6 +56,40 @@ export default function DetallesPedidoAdmin() {
 
     const API = process.env.EXPO_PUBLIC_API_URL || '';
 
+    // Cuantas bolas de una linea ya estan impresas. Con la ultima del pedido, el pedido pasa a Completado.
+    const cambiarHechas = async (prod: any, nuevas: number) => {
+        const max = prod.cantidad || 1;
+        const n = Math.max(0, Math.min(nuevas, max));
+        const antes = prod.hechas || 0;
+        const poner = (v: number, estado?: string) => setDatos((d: any) => ({
+            ...d,
+            pedido: estado ? { ...d.pedido, estado } : d.pedido,
+            productos: d.productos.map((x: any) => x.id === prod.id ? { ...x, hechas: v } : x),
+        }));
+        poner(n);
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const res = await fetch(`${API}/api/admin/lineas/${prod.id}/hechas`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
+                body: JSON.stringify({ hechas: n }),
+            });
+            const d = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                poner(antes);
+                Toast.show({ type: 'error', text1: traducirError(d.detail, 'No se pudo guardar') });
+                return;
+            }
+            if (d.estado_pedido === 'Completado' && datos.pedido.estado !== 'Completado') {
+                poner(n, 'Completado');
+                Toast.show({ type: 'success', text1: 'Pedido completado', text2: 'Ya están hechas todas las bolas' });
+            }
+        } catch {
+            poner(antes);
+            Toast.show({ type: 'error', text1: 'Error de conexión' });
+        }
+    };
+
     /**
      * Descarga un 3MF (una bola) o el zip de todo el pedido. Solo en la version web.
      * El archivo se genera al vuelo con el nombre que puso el cliente.
@@ -150,6 +184,25 @@ export default function DetallesPedidoAdmin() {
                             ) : (
                                 <Text style={styles.txtNormal}>Sin personalizar</Text>
                             )}
+
+                            {prod.personalizacion && prod.personalizacion !== 'Sin texto' ? (
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 10, flexWrap: 'wrap' }}>
+                                    <Text style={styles.txtNormalSecundario}>Hechas: <Text style={styles.txtBold}>{Math.min(prod.hechas || 0, prod.cantidad || 1)} de {prod.cantidad || 1}</Text></Text>
+                                    <Pressable accessibilityLabel="Quitar una hecha" onPress={() => cambiarHechas(prod, (prod.hechas || 0) - 1)}
+                                        style={{ borderWidth: 1, borderColor: '#cbd5e1', borderRadius: 8, paddingVertical: 4, paddingHorizontal: 12 }}>
+                                        <Text style={{ fontWeight: 'bold', color: '#334155' }}>−</Text>
+                                    </Pressable>
+                                    <Pressable accessibilityLabel="Marcar una más como hecha" onPress={() => cambiarHechas(prod, (prod.hechas || 0) + 1)}
+                                        style={{ borderWidth: 1, borderColor: '#16a34a', borderRadius: 8, paddingVertical: 4, paddingHorizontal: 12 }}>
+                                        <Text style={{ fontWeight: 'bold', color: '#15803d' }}>+</Text>
+                                    </Pressable>
+                                    {(prod.hechas || 0) < (prod.cantidad || 1) && (prod.cantidad || 1) > 1 ? (
+                                        <Pressable onPress={() => cambiarHechas(prod, prod.cantidad || 1)}>
+                                            <Text style={{ color: '#15803d', fontWeight: 'bold', textDecorationLine: 'underline' }}>Todas</Text>
+                                        </Pressable>
+                                    ) : null}
+                                </View>
+                            ) : null}
 
                             {prod.personalizacion && prod.personalizacion !== 'Sin texto' ? (
                                 <View style={{ marginTop: 10 }}>

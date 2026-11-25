@@ -1,3 +1,36 @@
+def _comprobar_editable(cliente, pedido_id: str):
+    """El admin puede cambiar bolas de cualquier pedido, pagado o no, salvo si esta anulado."""
+    r = cliente.table("pedidos").select("estado, pagado").eq("id", pedido_id).execute().data
+    if not r:
+        raise HTTPException(status_code=404, detail="Pedido no encontrado")
+    if r[0].get("estado") == "Cancelado":
+        raise HTTPException(status_code=409, detail="Este pedido está anulado, no se puede cambiar.")
+
+
+def _comprobar_anulable(cliente, pedido_id: str):
+    """Anular entero sigue pidiendo pedido Pendiente y sin pagar."""
+    r = cliente.table("pedidos").select("estado, pagado").eq("id", pedido_id).execute().data
+    if not r:
+        raise HTTPException(status_code=404, detail="Pedido no encontrado")
+    if r[0].get("pagado") and r[0].get("estado") != "Cancelado":
+        raise HTTPException(status_code=409, detail="Este pedido ya está pagado y no se puede anular.")
+    if r[0].get("estado") != "Pendiente":
+        raise HTTPException(status_code=409, detail="Solo se pueden anular pedidos Pendientes.")
+
+
+def _tras_cambiar_bolas(escritor, pedido_id: str, hay_bola_nueva: bool = False) -> str:
+    """Despues de editar, añadir o quitar bolas: si hay una bola por imprimir en un pedido Completado, vuelve a Pendiente.
+    Si ya estan hechas todas las de un Pendiente, pasa a Completado. Devuelve el estado final."""
+    ped = escritor.table("pedidos").select("estado").eq("id", pedido_id).execute().data
+    estado = ped[0].get("estado") if ped else "Pendiente"
+    if hay_bola_nueva and estado == "Completado":
+        _escribir(escritor.table("pedidos").update({"estado": "Pendiente"}).eq("id", pedido_id), "No se pudo reabrir el pedido")
+        estado = "Pendiente"
+    if estado == "Pendiente":
+        estado = _revisar_completado(escritor, pedido_id) or estado
+    return estado
+
+
 import os
 import html as _html
 import smtplib
@@ -68,6 +101,13 @@ class EdicionBola(BaseModel):
     personalizacion: Optional[str] = Field(None, max_length=60)
     cantidad: Optional[int] = Field(None, ge=1, le=50)
 
+class NuevaBola(BaseModel):
+    producto_id: str
+    modelo: str = Field(..., max_length=80)
+    color: str = Field(..., max_length=40)
+    personalizacion: str = Field("", max_length=60)
+    cantidad: int = Field(1, ge=1, le=50)
+
 class CorreoUsuario(BaseModel):
     asunto: str = Field(..., min_length=3, max_length=120)
     mensaje: str = Field(..., min_length=3, max_length=3000)
@@ -90,6 +130,14 @@ class EstadoPedido(BaseModel):
     estado: str
 
 ESTADOS_PEDIDO = ("Pendiente", "Completado", "Entregado", "Cancelado")
+
+class HechasLinea(BaseModel):
+    hechas: int
+
+
+class HechasPack(BaseModel):
+    detalles: list[str]   # id de la linea, repetido una vez por cada bola hecha
+
 
 class PagadoUsuario(BaseModel):
     pagado: bool
@@ -258,8 +306,15 @@ def _filtrar_pago(pedidos: list, pago: str):
     return pedidos
 
 
-def _cola_impresion(pedidos: list):
-    """Agrupa por color las bolas con nombre de los pedidos dados. Sirve para imprimir varias a la vez."""
+def _faltan(d: dict, solo_faltan: bool) -> int:
+    """Bolas de una linea que faltan por imprimir (si solo_faltan) o todas."""
+    cant = d.get("cantidad") or 1
+    return max(0, cant - min(d.get("hechas") or 0, cant)) if solo_faltan else cant
+
+
+def _cola_impresion(pedidos: list, solo_faltan: bool = True):
+    """Agrupa por color las bolas con nombre de los pedidos dados. Sirve para imprimir varias a la vez.
+    Las bolas ya hechas no salen (solo_faltan) para que los packs cuenten solo lo pendiente."""
     import re as _re
     import unicodedata as _ud
     def clave(c):
@@ -270,15 +325,17 @@ def _cola_impresion(pedidos: list):
             nombre = d.get("personalizacion")
             if not nombre or nombre == "Sin texto":
                 continue
+            cant = _faltan(d, solo_faltan)
+            if cant <= 0:
+                continue
             k = clave(d.get("color"))
             g = grupos.setdefault(k, {"color": d.get("color") or "Sin color", "bolas": 0, "lineas": []})
-            cant = d.get("cantidad") or 1
             g["bolas"] += cant
             u = p.get("usuarios") or {}
             g["lineas"].append({"id": d.get("id"), "color": d.get("color") or "Sin color", "pedido_id": p["id"], "pedido": str(p["id"])[:8].upper(),
                                 "modelo": d.get("modelo"), "personalizacion": nombre, "cantidad": cant,
                                 "estado": p.get("estado"), "cliente": u.get("nombre"), "curso": u.get("curso"),
-                                "creado": p.get("created_at") or ""})
+                                "creado": p.get("created_at") or "", "hechas": min(d.get("hechas") or 0, d.get("cantidad") or 1)})
     for g in grupos.values():
         g["packs"] = _packs_de_grupo(g["lineas"])
     return sorted(grupos.values(), key=lambda g: g["color"].lower())
@@ -292,7 +349,7 @@ def _packs_de_grupo(lineas: list):
     unidades = []
     for l in lineas:
         for _ in range(l.get("cantidad") or 1):
-            unidades.append({"cliente": l.get("cliente"), "curso": l.get("curso"), "pedido": l["pedido"], "pedido_id": l["pedido_id"],
+            unidades.append({"detalle_id": l.get("id"), "cliente": l.get("cliente"), "curso": l.get("curso"), "pedido": l["pedido"], "pedido_id": l["pedido_id"],
                              "modelo": l["modelo"], "personalizacion": l["personalizacion"], "creado": l.get("creado") or ""})
     orden = {
         "antiguos": sorted(unidades, key=lambda u: (u["creado"], (u["cliente"] or "").lower())),
@@ -635,15 +692,42 @@ if MODO_PRUEBA:
             logging.exception("No se pudo preparar el resumen del pedido")
         return {"mensaje": "Pedido procesado correctamente", "pedido_id": pedido["id"]}
 
+    def _revisar_prueba(ped):
+        nombradas = [d for d in ped["detalles_pedido"] if d.get("personalizacion") and d["personalizacion"] != "Sin texto"]
+        if ped["estado"] == "Pendiente" and nombradas and all((d.get("hechas") or 0) >= (d.get("cantidad") or 1) for d in nombradas):
+            ped["estado"] = "Completado"
+        return ped["estado"]
+
+    @app.patch("/api/admin/lineas/{detalle_id}/hechas")
+    def hechas_prueba(detalle_id: str, datos: HechasLinea, request: Request):
+        for ped in _pedidos(str(request.base_url)):
+            for d in ped["detalles_pedido"]:
+                if d["id"] == detalle_id:
+                    d["hechas"] = max(0, min(datos.hechas, d.get("cantidad") or 1))
+                    return {"hechas": d["hechas"], "estado_pedido": _revisar_prueba(ped)}
+        raise HTTPException(status_code=404, detail="Esa bola no existe")
+
+    @app.patch("/api/admin/impresion/hechas")
+    def pack_hecho_prueba(datos: HechasPack, request: Request):
+        hechos = 0
+        for ped in _pedidos(str(request.base_url)):
+            for d in ped["detalles_pedido"]:
+                n = datos.detalles.count(d["id"])
+                if n:
+                    d["hechas"] = min((d.get("hechas") or 0) + n, d.get("cantidad") or 1)
+            if _revisar_prueba(ped) == "Completado":
+                hechos += 1
+        return {"mensaje": "Bolas marcadas como hechas", "pedidos_completados": hechos}
+
     @app.get("/api/admin/impresion")
     def cola_prueba(request: Request, estado: str = "Pendiente", pago: str = "todos"):
-        return _cola_impresion(_filtrar_pago([p for p in _pedidos(str(request.base_url)) if p["estado"] == estado], pago))
+        return _cola_impresion(_filtrar_pago([p for p in _pedidos(str(request.base_url)) if p["estado"] == estado], pago), estado == "Pendiente")
 
     @app.get("/api/admin/impresion/3mf")
     def cola_3mf_prueba(request: Request, color: Optional[str] = None, cliente: Optional[str] = None, pack: Optional[int] = None, orden: str = "antiguos", formato: str = "3mf", estado: str = "Pendiente", pago: str = "todos"):
         if color is None and cliente is None:
             raise HTTPException(status_code=400, detail="Indica color o cliente")
-        return _respuesta_cola(_cola_impresion(_filtrar_pago([p for p in _pedidos(str(request.base_url)) if p["estado"] == estado], pago)), color, cliente, pack, orden, formato)
+        return _respuesta_cola(_cola_impresion(_filtrar_pago([p for p in _pedidos(str(request.base_url)) if p["estado"] == estado], pago), estado == "Pendiente"), color, cliente, pack, orden, formato)
 
     @app.get("/api/admin/resumen")
     def resumen_prueba(request: Request):
@@ -723,19 +807,48 @@ if MODO_PRUEBA:
             _ESTADO.setdefault("correos", []).append({"para": lista[0]["email"], "asunto": datos.asunto, "mensaje": datos.mensaje})
         return {"mensaje": "Correo enviado", "para": lista[0]["email"]}
 
-    def _editable_prueba(request: Request, pedido_id: str):
+    def _editable_prueba(request: Request, pedido_id: str, anular: bool = False):
         for p in _pedidos(str(request.base_url)):
             if p["id"] == pedido_id:
-                if p.get("pagado") and p["estado"] != "Cancelado":
-                    raise HTTPException(status_code=409, detail="Este pedido ya está pagado y no se puede cambiar.")
-                if p["estado"] != "Pendiente":
-                    raise HTTPException(status_code=409, detail="Solo se pueden cambiar pedidos Pendientes.")
+                if anular:
+                    if p.get("pagado") and p["estado"] != "Cancelado":
+                        raise HTTPException(status_code=409, detail="Este pedido ya está pagado y no se puede anular.")
+                    if p["estado"] != "Pendiente":
+                        raise HTTPException(status_code=409, detail="Solo se pueden anular pedidos Pendientes.")
+                elif p["estado"] == "Cancelado":
+                    raise HTTPException(status_code=409, detail="Este pedido está anulado, no se puede cambiar.")
                 return p
         raise HTTPException(status_code=404, detail="Pedido no encontrado")
 
+    def _tras_cambiar_prueba(p, hay_bola_nueva: bool = False):
+        if hay_bola_nueva and p["estado"] == "Completado":
+            p["estado"] = "Pendiente"
+        _revisar_prueba(p)
+        return p["estado"]
+
+    @app.post("/api/admin/pedidos/{pedido_id}/bolas")
+    def anadir_admin_prueba(pedido_id: str, datos: NuevaBola, request: Request):
+        p = _editable_prueba(request, pedido_id)
+        prod = next((x for x in _productos_prueba(str(request.base_url)) if x["id"] == datos.producto_id), None)
+        if not prod:
+            raise HTTPException(status_code=400, detail="Ese producto no existe.")
+        if datos.modelo not in [_figura_modelo(prod["nombre"], m["nombre"]) for m in prod["modelos"]]:
+            raise HTTPException(status_code=400, detail="Ese modelo no es de ese producto.")
+        if prod.get("colores") and datos.color not in prod["colores"]:
+            raise HTTPException(status_code=400, detail="Ese color no es de ese producto.")
+        nombre = re.sub(r"\s+", " ", datos.personalizacion.strip())
+        error = _error_nombre_bola(nombre, True)
+        if error:
+            raise HTTPException(status_code=400, detail=error)
+        p["detalles_pedido"].append({"id": f"n{len(p['detalles_pedido'])}{abs(hash(nombre)) % 10**5}", "producto_id": datos.producto_id, "modelo": datos.modelo, "color": datos.color,
+                                     "personalizacion": nombre, "precio_unitario": prod["precio"], "cantidad": datos.cantidad, "hechas": 0,
+                                     "productos": {"nombre": prod["nombre"], "modelos": prod["modelos"]}})
+        p["total"] = sum(x["precio_unitario"] * (x.get("cantidad") or 1) for x in p["detalles_pedido"])
+        return {"mensaje": "Bola añadida", "total": p["total"], "estado": _tras_cambiar_prueba(p, True)}
+
     @app.patch("/api/admin/pedidos/{pedido_id}/anular")
     def anular_admin_prueba(pedido_id: str, request: Request):
-        _editable_prueba(request, pedido_id)["estado"] = "Cancelado"
+        _editable_prueba(request, pedido_id, True)["estado"] = "Cancelado"
         return {"mensaje": "Pedido anulado", "estado": "Cancelado"}
 
     @app.patch("/api/admin/pedidos/{pedido_id}/detalles/{detalle_id}")
@@ -765,9 +878,11 @@ if MODO_PRUEBA:
             cambios["cantidad"] = datos.cantidad
         if not cambios:
             raise HTTPException(status_code=400, detail="No hay nada que cambiar.")
+        if any(k in cambios for k in ("modelo", "personalizacion")):
+            cambios["hechas"] = 0
         d.update(cambios)
         p["total"] = sum(x["precio_unitario"] * (x.get("cantidad") or 1) for x in p["detalles_pedido"])
-        return {"mensaje": "Bola cambiada", "total": p["total"]}
+        return {"mensaje": "Bola cambiada", "total": p["total"], "estado": _tras_cambiar_prueba(p, "hechas" in cambios)}
 
     @app.patch("/api/admin/pedidos/{pedido_id}/detalles/{detalle_id}/quitar")
     def quitar_admin_prueba(pedido_id: str, detalle_id: str, request: Request):
@@ -783,7 +898,7 @@ if MODO_PRUEBA:
             p["estado"] = "Cancelado"; p["total"] = 0
             return {"mensaje": "Pedido anulado", "estado": "Cancelado", "total": 0}
         p["total"] = sum(x["precio_unitario"] * (x.get("cantidad") or 1) for x in p["detalles_pedido"])
-        return {"mensaje": "Bola quitada", "estado": "Pendiente", "total": p["total"]}
+        return {"mensaje": "Bola quitada", "estado": _tras_cambiar_prueba(p), "total": p["total"]}
 
     # --- Incidencias de registro (prueba, en memoria) ---
     _INCIDENCIAS = []
@@ -1074,7 +1189,7 @@ def _estado_en_hoja(pedido_ref: str, estado: str) -> None:
 def _refrescar_hoja(cliente, pedido_id: str, estado: Optional[str] = None) -> None:
     """Deja la hoja al dia despues de modificar un pedido: borra sus filas y las vuelve a escribir, en ese orden."""
     try:
-        ped = cliente.table("pedidos").select("id, user_id, estado, created_at").eq("id", pedido_id).execute().data
+        ped = cliente.table("pedidos").select("id, user_id, estado, created_at, pagado").eq("id", pedido_id).execute().data
         if not ped:
             return
         ped = ped[0]
@@ -1088,6 +1203,8 @@ def _refrescar_hoja(cliente, pedido_id: str, estado: Optional[str] = None) -> No
         tareas: list = []
         _llamar_hoja({"accion": "borrar", "pedido_ref": str(pedido_id)}, tareas)
         _llamar_hoja(_filas_para_hoja((u[0]["nombre"] if u else ""), fecha, dets, str(pedido_id), _etiqueta_pedido(cliente, ped), estado), tareas)
+        if ped.get("pagado"):
+            _llamar_hoja({"accion": "pagado", "pedido_refs": [str(pedido_id)], "pagado": True}, tareas)
         if tareas:
             import threading
             threading.Thread(target=lambda: [t() for t in tareas], daemon=True).start()
@@ -1258,6 +1375,13 @@ def cambiar_estado_pedido(pedido_id: str, nuevo_estado: EstadoPedido, authorizat
         estado_antes = antes[0]["estado"] if antes else None
         respuesta = cliente_seguro.table("pedidos").update({"estado": nuevo_estado.estado}).eq("id", pedido_id).execute()
         try:
+            if respuesta.data and nuevo_estado.estado in ("Completado", "Entregado"):
+                cs = _cliente_servicio(cliente_seguro)
+                for d in cs.table("detalles_pedido").select("id, cantidad").eq("pedido_id", pedido_id).execute().data or []:
+                    cs.table("detalles_pedido").update({"hechas": d.get("cantidad") or 1}).eq("id", d["id"]).execute()
+        except Exception:
+            logging.exception("No se pudieron marcar las bolas como hechas")
+        try:
             if respuesta.data and estado_antes != nuevo_estado.estado:
                 ped = respuesta.data[0]
                 u = cliente_seguro.table("usuarios").select("nombre").eq("id", ped.get("user_id")).execute().data
@@ -1381,16 +1505,86 @@ def _pedidos_para_cola(authorization: Optional[str], estado: str, pago: str = "t
     perfil = cliente.table("usuarios").select("administrador").eq("id", user_id).single().execute()
     if not perfil.data or not perfil.data.get("administrador"):
         raise HTTPException(status_code=403, detail="Solo administradores")
-    datos = cliente.table("pedidos").select("id, estado, pagado, created_at, usuarios!user_id(nombre, curso), detalles_pedido(id, modelo, color, personalizacion, cantidad)") \
+    datos = cliente.table("pedidos").select("id, estado, pagado, created_at, usuarios!user_id(nombre, curso), detalles_pedido(id, modelo, color, personalizacion, cantidad, hechas)") \
         .eq("estado", estado).execute().data
     return _filtrar_pago(datos, pago)
+
+
+def _nombrada(d: dict) -> bool:
+    return bool(d.get("personalizacion")) and d["personalizacion"] != "Sin texto"
+
+
+def _revisar_completado(cs, pedido_id: str):
+    """Si ya estan hechas todas las bolas con nombre de un pedido Pendiente, lo pasa a Completado. Nunca lo vuelve a Pendiente."""
+    ped = cs.table("pedidos").select("*").eq("id", pedido_id).execute().data
+    if not ped or ped[0].get("estado") != "Pendiente":
+        return ped[0].get("estado") if ped else None
+    dets = cs.table("detalles_pedido").select("id, personalizacion, cantidad, hechas, modelo, precio_unitario").eq("pedido_id", pedido_id).execute().data or []
+    nombradas = [d for d in dets if _nombrada(d)]
+    if not nombradas or any((d.get("hechas") or 0) < (d.get("cantidad") or 1) for d in nombradas):
+        return "Pendiente"
+    _escribir(cs.table("pedidos").update({"estado": "Completado"}).eq("id", pedido_id), "No se pudo completar el pedido")
+    try:
+        u = cs.table("usuarios").select("nombre").eq("id", ped[0].get("user_id")).execute().data
+        fecha = datetime.fromisoformat(str(ped[0].get("created_at")).replace("Z", "+00:00")) if ped[0].get("created_at") else datetime.now(timezone.utc)
+        _enviar_a_hoja((u[0]["nombre"] if u else ""), fecha, dets, str(pedido_id), _etiqueta_pedido(cs, ped[0]), "Completado")
+    except Exception:
+        logging.exception("No se pudo actualizar la hoja")
+    return "Completado"
+
+
+def _guardar_hechas(cs, detalle_id: str, hechas: int):
+    det = cs.table("detalles_pedido").select("id, pedido_id, cantidad").eq("id", detalle_id).execute().data
+    if not det:
+        raise HTTPException(status_code=404, detail="Esa bola no existe")
+    n = max(0, min(int(hechas), det[0].get("cantidad") or 1))
+    _escribir(cs.table("detalles_pedido").update({"hechas": n}).eq("id", detalle_id), "No se pudo guardar")
+    return det[0]["pedido_id"], n
+
+
+@app.patch("/api/admin/lineas/{detalle_id}/hechas")
+def marcar_linea_hecha(detalle_id: str, datos: HechasLinea, authorization: Optional[str] = Header(None)):
+    """Cuantas bolas de una linea ya estan impresas. Con la ultima del pedido, el pedido pasa a Completado."""
+    try:
+        cs = _cliente_servicio(_exigir_admin(authorization))
+        pedido_id, n = _guardar_hechas(cs, detalle_id, datos.hechas)
+        return {"hechas": n, "estado_pedido": _revisar_completado(cs, pedido_id)}
+    except HTTPException:
+        raise
+    except Exception:
+        logging.exception("Error interno")
+        raise HTTPException(status_code=500, detail="Ha ocurrido un error en el servidor. Inténtalo de nuevo.")
+
+
+@app.patch("/api/admin/impresion/hechas")
+def marcar_pack_hecho(datos: HechasPack, authorization: Optional[str] = Header(None)):
+    """Marca como hechas las bolas de un pack: se repite el id de la linea una vez por bola."""
+    try:
+        cs = _cliente_servicio(_exigir_admin(authorization))
+        cuenta = {}
+        for d in datos.detalles:
+            cuenta[d] = cuenta.get(d, 0) + 1
+        pedidos = set()
+        for detalle_id, n in cuenta.items():
+            fila = cs.table("detalles_pedido").select("hechas").eq("id", detalle_id).execute().data
+            if not fila:
+                continue
+            pedido_id, _ = _guardar_hechas(cs, detalle_id, (fila[0].get("hechas") or 0) + n)
+            pedidos.add(pedido_id)
+        completados = [pid for pid in pedidos if _revisar_completado(cs, pid) == "Completado"]
+        return {"mensaje": "Bolas marcadas como hechas", "pedidos_completados": len(completados)}
+    except HTTPException:
+        raise
+    except Exception:
+        logging.exception("Error interno")
+        raise HTTPException(status_code=500, detail="Ha ocurrido un error en el servidor. Inténtalo de nuevo.")
 
 
 @app.get("/api/admin/impresion")
 def cola_impresion(estado: str = "Pendiente", pago: str = "todos", authorization: Optional[str] = Header(None)):
     """Bolas con nombre de los pedidos en ese estado, agrupadas por color."""
     try:
-        return _cola_impresion(_pedidos_para_cola(authorization, estado, pago))
+        return _cola_impresion(_pedidos_para_cola(authorization, estado, pago), estado == "Pendiente")
     except HTTPException:
         raise
     except Exception as e:
@@ -1404,7 +1598,7 @@ def cola_impresion_3mf(color: Optional[str] = None, cliente: Optional[str] = Non
     if color is None and cliente is None:
         raise HTTPException(status_code=400, detail="Indica color o cliente")
     try:
-        return _respuesta_cola(_cola_impresion(_pedidos_para_cola(authorization, estado, pago)), color, cliente, pack, orden, formato)
+        return _respuesta_cola(_cola_impresion(_pedidos_para_cola(authorization, estado, pago), estado == "Pendiente"), color, cliente, pack, orden, formato)
     except HTTPException:
         raise
     except Exception as e:
@@ -1881,7 +2075,7 @@ def anular_pedido_admin(pedido_id: str, authorization: Optional[str] = Header(No
     """El admin anula un pedido Pendiente sin pagar."""
     try:
         cliente = _exigir_admin(authorization)
-        _comprobar_editable(cliente, pedido_id)
+        _comprobar_anulable(cliente, pedido_id)
         _escribir(_cliente_servicio(cliente).table("pedidos").update({"estado": "Cancelado"}).eq("id", pedido_id), "No se pudo anular el pedido. Inténtalo de nuevo.")
         _estado_en_hoja(str(pedido_id), "Cancelado")
         return {"mensaje": "Pedido anulado", "estado": "Cancelado"}
@@ -1894,7 +2088,7 @@ def anular_pedido_admin(pedido_id: str, authorization: Optional[str] = Header(No
 
 @app.patch("/api/admin/pedidos/{pedido_id}/detalles/{detalle_id}")
 def editar_bola_admin(pedido_id: str, detalle_id: str, datos: EdicionBola, authorization: Optional[str] = Header(None)):
-    """El admin cambia el modelo, el color, el nombre o la cantidad de una linea de un pedido Pendiente sin pagar."""
+    """El admin cambia el modelo, el color, el nombre o la cantidad de una linea de un pedido, este pagado o no."""
     try:
         cliente = _exigir_admin(authorization)
         _comprobar_editable(cliente, pedido_id)
@@ -1926,13 +2120,16 @@ def editar_bola_admin(pedido_id: str, detalle_id: str, datos: EdicionBola, autho
             cambios["cantidad"] = datos.cantidad
         if not cambios:
             raise HTTPException(status_code=400, detail="No hay nada que cambiar.")
+        if any(k in cambios for k in ("modelo", "personalizacion", "producto_id")):
+            cambios["hechas"] = 0   # la bola cambia, hay que imprimirla de nuevo
         escritor = _cliente_servicio(cliente)
         _escribir(escritor.table("detalles_pedido").update(cambios).eq("id", detalle_id).eq("pedido_id", pedido_id), "No se pudo guardar el cambio. Inténtalo de nuevo.")
         todas = escritor.table("detalles_pedido").select("precio_unitario, cantidad").eq("pedido_id", pedido_id).execute().data or []
         total = round(sum(float(d.get("precio_unitario") or 0) * (d.get("cantidad") or 1) for d in todas), 2)
         escritor.table("pedidos").update({"total": total}).eq("id", pedido_id).execute()
-        _refrescar_hoja(escritor, pedido_id)
-        return {"mensaje": "Bola cambiada", "total": total}
+        estado = _tras_cambiar_bolas(escritor, pedido_id, "hechas" in cambios)
+        _refrescar_hoja(escritor, pedido_id, estado)
+        return {"mensaje": "Bola cambiada", "total": total, "estado": estado}
     except HTTPException:
         raise
     except Exception:
@@ -1942,7 +2139,7 @@ def editar_bola_admin(pedido_id: str, detalle_id: str, datos: EdicionBola, autho
 
 @app.patch("/api/admin/pedidos/{pedido_id}/detalles/{detalle_id}/quitar")
 def quitar_bola_admin(pedido_id: str, detalle_id: str, authorization: Optional[str] = Header(None)):
-    """El admin quita una unidad de una linea de un pedido Pendiente sin pagar. Si era la ultima del pedido, se anula."""
+    """El admin quita una unidad de una linea de un pedido, este pagado o no. Si era la ultima del pedido, se anula."""
     try:
         cliente = _exigir_admin(authorization)
         _comprobar_editable(cliente, pedido_id)
@@ -1962,13 +2159,51 @@ def quitar_bola_admin(pedido_id: str, detalle_id: str, authorization: Optional[s
             return {"mensaje": "Pedido anulado", "estado": "Cancelado", "total": 0}
         total = round(sum(float(d.get("precio_unitario") or 0) * (d.get("cantidad") or 1) for d in quedan), 2)
         escritor.table("pedidos").update({"total": total}).eq("id", pedido_id).execute()
-        _refrescar_hoja(escritor, pedido_id)
-        return {"mensaje": "Bola quitada", "estado": "Pendiente", "total": total}
+        estado = _tras_cambiar_bolas(escritor, pedido_id)
+        _refrescar_hoja(escritor, pedido_id, estado)
+        return {"mensaje": "Bola quitada", "estado": estado, "total": total}
     except HTTPException:
         raise
     except Exception:
         logging.exception("Error al quitar la bola")
         raise HTTPException(status_code=500, detail="No se pudo quitar la bola. Inténtalo de nuevo.")
+
+
+@app.post("/api/admin/pedidos/{pedido_id}/bolas")
+def anadir_bola_admin(pedido_id: str, datos: NuevaBola, authorization: Optional[str] = Header(None)):
+    """El admin añade una bola a un pedido, este pagado o no. El total y la hoja se actualizan.
+    Si el pedido estaba Completado vuelve a Pendiente, porque la bola nueva hay que imprimirla."""
+    try:
+        cliente = _exigir_admin(authorization)
+        _comprobar_editable(cliente, pedido_id)
+        prod = cliente.table("productos").select("id, nombre, precio, colores, personalizable, modelos(nombre)").eq("id", datos.producto_id).execute().data
+        if not prod:
+            raise HTTPException(status_code=400, detail="Ese producto no existe.")
+        prod = prod[0]
+        if datos.modelo not in [_figura_modelo(prod.get("nombre"), m.get("nombre")) for m in (prod.get("modelos") or [])]:
+            raise HTTPException(status_code=400, detail="Ese modelo no es de ese producto.")
+        if prod.get("colores") and datos.color not in prod["colores"]:
+            raise HTTPException(status_code=400, detail="Ese color no es de ese producto.")
+        nombre = re.sub(r"\s+", " ", (datos.personalizacion or "").strip())
+        error = _error_nombre_bola(nombre, bool(prod.get("personalizable")))
+        if error:
+            raise HTTPException(status_code=400, detail=error)
+        escritor = _cliente_servicio(cliente)
+        _escribir(escritor.table("detalles_pedido").insert({
+            "pedido_id": pedido_id, "producto_id": prod["id"], "modelo": datos.modelo, "color": datos.color,
+            "personalizacion": nombre or "Sin texto", "precio_unitario": float(prod.get("precio") or 0), "cantidad": datos.cantidad,
+        }), "No se pudo añadir la bola. Inténtalo de nuevo.")
+        todas = escritor.table("detalles_pedido").select("precio_unitario, cantidad").eq("pedido_id", pedido_id).execute().data or []
+        total = round(sum(float(d.get("precio_unitario") or 0) * (d.get("cantidad") or 1) for d in todas), 2)
+        escritor.table("pedidos").update({"total": total}).eq("id", pedido_id).execute()
+        estado = _tras_cambiar_bolas(escritor, pedido_id, True)
+        _refrescar_hoja(escritor, pedido_id, estado)
+        return {"mensaje": "Bola añadida", "total": total, "estado": estado}
+    except HTTPException:
+        raise
+    except Exception:
+        logging.exception("Error al añadir la bola")
+        raise HTTPException(status_code=500, detail="No se pudo añadir la bola. Inténtalo de nuevo.")
 
 
 @app.patch("/api/admin/usuarios/{usuario_id}")
