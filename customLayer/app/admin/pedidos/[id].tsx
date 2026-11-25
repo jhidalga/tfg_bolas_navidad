@@ -97,6 +97,14 @@ export default function DetallesPedidoAdmin() {
 
             <Text style={styles.titulo}>Pedido de {etiquetaPedido(datos.usuario || datos.pedido.usuarios, datos.pedido.id, datos.numero)}</Text>
             <Text style={{ fontSize: 12, color: '#9ca3af', marginTop: -8, marginBottom: 12 }}>#{datos.pedido.id.slice(0,8).toUpperCase()}</Text>
+            {datos.pedido.user_id ? (
+                <Pressable
+                    style={{ backgroundColor: '#eff6ff', borderColor: '#2563eb', borderWidth: 1, paddingVertical: 10, paddingHorizontal: 14, borderRadius: 10, alignSelf: 'flex-start', marginBottom: 10 }}
+                    onPress={() => router.push(`/admin/usuarios/${datos.pedido.user_id}` as any)}
+                >
+                    <Text style={{ color: '#1d4ed8', fontWeight: 'bold' }}>Ver perfil de {(datos.usuario || datos.pedido.usuarios)?.nombre || 'usuario'}</Text>
+                </Pressable>
+            ) : null}
             <Text style={styles.totalInfo}>Importe Total: {euros(datos.pedido.total)}</Text>
 
             {datos.pedido.nota ? (

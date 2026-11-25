@@ -482,7 +482,7 @@ if MODO_PRUEBA:
             def prod(pid):
                 p = prods[pid]; return {"nombre": p["nombre"], "modelos": p["modelos"]}
             _ESTADO["pedidos"] = [
-                {"id": "11111111-aaaa", "total": 3.0, "estado": "Pendiente", "created_at": "2026-11-17T09:30:00",
+                {"id": "11111111-aaaa", "user_id": "u2", "total": 3.0, "estado": "Pendiente", "created_at": "2026-11-17T09:30:00",
                  "usuarios": {"nombre": "Ana Lopez", "curso": "1DAM", "email": "alopmar@g.educaand.es"},
                  "detalles_pedido": [_detalle_prueba("Galleta de Jengibre", "Ana", producto=prod("p1")),
                                      _detalle_prueba("Oso de navidad", "Luis", producto=prod("p1")),

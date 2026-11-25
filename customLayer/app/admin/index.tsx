@@ -396,7 +396,12 @@ export default function ListaPedidosAdmin() {
                                             </View>
                                             <View style={styles.datosCliente}>
                                                 <Text style={styles.txtDato}><FontAwesome name="calendar" size={16} color="black" /> {fechaCorta(pedido.created_at)}</Text>
-                                                <Text style={styles.txtDato}><FontAwesome5 name="user" size={14} color="black" /> {pedido.usuarios?.nombre || "Desconocido"}</Text>
+                                                <Pressable
+                                                    disabled={modoEliminar || !pedido.user_id}
+                                                    onPress={() => router.push(`/admin/usuarios/${pedido.user_id}` as any)}
+                                                >
+                                                    <Text style={[styles.txtDato, pedido.user_id && !modoEliminar ? { color: '#2563eb', textDecorationLine: 'underline' } : null]}><FontAwesome5 name="user" size={14} color={pedido.user_id && !modoEliminar ? '#2563eb' : 'black'} /> {pedido.usuarios?.nombre || "Desconocido"}</Text>
+                                                </Pressable>
                                                 <Text style={styles.txtDato}><FontAwesome5 name="book" size={14} color="black" /> {pedido.usuarios?.curso || "Desconocido"}</Text>
                                             </View>
                                             <Text style={styles.precioTotal}>{euros(pedido.total)}</Text>
