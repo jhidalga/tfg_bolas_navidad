@@ -29,6 +29,7 @@ export default function Registro() {
     const [apellido1, setApellido1] = useState('');
     const [apellido2, setApellido2] = useState('');
     const [etapa, setEtapa] = useState('');
+    const [aceptaCorreos, setAceptaCorreos] = useState(false);
     // Aviso para quien no consigue registrarse
     const [incidenciaAbierta, setIncidenciaAbierta] = useState(false);
     const [incNombre, setIncNombre] = useState('');
@@ -112,6 +113,11 @@ export default function Registro() {
             return;
         }
 
+        if (!aceptaCorreos) {
+            Toast.show({ type: 'error', text1: 'Falta aceptar las comunicaciones', text2: 'Marca la casilla para poder avisarte si hay algún problema con tus pedidos.' });
+            return;
+        }
+
         let errorCorreo = validarCorreo(correoLimpio, profesor, nombreSolo, apellido1Limpio, apellido2Limpio);
         if (errorCorreo && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correoLimpio)) {
             // Un administrador puede haber permitido este correo concreto
@@ -143,7 +149,9 @@ export default function Registro() {
                     nombre: nombreLimpio,
                     tema: temaActual.nombre,
                     apellido1: apellido1Limpio,
-                    apellido2: apellido2Limpio
+                    apellido2: apellido2Limpio,
+                    acepta_comunicaciones: true,
+                    acepta_comunicaciones_fecha: new Date().toISOString()
                 }
             }
         });
@@ -278,6 +286,20 @@ export default function Registro() {
                             )}
                         </>
                     )}
+
+                    <Pressable
+                        onPress={() => setAceptaCorreos(!aceptaCorreos)}
+                        accessibilityRole="checkbox"
+                        accessibilityState={{ checked: aceptaCorreos }}
+                        style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 16 }}
+                    >
+                        <View style={{ width: 22, height: 22, borderRadius: 5, borderWidth: 2, borderColor: tc('#a52a2a'), backgroundColor: aceptaCorreos ? tc('#a52a2a') : 'transparent', alignItems: 'center', justifyContent: 'center', marginTop: 1 }}>
+                            {aceptaCorreos ? <Text style={{ color: '#ffffff', fontWeight: 'bold', fontSize: 14, lineHeight: 16 }}>✓</Text> : null}
+                        </View>
+                        <Text style={{ flex: 1, color: tc('#3b1a12'), fontSize: 13, lineHeight: 18 }}>
+                            Acepto recibir correos del departamento si hay alguna incidencia con mis pedidos, por ejemplo para confirmar un pedido o corregir un error. Solo usarán mi correo para esto. *
+                        </Text>
+                    </Pressable>
 
                     <Pressable
                         style={[styles.botonLogin, cargando && { opacity: 0.7 }]}
