@@ -38,7 +38,12 @@ export default function ListaPedidosAdmin() {
         { label: 'Cancelado', value: 'Cancelado' }
     ]);
 
-    const [filtroPago, setFiltroPago] = useState<'todos' | 'pagados' | 'sin_pagar'>('todos');
+    const [openPago, setOpenPago] = useState(false);
+    const [filtroPago, setFiltroPago] = useState<string[]>([]);
+    const [itemsPago, setItemsPago] = useState([
+        { label: 'Pagados', value: 'pagados' },
+        { label: 'Sin pagar', value: 'sin_pagar' }
+    ]);
 
     const [openCurso, setOpenCurso] = useState(false);
     const [filtroCurso, setFiltroCurso] = useState<string[]>([]);
@@ -63,7 +68,7 @@ export default function ListaPedidosAdmin() {
 
     useEffect(() => {
         setPaginaActual(1);
-    }, [filtroEstado, filtroCurso]);
+    }, [filtroEstado, filtroCurso, filtroPago]);
 
     /**
      * Obtiene la lista completa de pedidos desde la API para el panel de administración.
@@ -202,7 +207,7 @@ export default function ListaPedidosAdmin() {
             const coincideEstado = filtroEstado.length === 0 || filtroEstado.includes(pedido.estado);
             const cursoUsuario = pedido.usuarios?.curso || "Desconocido";
             const coincideCurso = filtroCurso.length === 0 || filtroCurso.includes(cursoUsuario);
-            const coincidePago = filtroPago === 'todos' || (filtroPago === 'pagados' ? !!pedido.pagado : !pedido.pagado);
+            const coincidePago = filtroPago.length === 0 || filtroPago.includes(pedido.pagado ? 'pagados' : 'sin_pagar');
             return coincideEstado && coincideCurso && coincidePago;
         });
     }, [pedidos, filtroEstado, filtroCurso, filtroPago]);
@@ -354,7 +359,7 @@ export default function ListaPedidosAdmin() {
                         mode="BADGE"
                         placeholder="Filtrar por Estado"
                         listMode="SCROLLVIEW"
-                        onOpen={() => setOpenCurso(false)}
+                        onOpen={() => { setOpenCurso(false); setOpenPago(false); }}
                         style={styles.dropdown}
                         textStyle={styles.textoDropdown}
                         badgeStyle={styles.badgeDropdown}
@@ -373,7 +378,7 @@ export default function ListaPedidosAdmin() {
                         mode="BADGE"
                         placeholder="Filtrar por Curso"
                         listMode="SCROLLVIEW"
-                        onOpen={() => setOpenEstado(false)}
+                        onOpen={() => { setOpenEstado(false); setOpenPago(false); }}
                         style={styles.dropdown}
                         textStyle={styles.textoDropdown}
                         badgeStyle={styles.badgeDropdown}
@@ -381,18 +386,26 @@ export default function ListaPedidosAdmin() {
                         dropDownContainerStyle={styles.dropdownContainer}
                     />
                 </View>
-            </View>
-            <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center', flexWrap: 'wrap', paddingHorizontal: 16, paddingBottom: 8 }}>
-                <Text style={{ color: '#64748b', fontWeight: 'bold' }}>Pago:</Text>
-                {[{ v: 'todos', t: 'Todos' }, { v: 'pagados', t: 'Pagados' }, { v: 'sin_pagar', t: 'Sin pagar' }].map((o) => (
-                    <Pressable
-                        key={o.v}
-                        onPress={() => { setFiltroPago(o.v as 'todos' | 'pagados' | 'sin_pagar'); setPaginaActual(1); }}
-                        style={{ paddingVertical: 6, paddingHorizontal: 12, borderRadius: 999, backgroundColor: filtroPago === o.v ? '#16a34a' : '#e5e7eb' }}
-                    >
-                        <Text style={{ color: filtroPago === o.v ? '#fff' : '#111827', fontWeight: 'bold' }}>{o.t}</Text>
-                    </Pressable>
-                ))}
+                <View style={[styles.filtroWrapper, { zIndex: openPago ? 3000 : 500 }]}>
+                    <DropDownPicker
+                        open={openPago}
+                        value={filtroPago}
+                        items={itemsPago}
+                        setOpen={setOpenPago}
+                        setValue={setFiltroPago}
+                        setItems={setItemsPago}
+                        multiple={true}
+                        mode="BADGE"
+                        placeholder="Filtrar por Pago"
+                        listMode="SCROLLVIEW"
+                        onOpen={() => { setOpenEstado(false); setOpenCurso(false); }}
+                        style={styles.dropdown}
+                        textStyle={styles.textoDropdown}
+                        badgeStyle={styles.badgeDropdown}
+                        badgeTextStyle={styles.textoBadgeDropdown}
+                        dropDownContainerStyle={styles.dropdownContainer}
+                    />
+                </View>
             </View>
             <ScrollView contentContainerStyle={styles.scrollContent}>
                 {pedidosFiltrados.length === 0 ? (
