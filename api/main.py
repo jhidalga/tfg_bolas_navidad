@@ -614,6 +614,16 @@ if MODO_PRUEBA:
                   "detalles_pedido": detalles}
         lista.insert(0, pedido)
         _ESTADO["carrito"].clear()
+        try:
+            html, texto = _factura("navidad", f"admin-2dam-{_ESTADO['n']:02d}", datetime.now(timezone.utc), detalles, float(checkout.total), checkout.nota.strip())
+            asunto = f"Hemos recibido tu pedido admin-2dam-{_ESTADO['n']:02d}"
+            texto_msg = "Hola Admin:\n\nHemos recibido tu pedido. Aquí tienes el resumen.\n\nSi hay algún error en alguna bola, respóndenos a este correo y lo arreglamos."
+            if _config_correo():
+                _enviar_correo("admin@g.educaand.es", asunto, texto_msg, "navidad", None, html, texto)
+            else:
+                _ESTADO.setdefault("correos", []).append({"para": "admin@g.educaand.es", "asunto": asunto, "mensaje": texto_msg + "\n\n" + texto, "html": _correo_html("navidad", asunto, texto_msg, "pedidosldt@gmail.com", html)})
+        except Exception:
+            logging.exception("No se pudo preparar el resumen del pedido")
         return {"mensaje": "Pedido procesado correctamente", "pedido_id": pedido["id"]}
 
     @app.get("/api/admin/impresion")
@@ -970,6 +980,12 @@ def realizar_pedido(checkout: CheckoutPedido, authorization: Optional[str] = Hea
             _enviar_a_hoja((u[0]["nombre"] if u else ""), fecha, detalles, str(pedido_id), _etiqueta_pedido(cliente_seguro, ped), "Pendiente")
         except Exception:
             logging.exception("No se pudo avisar a la hoja")
+        try:
+            import threading
+            ped_completo = dict(pedido_res.data[0]); ped_completo.setdefault("total", total_servidor)
+            threading.Thread(target=_correo_pedido_recibido, args=(cliente_seguro, ped_completo, detalles, user_id), daemon=True).start()
+        except Exception:
+            logging.exception("No se pudo preparar el resumen del pedido")
         return {"mensaje": "Pedido procesado correctamente", "pedido_id": pedido_id}
     except Exception as e:
         logging.exception("Error interno")
@@ -1556,7 +1572,7 @@ def _config_correo():
             "usuario": usuario, "clave": clave, "remitente": os.getenv("SMTP_FROM", usuario).strip() or usuario}
 
 
-def _correo_html(tema: str, titulo: str, mensaje: str, contacto: str) -> str:
+def _correo_html(tema: str, titulo: str, mensaje: str, contacto: str, extra: str = "") -> str:
     """Correo con el estilo del tema activo y la firma del departamento. El texto va escapado."""
     c = _FIRMAS_CORREO.get(tema) or _FIRMAS_CORREO["navidad"]
     parrafos = "".join(f'<p style="margin:0 0 14px">{_html.escape(x).replace(chr(10), "<br>")}</p>' for x in re.split(r"\n\s*\n", mensaje.strip()) if x.strip())
@@ -1565,14 +1581,14 @@ def _correo_html(tema: str, titulo: str, mensaje: str, contacto: str) -> str:
             f'<tr><td style="background:{c["cabecera"]};padding:30px 24px;text-align:center"><div style="color:{c["rotulo"]};font-size:12px;letter-spacing:3px">{_html.escape(c["sello"])}</div>'
             f'<div style="color:#ffffff;font-size:24px;font-weight:bold;margin-top:10px">{_html.escape(titulo)}</div></td></tr>'
             f'<tr><td style="height:5px;background:{c["barra"]};font-size:0;line-height:0">&nbsp;</td></tr>'
-            f'<tr><td style="padding:30px 30px 16px;color:#1f2937;font-size:16px;line-height:1.6">{parrafos}</td></tr>'
+            f'<tr><td style="padding:30px 30px 16px;color:#1f2937;font-size:16px;line-height:1.6">{parrafos}{extra}</td></tr>'
             f'<tr><td style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:20px 30px;text-align:center">'
             f'<img src="{_LOGO_CORREO}" alt="IES Laguna de Tollón" width="170" style="display:block;margin:0 auto 10px">'
             f'<p style="margin:0;color:#6b7280;font-size:13px;line-height:1.5">Atentamente,<br>{_html.escape(c["firma"])}<br>'
             f'<a href="mailto:{_html.escape(contacto)}" style="color:{c["enlace"]}">{_html.escape(contacto)}</a></p></td></tr></table></div>')
 
 
-def _enviar_correo(para: str, asunto: str, mensaje: str, tema: str = "navidad", responde_a: Optional[str] = None):
+def _enviar_correo(para: str, asunto: str, mensaje: str, tema: str = "navidad", responde_a: Optional[str] = None, extra_html: str = "", extra_texto: str = ""):
     """Manda un correo con firma. Lanza ValueError si faltan las variables y RuntimeError si el servidor de correo falla."""
     cfg = _config_correo()
     if not cfg:
@@ -1584,13 +1600,13 @@ def _enviar_correo(para: str, asunto: str, mensaje: str, tema: str = "navidad", 
     msg["From"] = formataddr((firma, cfg["remitente"]))
     msg["To"] = para
     msg["Reply-To"] = cfg["remitente"]
-    msg.set_content(f"{mensaje.strip()}\n\nAtentamente,\n{firma}\n{cfg['remitente']}")
+    msg.set_content(f"{mensaje.strip()}\n\n" + (f"{extra_texto.strip()}\n\n" if extra_texto else "") + f"Atentamente,\n{firma}\n{cfg['remitente']}")
     if responde_a and re.fullmatch(r"<[^<>\s]{3,280}>", responde_a):
         msg["In-Reply-To"] = responde_a
         msg["References"] = responde_a
     msg["Date"] = formatdate(localtime=True)
     msg["Message-ID"] = make_msgid(domain=cfg["remitente"].split("@")[-1])
-    msg.add_alternative(_correo_html(tema, asunto, mensaje, cfg["remitente"]), subtype="html")
+    msg.add_alternative(_correo_html(tema, asunto, mensaje, cfg["remitente"], extra_html), subtype="html")
     try:
         with open(_RUTA_LOGO, "rb") as f:
             msg.get_payload()[1].add_related(f.read(), "image", "png", cid="<logo_ies>", disposition="inline", filename="logo_ies.png")
@@ -1709,6 +1725,61 @@ def correos_usuario(usuario_id: str, authorization: Optional[str] = Header(None)
     except Exception:
         logging.exception("Error interno")
         raise HTTPException(status_code=500, detail="Ha ocurrido un error en el servidor. Inténtalo de nuevo.")
+
+
+def _factura(tema: str, codigo: str, fecha, lineas: list, total: float, nota: str = ""):
+    """Resumen del pedido para el correo: devuelve (html, texto). Todo el texto del cliente va escapado."""
+    c = _FIRMAS_CORREO.get(tema) or _FIRMAS_CORREO["navidad"]
+    from zoneinfo import ZoneInfo
+    f = fecha.astimezone(ZoneInfo("Europe/Madrid")) if getattr(fecha, "tzinfo", None) else fecha
+    dia = f.strftime("%d/%m/%Y %H:%M")
+    def euro(x): return f"{float(x):.2f}".replace(".", ",") + " €"
+    filas_h, filas_t = [], []
+    for d in lineas:
+        cant = int(d.get("cantidad") or 1)
+        pu = float(d.get("precio_unitario") or 0)
+        nombre = d.get("personalizacion")
+        nombre = "" if not nombre or nombre == "Sin texto" else str(nombre)
+        figura = str(d.get("modelo") or "Figura")
+        color = str(d.get("color") or "")
+        detalle_h = _html.escape(figura) + (f'<br><span style="color:#6b7280;font-size:13px">{_html.escape(color)}</span>' if color else "")
+        filas_h.append(f'<tr><td style="padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:14px">{detalle_h}</td>'
+                       f'<td style="padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:14px;font-weight:bold">{_html.escape(nombre) or "—"}</td>'
+                       f'<td style="padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:14px;text-align:center">{cant}</td>'
+                       f'<td style="padding:10px 8px;border-bottom:1px solid #e5e7eb;font-size:14px;text-align:right;white-space:nowrap">{euro(pu * cant)}</td></tr>')
+        filas_t.append(f"- {figura}{' ' + color if color else ''}" + (f' "{nombre}"' if nombre else "") + f" x{cant}: {euro(pu * cant)}")
+    nota_h = (f'<p style="margin:14px 0 0;color:#4b5563;font-size:14px"><b>Tu nota:</b> {_html.escape(nota)}</p>' if nota else "")
+    html = (f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:6px 0 4px;border:1px solid #e5e7eb;border-radius:10px;border-collapse:separate;overflow:hidden">'
+            f'<tr><td colspan="4" style="background:{c["cabecera"]};color:{c["rotulo"]};padding:10px 12px;font-size:12px;letter-spacing:2px;font-weight:bold">RESUMEN DEL PEDIDO</td></tr>'
+            f'<tr><td colspan="4" style="padding:12px 12px 4px;font-size:14px;color:#374151">Pedido <b>{_html.escape(codigo)}</b><br><span style="color:#6b7280">{dia}</span></td></tr>'
+            f'<tr style="background:#f9fafb"><th align="left" style="padding:8px;font-size:12px;color:#6b7280">FIGURA</th><th align="left" style="padding:8px;font-size:12px;color:#6b7280">NOMBRE</th>'
+            f'<th style="padding:8px;font-size:12px;color:#6b7280">CANT.</th><th align="right" style="padding:8px;font-size:12px;color:#6b7280">IMPORTE</th></tr>'
+            + "".join(filas_h) +
+            f'<tr><td colspan="3" style="padding:12px 8px;text-align:right;font-weight:bold;font-size:15px">Total</td>'
+            f'<td style="padding:12px 8px;text-align:right;font-weight:bold;font-size:15px;color:{c["enlace"]};white-space:nowrap">{euro(total)}</td></tr></table>' + nota_h)
+    texto = f"RESUMEN DEL PEDIDO {codigo} ({dia})\n" + "\n".join(filas_t) + f"\nTotal: {euro(total)}" + (f"\nTu nota: {nota}" if nota else "")
+    return html, texto
+
+
+def _correo_pedido_recibido(cliente, pedido: dict, detalles: list, user_id: str) -> None:
+    """Manda al cliente el resumen de su pedido. Si algo falla, se anota y el pedido sigue valido."""
+    try:
+        if not _config_correo():
+            return
+        u = cliente.table("usuarios").select("nombre, email").eq("id", user_id).execute().data
+        if not u or not u[0].get("email"):
+            return
+        nombre = (u[0].get("nombre") or "").strip()
+        fecha = datetime.fromisoformat(str(pedido.get("created_at")).replace("Z", "+00:00")) if pedido.get("created_at") else datetime.now(timezone.utc)
+        codigo = _etiqueta_pedido(cliente, {**pedido, "user_id": user_id})
+        tema = obtener_tema().get("tema", "navidad")
+        html, texto = _factura(tema, codigo, fecha, detalles, float(pedido.get("total") or 0), str(pedido.get("nota") or ""))
+        saludo = f"Hola {nombre.split(' ')[0]}:" if nombre else "Hola:"
+        _enviar_correo(u[0]["email"], f"Hemos recibido tu pedido {codigo}",
+                       f"{saludo}\n\nHemos recibido tu pedido. Aquí tienes el resumen.\n\nSi hay algún error en alguna bola, respóndenos a este correo y lo arreglamos.",
+                       tema, None, html, texto)
+    except Exception:
+        logging.exception("No se pudo enviar el resumen del pedido")
 
 
 @app.get("/api/admin/correo/estado")
