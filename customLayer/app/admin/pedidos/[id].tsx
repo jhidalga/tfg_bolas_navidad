@@ -157,66 +157,54 @@ export default function DetallesPedidoAdmin() {
 
             <Text style={styles.subtitulo}>Productos:</Text>
             
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
             {datos.productos && datos.productos.map((prod: any, index: number) => {
-                const modelosProd = prod.productos?.modelos || [];
-                const modeloAsociado = modelosProd.find((m: any) => m.nombre === prod.modelo) || modelosProd.find((m: any) => /^(base|unico|único)$/i.test(String(m.nombre || '').trim())) || (modelosProd.length === 1 ? modelosProd[0] : undefined);
-                const imagenUri = modeloAsociado?.imagen;
+                const nombrada = !!prod.personalizacion && prod.personalizacion !== 'Sin texto';
+                const hecha = (prod.hechas || 0) >= (prod.cantidad || 1);
 
                 return (
-                    <View key={index} style={styles.tarjetaProducto}>
-                        {imagenUri ? (
-                            <Image source={{ uri: imagenUri }} style={styles.imagenProducto} />
-                        ) : (
-                            <View style={styles.placeholderImagen} />
-                        )}
-                        
-                        <View style={styles.infoProducto}>
-                            <Text style={styles.nombre}>{prod.productos.nombre}</Text>
-                            <Text style={styles.txtNormalSecundario}>Modelo: <Text style={styles.txtBold}>{prod.modelo}</Text></Text>
-                            <Text style={styles.txtNormalSecundario}>Color: <Text style={styles.txtBold}>{prod.color}</Text></Text>
-                            <Text style={styles.txtNormalSecundario}>Cantidad: <Text style={styles.txtBold}>{prod.cantidad || 1}</Text></Text>
-                            <Text style={styles.txtNormalSecundario}>Precio unitario: <Text style={styles.txtBold}>{euros(prod.precio_unitario)}</Text></Text>
-                            
-                            {prod.personalizacion && prod.personalizacion !== 'Sin texto' ? (
+                    <View key={index} style={{ flexDirection: 'row', gap: 12, backgroundColor: '#fff', borderRadius: 12, borderWidth: 1, borderColor: '#e5e7eb', padding: 12, width: 380, maxWidth: '100%' }}>
+                        {nombrada ? (
+                            <Image
+                                source={{ uri: `${API}/api/preview?modelo=${encodeURIComponent(prod.modelo)}&nombre=${encodeURIComponent(prod.personalizacion)}` }}
+                                style={{ width: 110, height: 110, backgroundColor: '#fff', borderRadius: 8 }}
+                                resizeMode="contain"
+                            />
+                        ) : null}
+
+                        <View style={{ flex: 1, gap: 2 }}>
+                            <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#111827' }}>{prod.productos.nombre}</Text>
+                            <Text style={styles.txtNormalSecundario}>{prod.modelo} · <Text style={styles.txtBold}>{prod.color}</Text></Text>
+                            <Text style={styles.txtNormalSecundario}>Cantidad <Text style={styles.txtBold}>{prod.cantidad || 1}</Text> · <Text style={styles.txtBold}>{euros(prod.precio_unitario)}</Text></Text>
+
+                            {nombrada ? (
                                 <View style={styles.badgePersonalizado}>
-                                    <Text style={styles.txtBadge}>Personalización: "{prod.personalizacion}"</Text>
+                                    <Text style={styles.txtBadge}>"{prod.personalizacion}"</Text>
                                 </View>
                             ) : (
                                 <Text style={styles.txtNormal}>Sin personalizar</Text>
                             )}
 
-                            {prod.personalizacion && prod.personalizacion !== 'Sin texto' ? (
-                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 10, flexWrap: 'wrap' }}>
+                            {nombrada ? (
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 6, flexWrap: 'wrap' }}>
                                     <Pressable
-                                        onPress={() => cambiarHechas(prod, (prod.hechas || 0) >= (prod.cantidad || 1) ? 0 : (prod.cantidad || 1))}
+                                        onPress={() => cambiarHechas(prod, hecha ? 0 : (prod.cantidad || 1))}
                                         accessibilityRole="checkbox"
-                                        accessibilityState={{ checked: (prod.hechas || 0) >= (prod.cantidad || 1) }}
+                                        accessibilityState={{ checked: hecha }}
                                         accessibilityLabel="Bola hecha"
-                                        style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
+                                        style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}
                                     >
-                                        <Ionicons name={(prod.hechas || 0) >= (prod.cantidad || 1) ? 'checkbox' : 'square-outline'} size={26}
-                                            color={(prod.hechas || 0) >= (prod.cantidad || 1) ? '#15803d' : '#94a3b8'} />
+                                        <Ionicons name={hecha ? 'checkbox' : 'square-outline'} size={22} color={hecha ? '#15803d' : '#94a3b8'} />
                                         <Text style={styles.txtNormalSecundario}>Hecha</Text>
                                     </Pressable>
-                                    {(prod.hechas || 0) > 0 && (prod.hechas || 0) < (prod.cantidad || 1) ? (
+                                    {(prod.hechas || 0) > 0 && !hecha ? (
                                         <Text style={styles.txtNormalSecundario}>{prod.hechas} de {prod.cantidad}</Text>
                                     ) : null}
-                                </View>
-                            ) : null}
-
-                            {prod.personalizacion && prod.personalizacion !== 'Sin texto' ? (
-                                <View style={{ marginTop: 10 }}>
-                                    <Text style={styles.txtNormalSecundario}>Así saldrá el 3D:</Text>
-                                    <Image
-                                        source={{ uri: `${API}/api/preview?modelo=${encodeURIComponent(prod.modelo)}&nombre=${encodeURIComponent(prod.personalizacion)}` }}
-                                        style={{ width: 200, height: 200, backgroundColor: '#fff', borderRadius: 8, marginTop: 6 }}
-                                        resizeMode="contain"
-                                    />
                                     <Pressable
-                                        style={{ backgroundColor: '#2563eb', paddingVertical: 10, paddingHorizontal: 14, borderRadius: 8, marginTop: 8, alignSelf: 'flex-start' }}
+                                        style={{ backgroundColor: '#2563eb', paddingVertical: 6, paddingHorizontal: 10, borderRadius: 8 }}
                                         onPress={() => descargar3mf(prod.id, `${String(prod.modelo).replace(/[^A-Za-z0-9]+/g, '_')}_${String(prod.personalizacion).replace(/[^A-Za-z0-9]+/g, '_')}.3mf`)}
                                     >
-                                        <Text style={{ color: '#fff', fontWeight: 'bold' }}>Descargar 3MF</Text>
+                                        <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 12 }}>3MF</Text>
                                     </Pressable>
                                 </View>
                             ) : null}
@@ -224,6 +212,7 @@ export default function DetallesPedidoAdmin() {
                     </View>
                 );
             })}
+            </View>
         </ScrollView>
     );
 }
