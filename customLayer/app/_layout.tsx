@@ -5,6 +5,7 @@ import Toast from 'react-native-toast-message';
 import { useEffect, useState } from 'react';
 import Bienvenida, { debeMostrarBienvenida } from '../componentes/bienvenida';
 import AvisoComunicaciones from '../componentes/avisoComunicaciones';
+import AvisoNovedad from '../componentes/avisoNovedad';
 import { supabase } from '../lib/supabase';
 import { temaActual, tc, sincronizarTema } from '../lib/tema';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -12,6 +13,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 export default function RootLayout() {
   const router = useRouter();
   const segments = useSegments();
+  const [consentimientoAbierto, setConsentimientoAbierto] = useState(false);
   const [bienvenida, setBienvenida] = useState(() => !!temaActual.bienvenida && debeMostrarBienvenida());
 
   useEffect(() => {
@@ -47,7 +49,8 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: 'transparent' } }} />
       {bienvenida && <Bienvenida onTerminar={() => setBienvenida(false)} />}
-      <AvisoComunicaciones activo={!bienvenida} />
+      <AvisoComunicaciones activo={!bienvenida} onAbierto={setConsentimientoAbierto} />
+      <AvisoNovedad activo={!bienvenida && !consentimientoAbierto} />
       <Toast position='top' topOffset={40} config={toastConfig} />
     </SafeAreaProvider>
     </ThemeProvider>

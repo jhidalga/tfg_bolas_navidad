@@ -14,7 +14,7 @@ var MARCAS = ['TOTAL', 'COBRADO', 'POR COBRAR'];
 
 // Coste de hacer cada figura (euros). La clave es el nombre de la figura sin tildes y en minusculas.
 var ESTADOS_CON_COSTE = ['Completado', 'Entregado'];
-var COSTES = { 'reno': 0.18, 'estrella': 0.16, 'arbol': 0.14, 'galleta': 0.16, 'oso': 0.19 };
+var COSTES = { 'reno': 0.18, 'estrella': 0.16, 'arbol': 0.14, 'galleta': 0.16, 'oso': 0.19, 'calcet': 0.19 };
 
 function normalizar(t) {
   return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');

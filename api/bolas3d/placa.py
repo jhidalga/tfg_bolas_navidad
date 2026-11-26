@@ -111,6 +111,13 @@ def _caja(f):
     return min(xs), max(xs), min(ys), max(ys)
 
 
+def rojo_calcetin(aj):
+    """El calcetin va siempre en rojo: el cuerpo pasa del filamento 4 (marron) al 6 (rojo)."""
+    if 'value="Stocking' not in aj:
+        return aj
+    return re.sub(r'(key="extruder" value=")4(")', r'\g<1>6\2', aj)
+
+
 TORRE = (40.0, 40.0)   # ancho y fondo que dejamos libres para la torre de purga
 
 
@@ -181,6 +188,7 @@ def unir_3mf(lista):
         aj = re.sub(r'<object id="\d+">', '<object id="%d">' % nid, f["ajustes"], count=1)
         aj = re.sub(r'<part id="(\d+)"', lambda m: '<part id="%d"' % nuevo_id.get(m.group(1), int(m.group(1))), aj)
         aj = re.sub(r' uuid="[^"]*"', lambda m: ' uuid="%s"' % _uid(), aj)
+        aj = rojo_calcetin(aj)
         ajustes_obj.append("  " + aj)
         instancias.append('    <model_instance>\n      <metadata key="object_id" value="%d"/>\n'
                           '      <metadata key="instance_id" value="0"/>\n'

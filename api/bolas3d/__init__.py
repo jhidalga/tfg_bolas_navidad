@@ -62,7 +62,28 @@ def generar_3mf(modelo, nombre):
         except SystemExit as e:
             raise ValueError(str(e.code) if e.code else "No se pudo generar el 3MF")
         with open(salida, "rb") as f:
-            return f.read()
+            datos = f.read()
+    if fichero == "Stocking.3mf":
+        datos = _calcetin_rojo(datos)
+    return datos
+
+
+def _calcetin_rojo(datos):
+    """El calcetin va siempre en rojo: el filamento 4 (el del cuerpo) pasa de marron a rojo."""
+    import io, json, zipfile
+    ent = zipfile.ZipFile(io.BytesIO(datos))
+    sal = io.BytesIO()
+    with zipfile.ZipFile(sal, "w", zipfile.ZIP_DEFLATED) as z:
+        for info in ent.infolist():
+            b = ent.read(info.filename)
+            if info.filename == "Metadata/project_settings.config":
+                proj = json.loads(b)
+                col = proj.get("filament_colour")
+                if isinstance(col, list) and len(col) >= 4:
+                    col[3] = "#C12E1F"
+                b = json.dumps(proj).encode("utf-8")
+            z.writestr(info, b)
+    return sal.getvalue()
 
 
 def nombre_fichero(modelo, nombre, cantidad=1):

@@ -9,7 +9,7 @@ import { tc } from '../lib/tema';
  * Sale una vez la sesion esta iniciada y la cuenta no ha aceptado todavia.
  * "Acepto" lo guarda en la cuenta con la fecha. "Ahora no" lo cierra hasta la proxima vez que entre.
  */
-export default function AvisoComunicaciones({ activo = true }: { activo?: boolean }) {
+export default function AvisoComunicaciones({ activo = true, onAbierto }: { activo?: boolean; onAbierto?: (abierto: boolean) => void }) {
     const [visible, setVisible] = useState(false);
     const [guardando, setGuardando] = useState(false);
     const [cerradoAhora, setCerradoAhora] = useState(false);
@@ -24,6 +24,9 @@ export default function AvisoComunicaciones({ activo = true }: { activo?: boolea
         return () => oyente.subscription.unsubscribe();
     }, []);
 
+    const abierto = activo && visible && !cerradoAhora;
+    useEffect(() => { onAbierto?.(abierto); }, [abierto]);
+
     const aceptar = async () => {
         setGuardando(true);
         const { error } = await supabase.auth.updateUser({ data: { acepta_comunicaciones: true, acepta_comunicaciones_fecha: new Date().toISOString() } });
@@ -37,7 +40,7 @@ export default function AvisoComunicaciones({ activo = true }: { activo?: boolea
     };
 
     return (
-        <Modal visible={activo && visible && !cerradoAhora} transparent animationType="fade" onRequestClose={() => setCerradoAhora(true)}>
+        <Modal visible={abierto} transparent animationType="fade" onRequestClose={() => setCerradoAhora(true)}>
             <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
                 <View style={{ backgroundColor: tc('#fbf1de'), borderWidth: 1, borderColor: tc('#e3cfa5'), borderRadius: 14, padding: 22, width: '100%', maxWidth: 420 }}>
                     <Text style={{ fontSize: 18, fontWeight: 'bold', color: tc('#3b1a12'), marginBottom: 10 }}>Avisos sobre tus pedidos</Text>

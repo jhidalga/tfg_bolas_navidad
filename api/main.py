@@ -120,6 +120,15 @@ class CheckoutPedido(BaseModel):
 TEMAS_WEB = ("normal", "navidad", "sanvalentin")
 CAMPOS_OFERTA = ("en_oferta", "precio_anterior")
 
+class AvisoNuevo(BaseModel):
+    titulo: str = Field(..., min_length=1, max_length=80)
+    texto: str = Field(..., min_length=1, max_length=600)
+
+
+class AvisoActivo(BaseModel):
+    activo: bool
+
+
 class TemaWeb(BaseModel):
     tema: str
 
@@ -430,7 +439,7 @@ if MODO_PRUEBA:
     _MUESTRAS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "bolas3d", "muestras")
     _MODELOS = {  # nombre en la tienda -> imagen
         "Galleta de Jengibre": "Gingerbread", "Oso de navidad": "Bear", "Reno de Navidad": "Reindeer",
-        "Estrella": "Star", "Arbol de Navidad": "ChristmasTree",
+        "Estrella": "Star", "Arbol de Navidad": "ChristmasTree", "Calcetín": "Stocking",
     }
 
     def _productos_prueba(base: str):
@@ -446,6 +455,7 @@ if MODO_PRUEBA:
                  ["Galleta de Jengibre", "Oso de navidad", "Reno de Navidad"], ["Marr\u00f3n"]),
             prod("p2", "Bola de Navidad Estrella", "Bola de navidad con forma de estrella y nombre personalizado", ["Estrella"], ["Dorado"]),
             prod("p3", "Bola de Navidad \u00c1rbol", "Bola de navidad con forma de \u00e1rbol y nombre personalizado", ["Arbol de Navidad"], ["Verde"]),
+            prod("p6", "Bola de Navidad Calcet\u00edn", "Bola de navidad con forma de calcet\u00edn y nombre personalizado", ["Calcet\u00edn"], ["Rojo"]),
             prod("p4", "Galleta de jengibre", "Como en producci\u00f3n: el modelo se llama Base", ["Base"], ["Marr\u00f3n"]),
             prod("p5", "Reno", "Como en producci\u00f3n: el modelo se llama Base", ["Base"], ["Marr\u00f3n"]),
         ]
@@ -525,6 +535,40 @@ if MODO_PRUEBA:
     @app.get("/api/mensajes")
     def mensaje_prueba():
         return {"id": 1, "mensaje": ""}
+
+    @app.get("/api/avisos/activo")
+    def aviso_activo_prueba():
+        return {"aviso": next((a for a in _ESTADO.setdefault("avisos", []) if a["activo"]), None)}
+
+    @app.get("/api/admin/avisos")
+    def listar_avisos_prueba():
+        return list(reversed(_ESTADO.setdefault("avisos", [])))
+
+    @app.post("/api/admin/avisos")
+    def crear_aviso_prueba(datos: AvisoNuevo):
+        lista = _ESTADO.setdefault("avisos", [])
+        for a in lista:
+            a["activo"] = False
+        a = {"id": f"av{len(lista) + 1}", "titulo": datos.titulo.strip(), "texto": datos.texto.strip(), "activo": True, "creado": "2026-11-26T20:40:00+00:00"}
+        lista.append(a)
+        return a
+
+    @app.patch("/api/admin/avisos/{aviso_id}")
+    def activar_aviso_prueba(aviso_id: str, datos: AvisoActivo):
+        lista = _ESTADO.setdefault("avisos", [])
+        if datos.activo:
+            for a in lista:
+                a["activo"] = False
+        for a in lista:
+            if a["id"] == aviso_id:
+                a["activo"] = datos.activo
+                return a
+        raise HTTPException(status_code=404, detail="Aviso no encontrado")
+
+    @app.delete("/api/admin/avisos/{aviso_id}")
+    def borrar_aviso_prueba(aviso_id: str):
+        _ESTADO["avisos"] = [a for a in _ESTADO.setdefault("avisos", []) if a["id"] != aviso_id]
+        return {"mensaje": "Aviso borrado"}
 
     @app.get("/api/tema")
     def tema_prueba():
@@ -2390,6 +2434,83 @@ def recuperar_clave(datos: RecuperarClave):
 
 
 
+# ---------- Avisos emergentes ----------
+# Un administrador publica un aviso y a cada persona le sale una sola vez al entrar (la web recuerda cual vio).
+# Solo hay uno activo a la vez. Hace falta la tabla avisos (ver documentacion/avisos.sql).
+def _cliente_avisos():
+    clave = os.getenv("SUPABASE_SERVICE_KEY")
+    return create_client(SUPABASE_URL, clave) if clave else supabase
+
+
+@app.get("/api/avisos/activo")
+def aviso_activo():
+    """Publico: el aviso activo, o null. Si la tabla aun no existe, no hay aviso."""
+    try:
+        r = _cliente_avisos().table("avisos").select("id, titulo, texto, creado").eq("activo", True).order("creado", desc=True).limit(1).execute().data
+        return {"aviso": r[0] if r else None}
+    except Exception:
+        return {"aviso": None}
+
+
+@app.get("/api/admin/avisos")
+def listar_avisos():
+    try:
+        return _cliente_avisos().table("avisos").select("id, titulo, texto, activo, creado").order("creado", desc=True).limit(30).execute().data or []
+    except Exception:
+        logging.exception("No se pudieron leer los avisos")
+        raise HTTPException(status_code=500, detail="No se pudieron leer los avisos. Comprueba que existe la tabla avisos.")
+
+
+def _desactivar_otros(cliente, excepto: Optional[str] = None):
+    q = cliente.table("avisos").update({"activo": False}).eq("activo", True)
+    if excepto:
+        q = q.neq("id", excepto)
+    q.execute()
+
+
+@app.post("/api/admin/avisos")
+def crear_aviso(datos: AvisoNuevo):
+    """Crea un aviso y lo deja activo (desactiva el anterior)."""
+    try:
+        c = _cliente_avisos()
+        _desactivar_otros(c)
+        r = c.table("avisos").insert({"titulo": datos.titulo.strip(), "texto": datos.texto.strip(), "activo": True}).execute().data
+        return r[0]
+    except HTTPException:
+        raise
+    except Exception:
+        logging.exception("No se pudo crear el aviso")
+        raise HTTPException(status_code=500, detail="No se pudo guardar el aviso. Comprueba que existe la tabla avisos.")
+
+
+@app.patch("/api/admin/avisos/{aviso_id}")
+def activar_aviso(aviso_id: str, datos: AvisoActivo):
+    """Activa un aviso (desactiva el resto) o lo desactiva. Al reactivar uno viejo, sale otra vez a todos."""
+    try:
+        c = _cliente_avisos()
+        if datos.activo:
+            _desactivar_otros(c, aviso_id)
+        r = c.table("avisos").update({"activo": datos.activo}).eq("id", aviso_id).execute().data
+        if not r:
+            raise HTTPException(status_code=404, detail="Aviso no encontrado")
+        return r[0]
+    except HTTPException:
+        raise
+    except Exception:
+        logging.exception("No se pudo cambiar el aviso")
+        raise HTTPException(status_code=500, detail="No se pudo cambiar el aviso")
+
+
+@app.delete("/api/admin/avisos/{aviso_id}")
+def borrar_aviso(aviso_id: str):
+    try:
+        _cliente_avisos().table("avisos").delete().eq("id", aviso_id).execute()
+        return {"mensaje": "Aviso borrado"}
+    except Exception:
+        logging.exception("No se pudo borrar el aviso")
+        raise HTTPException(status_code=500, detail="No se pudo borrar el aviso")
+
+
 @app.patch("/api/admin/ofertas")
 def cambiar_ofertas(datos: OfertasWeb, authorization: Optional[str] = Header(None)):
     """Solo administradores: activa o quita las ofertas de toda la tienda."""
@@ -2426,8 +2547,8 @@ def cambiar_tema(datos: TemaWeb, authorization: Optional[str] = Header(None)):
 # (ver documentacion/incidencias_registro.sql).
 # ---------------------------------------------------------------
 _NOMBRE_FIGURA = {"Gingerbread.3mf": "Galleta de jengibre", "ChristmasTree.3mf": "Árbol", "Bear.3mf": "Oso",
-                  "Star.3mf": "Estrella", "Reindeer.3mf": "Reno"}
-_ORDEN_MODELOS = ["Galleta de jengibre", "Reno", "Oso", "Estrella", "Árbol"]
+                  "Star.3mf": "Estrella", "Reindeer.3mf": "Reno", "Stocking.3mf": "Calcetín"}
+_ORDEN_MODELOS = ["Galleta de jengibre", "Reno", "Oso", "Estrella", "Árbol", "Calcetín"]
 
 
 def _modelo_resumen(modelo):
@@ -2496,7 +2617,7 @@ def _exigir_admin(authorization: Optional[str]):
     return cliente
 
 
-_COSTES_FIGURA = {"reno": 0.18, "estrella": 0.16, "arbol": 0.14, "galleta": 0.16, "oso": 0.19}
+_COSTES_FIGURA = {"reno": 0.18, "estrella": 0.16, "arbol": 0.14, "galleta": 0.16, "oso": 0.19, "calcet": 0.19}
 
 
 def _coste_figura(figura: str, estado: str) -> float:
