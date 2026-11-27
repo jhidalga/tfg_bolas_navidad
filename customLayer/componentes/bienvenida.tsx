@@ -8,8 +8,9 @@ const ADORNOS = [
     require('../assets/images/bienvenida/oso.png'),
     require('../assets/images/bienvenida/arbol.png'),
     require('../assets/images/bienvenida/estrella.png'),
+    require('../assets/images/bienvenida/calcetin.png'),
 ];
-const LARGO_HILO = [0.10, 0.22, 0.07, 0.19, 0.13]; // fraccion del alto de pantalla
+const LARGO_HILO = [0.10, 0.22, 0.07, 0.19, 0.13, 0.21]; // fraccion del alto de pantalla
 
 let yaMostrada = false;
 
@@ -105,7 +106,7 @@ export default function Bienvenida({ onTerminar }: { onTerminar: () => void }) {
 
     const movil = width < 600;
     const tactil = typeof window !== 'undefined' && !!window.matchMedia?.('(pointer: coarse)').matches;
-    const ancho = Math.min(130, width / (movil ? 4.1 : 5.6));
+    const ancho = Math.min(130, width / (movil ? 6.2 : 6.6));
 
     return (
         <View style={{
